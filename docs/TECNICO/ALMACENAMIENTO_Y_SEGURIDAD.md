@@ -1,6 +1,6 @@
 # Almacenamiento, seguridad y recuperación — Prisma
 
-**Estado:** criterios por validar; no hay esquema ni cifrado elegidos.
+**Estado:** dirección local-first confirmada; Dexie/IndexedDB y Argon2id + AES-256-GCM son candidatos técnicos, todavía sujetos a benchmark y aprobación.
 
 ## Protección de la información
 
@@ -38,6 +38,22 @@ Antes de decidir formato, KDF, algoritmo o biblioteca:
 5. verificar integridad y fallos sin sobrescribir los datos actuales.
 
 Argon2id, AES-GCM y cualquier parámetro propuesto anteriormente no están aprobados. No instalar WASM ni dependencias criptográficas por anticipado. La solución debe ser segura, mantenible, gratuita y viable en Android.
+
+## Copias y recuperación — dirección propuesta
+
+La copia es un archivo portable, manual y autocontenido. No se sube a Prisma, Firebase ni ningún servicio externo.
+
+Dirección candidata para la prueba técnica:
+- KDF resistente a fuerza bruta: **Argon2id**. OWASP publica como mínimo de referencia 19 MiB de memoria, 2 iteraciones y paralelismo 1 para almacenamiento de contraseñas; sirve como punto de partida de prueba, no como parámetro ya aprobado para el archivo de Prisma. La configuración final se medirá en Android y quedará incluida en la cabecera del archivo.
+- Cifrado autenticado: **AES-256-GCM**, con clave derivada de la contraseña y nonce único generado criptográficamente. El encabezado/versión y parámetros relevantes deben quedar autenticados como datos asociados.
+- Formato versionado con identificador de formato, versión de esquema, KDF y parámetros, salt, algoritmo, nonce, ciphertext y etiqueta de autenticación.
+- Incluir todos los datos personales no reconstruibles: películas manuales y sus vínculos, estados, visionados, calificaciones, listas y preferencias que entren en el alcance. Excluir cachés y datos remotos reconstruibles salvo que la restauración los necesite.
+- Importación en dos fases: leer y limitar el tamaño/los parámetros; derivar clave y autenticar; validar estructura, relaciones y versión; solo después escribir en una transacción segura o en una base temporal y sustituir. Una contraseña errónea, un archivo alterado, una versión no soportada o un fallo no pueden modificar la base actual.
+- El usuario debe descargar y custodiar el archivo y recordar su contraseña. Si se pierde la contraseña, no existe recuperación remota: el cifrado está diseñado para que el proveedor no pueda descifrarlo.
+
+No elegir todavía implementación de Argon2id, parámetros definitivos, compresión ni estrategia de restauración (reemplazo/fusión). La prueba debe medir tiempos, RAM y batería en el teléfono objetivo.
+
+Fuentes: [OWASP Password Storage Cheat Sheet — parámetros Argon2id](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html), [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API), [AES-GCM en SubtleCrypto](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/encrypt).
 
 ## Credenciales externas
 
