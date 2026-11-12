@@ -2,7 +2,9 @@ import Dexie from "../node_modules/dexie/dist/dexie.mjs";
 
 const $ = (id) => document.getElementById(id);
 const FIELDS = [
-  ["openMs", "Apertura"],
+  ["moduleInitMs", "Inicialización SQLite WASM"],
+  ["vfsInitMs", "Inicialización OPFS VFS"],
+  ["openMs", "Apertura de base"],
   ["dataBuildMs", "Generación del dataset"],
   ["insertMs", "Inserción + commit"],
   ["yearQueryMs", "Consulta por año"],
@@ -11,7 +13,6 @@ const FIELDS = [
   ["updateMs", "Actualizar calificación"],
   ["rollbackMs", "Rollback"],
   ["reopenMs", "Cerrar + reabrir"],
-  ["totalMs", "Tiempo total"]
 ];
 
 let lastReport = null;
@@ -46,7 +47,8 @@ function buildDataset(movieCount, viewsPerMovie) {
     targetTitle: `Prisma Film ${pad(targetIndex)}`,
     targetViewId: `view-${pad(targetIndex)}-0`,
     expectedViews: movieCount * viewsPerMovie,
-    expectedViewsForTarget: viewsPerMovie
+    expectedViewsForTarget: viewsPerMovie,
+    expectedYearCount: movieCount <= 20 ? 0 : Math.floor((movieCount - 1 - 20) / 47) + 1
   };
 }
 
@@ -152,7 +154,8 @@ async function runDexie(movieCount, viewsPerMovie, round) {
       rollbackRemaining,
       reopenedCount,
       expectedViews: data.expectedViews,
-      expectedViewsForTarget: data.expectedViewsForTarget
+      expectedViewsForTarget: data.expectedViewsForTarget,
+      expectedYearCount: data.expectedYearCount
     };
   } finally {
     db.close();
@@ -207,8 +210,12 @@ function median(values) {
 function summarize(runs) {
   const summary = {};
   for (const [field] of FIELDS) {
-    summary[field] = Number(median(runs.map((run) => run[field])).toFixed(2));
+    const values = runs.map((run) => run[field]);
+    summary[field] = values.every((value) => Number.isFinite(value))
+      ? Number(median(values).toFixed(2))
+      : null;
   }
+  summary.totalMs = Number(median(runs.map((run) => run.totalMs)).toFixed(2));
   return summary;
 }
 
@@ -223,7 +230,7 @@ function showResults(dexieRuns, sqliteRuns, config) {
 
   for (const [field, label] of FIELDS) {
     const tr = document.createElement("tr");
-    for (const value of [label, ms(dexie[field]), ms(sqlite[field])]) {
+    for (const value of [label, dexie[field] == null ? "—" : ms(dexie[field]), sqlite[field] == null ? "—" : ms(sqlite[field])]) {
       const td = document.createElement("td");
       td.textContent = value;
       tr.append(td);
@@ -239,7 +246,8 @@ function showResults(dexieRuns, sqliteRuns, config) {
     item.titleMatches === 1 &&
     item.updatedRating === 8 &&
     item.rollbackRemaining === 0 &&
-    item.yearCount === reference.yearCount
+    item.yearCount === config.expectedYearCount &&
+    item.expectedYearCount === config.expectedYearCount
   );
 
   $("integrity").className = "status " + (valid ? "ok" : "bad");
@@ -284,7 +292,8 @@ async function runAll() {
     }
 
     const expectedViews = movieCount * viewsPerMovie;
-    const config = { movieCount, viewsPerMovie, expectedViews };
+    const expectedYearCount = movieCount <= 20 ? 0 : Math.floor((movieCount - 1 - 20) / 47) + 1;
+    const config = { movieCount, viewsPerMovie, expectedViews, expectedYearCount };
     const summary = showResults(dexieRuns, sqliteRuns, config);
     const storageAfter = await storageEstimate();
 
@@ -293,6 +302,13 @@ async function runAll() {
       version: 1,
       generatedAt: new Date().toISOString(),
       browser: navigator.userAgent,
+      deviceProfile: {
+        model: "Samsung Galaxy A03 SM-A035M",
+        android: "13 / API 33",
+        chipset: "Unisoc T606",
+        physicalRamGB: 4,
+        browser: "Brave 1.99.56 / Chromium 157.0.8103.50 (perfil informado por el propietario)"
+      },
       secureContext: isSecureContext,
       deviceMemoryReported: navigator.deviceMemory || null,
       hardwareConcurrencyReported: navigator.hardwareConcurrency || null,
@@ -300,7 +316,10 @@ async function runAll() {
       storageAfter,
       dataset: config,
       rounds: totalRounds,
-      dexie: { version: "4.4.7", runs: dexieRuns, median: summary.dexie },
+      dexie: {
+        version: "4.4.7", runs: dexieRuns,
+        median: {...summary.dexie, totalMs: Number(median(dexieRuns.map((x) => x.totalMs)).toFixed(2))}
+      },
       sqlite: {
         packageVersion: "3.54.1-build1",
         runtimeVersion: sqliteRuns[0]?.sqliteCoreVersion || null,
@@ -310,7 +329,7 @@ async function runAll() {
       integrityPassed: summary.integrityPassed,
       notes: [
         "SQLite usa OPFS SAH pool dentro de un Worker; Dexie usa IndexedDB con chromeTransactionDurability strict.",
-        "La medición incluye inicialización de SQLite WASM y Worker, pero no la instalación npm ni la descarga inicial de dependencias.",
+        "SQLite totalMs incluye inicialización de Worker, WASM y VFS; Dexie se importa antes de pulsar Ejecutar. Los tiempos totales no son directamente equivalentes. La tabla separa inicialización SQLite para evitar ocultar ese coste.",
         "El valor de StorageManager.estimate es informativo y no se considera cuota garantizada.",
         "SQLite SAH pool limita conexiones concurrentes; el benchmark no convierte ese VFS en una decisión de arquitectura aprobada."
       ]
