@@ -1,51 +1,63 @@
 # Plan de trabajo — Prisma
 
-**Estado:** fundamentos por replantear.  
-**Regla:** no comenzar el código de producto hasta resolver y aprobar los fundamentos necesarios.
+**Estado:** preparación técnica enfocada en el primer recorrido funcional. No hay código de producto todavía.  
+**Regla:** no iniciar la aplicación hasta cerrar las decisiones técnicas bloqueantes y recibir aprobación expresa del propietario.
 
-Este plan no usa IDs de fase/hito ni asigna números a funciones futuras. El orden puede ajustarse según lo que desbloquee una aplicación utilizable.
+## Recorrido funcional inicial acordado
 
-## Cerrar los fundamentos
+El primer recorrido que guiará las pruebas y la arquitectura es:
 
-- [ ] Definir el primer recorrido útil que Prisma debe resolver de principio a fin.
-- [ ] Revisar el alcance inicial y retirar funciones que no sean necesarias para esa primera experiencia.
-- [ ] Revisar el diseño heredado en contexto PWA; aprobar solo lo que funcione bien en pantalla y navegación web.
-- [ ] Evaluar las mejores arquitecturas y tecnologías disponibles para cada necesidad; elegir con evidencia la combinación de mayor calidad, no la opción básica por comodidad.
-- [ ] Definir el almacenamiento local, las reglas de integridad y cómo recuperar los datos si el navegador los elimina.
-- [ ] Definir una copia de seguridad cifrada viable para el teléfono, sin fijar algoritmos ni parámetros antes de medirlos y revisarlos.
-- [ ] Elegir un alojamiento que cueste 0 USD, no requiera plan de pago ni facturación automática, y fijar el origen HTTPS antes de guardar datos reales.
-- [ ] Definir una actualización de PWA que no interrumpa operaciones ni mezcle archivos incompatibles.
-- [ ] Acordar las pruebas concretas del primer recorrido y la aceptación en el teléfono.
-- [ ] Confirmar que el propietario aprueba empezar a desarrollar.
+1. Crear manualmente una película en el dispositivo (título obligatorio; año opcional).
+2. Incorporarla al Historial.
+3. Registrar uno o varios visionados independientes, con las modalidades de fecha/hora ya acordadas.
+4. Calificar un visionado con la escala personal de 1 a 10; una repetición no sobrescribe otra.
+5. Abrir «Visionados» y consultar cada registro.
+6. Cerrar y volver a abrir Prisma; comprobar que película, visionados y notas siguen guardados.
+7. Repetir las operaciones locales sin conexión.
+8. Antes de guardar datos personales reales, exportar una copia cifrada y restaurarla en una base de prueba, verificando que no se pierdan ni dupliquen registros.
 
-Esta lista es una puerta de entrada, no un proyecto documental paralelo. Si una decisión puede tomarse de forma segura cuando se implemente una función, no se debe especular ahora.
+La alta manual permite probar el diario sin depender de TMDB, una API externa o conectividad. TMDB, Descubrir y sus filtros se incorporarán después, sin transmitir nunca el historial ni el perfil personal.
 
-## Construir una primera experiencia realmente utilizable
+Este recorrido es una primera capacidad vertical, no una definición de todas las funciones de la primera versión pública. Pendientes, Ocultos, listas, estadísticas, Espectro y el feed avanzado se planifican por separado. Las pantallas ya aprobadas no se rediseñan por este recorte técnico.
 
-Después de cerrar los fundamentos:
-- implementar el recorrido inicial elegido por el propietario, de extremo a extremo;
-- guardar datos reales y comprobarlos al cerrar y reabrir la PWA;
-- completar estados vacíos, errores y recuperación del mismo recorrido;
-- verificarlo en el dispositivo Android;
-- no añadir navegación o controles que aún no tengan una función real.
+## Fundamentos: estado actual
 
-La primera entrega no se declarará lista por tener un shell, un conjunto de pantallas o un backend inexistente. Debe resolver una necesidad real de forma consistente.
+- [x] Seleccionar el primer recorrido funcional.
+- [x] Conservar las composiciones visuales y comportamientos aprobados para ese recorrido.
+- [x] Confirmar que la aplicación será local-first, sin cuenta ni backend propio y con coste de 0 USD.
+- [ ] Comparar SvelteKit 3 y React Router 8 con la misma muestra y el mismo comportamiento.
+- [ ] Comparar Dexie/IndexedDB con SQLite/WASM/OPFS en el teléfono Android objetivo.
+- [ ] Cerrar el modelo conceptual de películas, visionados y calificaciones provisionales.
+- [ ] Aprobar persistencia, formato de copia cifrada, KDF, cifrado autenticado y recuperación segura.
+- [ ] Elegir el alojamiento estático y aprobar el origen HTTPS definitivo sin riesgo de facturación.
+- [ ] Definir actualización PWA sin interrumpir operaciones ni mezclar archivos incompatibles.
+- [ ] Ejecutar pruebas en Android y acordar criterios de aceptación.
+- [ ] Recibir autorización expresa para iniciar el código de producto.
 
-## Completar el alcance acordado
+## Recomendaciones técnicas preliminares
 
-Una vez que la primera experiencia sea estable, añadir capacidades por prioridad y valor para el usuario. Las versiones públicas se asignarán con SemVer según el impacto real de cada entrega. No se reserva por adelantado ningún número para funciones o etapas futuras.
+- **Framework:** comparar Svelte 5.57.1 + SvelteKit 3.2.0 con React 19.3.0 + React Router 8.5.1. No seleccionar por popularidad ni por menor número de archivos.
+- **Almacenamiento:** Dexie 4.4.7 sobre IndexedDB es la candidata para el diario inicial; SQLite/WASM/OPFS sigue como alternativa si demuestra una mejora clara sin comprometer concurrencia, apertura ni memoria.
+- **Hosting:** Firebase Hosting clásico en Spark es el candidato actual por su hostname web.app propio y porque Spark no exige método de pago. Debe aprobarse el proyecto/site ID y aceptar los límites de 10 GB de almacenamiento y 10 GB/mes de transferencia; al agotarlos, el servicio se bloquea o pausa en lugar de cobrar mientras no se active Blaze.
+- **Copias:** se estudia un archivo versionado cifrado con Argon2id y AES-256-GCM; ningún parámetro ni biblioteca queda fijado hasta medirlo y revisarlo.
 
-Historial, Pendientes, listas, TMDB, estadísticas, Espectro y Descubrir avanzado son capacidades candidatas a revisar, no obligaciones automáticas del nuevo desarrollo.
+## Construir la primera capacidad utilizable
 
-## Criterio para cerrar una entrega
+Una vez aprobados los fundamentos:
 
-Una entrega está lista cuando:
-- el usuario puede completar lo anunciado desde la aplicación;
-- los datos quedan guardados y se recuperan tras cerrar y abrir;
-- los errores no destruyen información;
-- funciona en el teléfono y en los temas que hayan sido aprobados;
-- el modo offline se ha comprobado cuando sea parte del comportamiento anunciado;
-- las pruebas relevantes pasan y no hay defectos graves abiertos;
-- las notas explican qué puede hacer el usuario y qué límites quedan.
+- implementar el recorrido completo anterior, no un conjunto de pantallas sueltas;
+- conectar interfaz, reglas, almacenamiento y recuperación;
+- incluir estados vacíos, errores y validación;
+- probar persistencia y offline en Android;
+- no guardar datos personales reales hasta que exportación/restauración hayan pasado las pruebas;
+- no añadir controles que todavía no tengan una función real.
 
-No se cierra una entrega por commits, tests aislados, cambios de documentación o pipelines verdes.
+## Ampliar Prisma
+
+Después de estabilizar la primera capacidad, añadir por prioridad: TMDB y Descubrir, Pendientes y Ocultos/restauración, listas, estadísticas y Espectro. No hay fases con números ni versiones reservadas.
+
+## Criterio de aceptación
+
+Una capacidad está lista cuando el usuario puede completarla, los datos permanecen tras cerrar/reabrir, los fallos no destruyen información, funciona en Android y en Obsidiana/Cuarzo, el comportamiento offline prometido se comprueba y la recuperación está validada cuando corresponda.
+
+No equivale a progreso un commit, una pantalla estática, un build, una prueba aislada o documentación adicional.
