@@ -32,10 +32,11 @@ Mantén esa sesión abierta y abre en Brave: `http://127.0.0.1:18765/`. No abras
 
 1. Ejecutar las pruebas básicas.
 2. Solicitar persistencia mediante el botón correspondiente.
-3. Registrar el Service Worker y recargar la página.
-4. Descargar el JSON sintético y seleccionarlo mediante el selector Android.
-5. Con Termux aún ejecutando el servidor, activar modo avión y recargar para probar la caché offline.
-6. Descargar el informe JSON y compartirlo en la conversación.
+3. Registrar el Service Worker y recargar la página hasta que «Controla esta página» muestre «Sí».
+4. Descargar el JSON sintético y seleccionarlo mediante el selector estándar de Android. El informe debe indicar «Ida y vuelta de archivo: CORRECTO».
+5. Regresar a Termux y detener el servidor con Ctrl+C. No vuelvas a iniciarlo todavía.
+6. Activar modo avión y recargar `http://127.0.0.1:18765/`. Si la página abre desde la caché con el servidor detenido, pulsa «Confirmar que cargó con servidor detenido y modo avión».
+7. Descargar el informe JSON y compartirlo en la conversación. La descarga local funciona sin Internet.
 
 Al terminar, usa «Limpiar datos de la sonda» para borrar únicamente la base, caché, Worker y carpeta OPFS con nombres propios de la herramienta. Detén el servidor con Ctrl+C.
 
