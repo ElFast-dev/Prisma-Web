@@ -1,3 +1,5 @@
+> **Archivo histórico de la etapa Android.** Fuente sincronizada desde `feature/fase1-android-foundation` antes de retirar el repositorio anterior. Los hitos y requisitos históricos se conservan como antecedente; la fuente vigente de Prisma Web está en `docs/ROADMAP.md` y `docs/TECNICO/`.
+
 # Referencias técnicas oficiales
 
 Fuentes consultadas para el diseño técnico inicial de Prisma (5 de noviembre de 2026). Deben volver a comprobarse antes de cada fase si la tecnología o el comportamiento ha podido cambiar.
