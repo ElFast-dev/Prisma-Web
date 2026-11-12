@@ -39,7 +39,7 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | ID | Propuesta | Estado |
 |---|---|---|
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
-| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | Dexie es la candidata preferente; falta benchmark real en Android y prueba de concurrencia, durabilidad, recuperación y cuota |
+| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | Dexie es la candidata preferente; falta benchmark real en Android y prueba de concurrencia, durabilidad, recuperación y cuota. OPFS queda condicionado a su disponibilidad real en Brave |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
 | T-005 | Firebase Hosting clásico en Spark como alojamiento estático con hostname web.app dedicado. | Candidato recomendado de 0 USD; falta aprobar proyecto/site ID y verificar configuración sin facturación. GitHub Pages queda desaconsejado por origen compartido |
@@ -70,3 +70,11 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 9. **Puerta final:** el propietario aprueba expresamente el comienzo del código de producto.
 
 Las decisiones que no afecten al alcance, al coste, a la privacidad ni a la integridad de datos se pueden tomar durante la implementación de la función que las necesite.
+
+
+## Actualización del dispositivo de referencia — 12 de noviembre de 2026
+
+- **Dispositivo:** Samsung Galaxy A03 SM-A035M, Android 13, Unisoc T606, 4 GB de RAM.
+- **Navegador de aceptación:** Brave Android 1.99.56, Chromium 157.0.8103.50, versión facilitada por el propietario.
+- **Almacenamiento:** la observación inicial de 6,2 GB libres no es un límite permanente; el propietario puede liberar espacio antes de ejecutar benchmarks. Registrar espacio y cuota web por sesión.
+- **Compatibilidad:** Brave declara desactivar la File System API. OPFS pertenece a esa API; no se debe asumir disponible sin detección funcional en Brave. La importación/exportación no dependerá de selectores File System Access específicos.
