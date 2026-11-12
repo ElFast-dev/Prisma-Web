@@ -35,7 +35,7 @@ No se considera progreso suficiente acumular documentación, scaffolding, abstra
 3. [Requisitos de producto — todavía revisables](docs/PRODUCTO/REQUISITOS.md)
 4. [Plan de trabajo](docs/ROADMAP.md)
 5. [Arquitectura — opciones por validar](docs/TECNICO/ARQUITECTURA.md)
-6. [Identificación de entregas](docs/TECNICO/VERSIONADO.md)
+6. [Identificación de entregas](docs/TECNICO/ENTREGAS.md)
 7. [Alojamiento y origen — decisión pendiente](docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md)
 8. [Registro de decisiones](docs/DECISIONES/REGISTRO.md)
 9. [Estado visual — referencias por revalidar](docs/DISENO/ESTADO_VISUAL.md)
