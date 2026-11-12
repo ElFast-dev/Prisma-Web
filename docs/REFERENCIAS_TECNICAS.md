@@ -44,6 +44,12 @@ Las cuotas del navegador son variables, no una reserva de capacidad. La persiste
 
 ## Hosting y origen
 
+Cloudflare Pages fue rechazado por el propietario; sus enlaces dejan de ser una recomendación activa.
+
 - MDN — Origin: https://developer.mozilla.org/en-US/docs/Glossary/Origin
-- Cloudflare Pages — Integración GitHub: https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/
-- Cloudflare Pages — Integración Git: https://developers.cloudflare.com/pages/configuration/git-integration/
+- GitHub Docs — Crear un sitio GitHub Pages: https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
+- GitHub Docs — Límites de GitHub Pages: https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits
+- GitHub Docs — Facturación de GitHub Actions: https://docs.github.com/en/billing/concepts/product-billing/github-actions
+- GitHub Docs — HTTPS en GitHub Pages: https://docs.github.com/en/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https
+
+Los proveedores y límites se vuelven a verificar antes de habilitar un alojamiento. No asumir que un plan gratuito es ilimitado ni que es aceptable para el proyecto.
