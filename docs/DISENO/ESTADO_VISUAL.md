@@ -90,21 +90,21 @@ No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni lo
 
 ## Ficha cinematográfica
 
-**Estado:** estructura visual confirmada por el propietario el 12 de noviembre de 2026 y afinada para mantener controles personales compactos.
+**Estado:** composición aprobada por el propietario el 12 de noviembre de 2026. Las aclaraciones posteriores ajustan únicamente cómo se accede a la calificación y al detalle de visionados; no reemplazan el diseño acordado.
 
-- Cabecera panorámica a todo el ancho, con imagen, degradado inferior, título superpuesto y metadatos básicos disponibles.
-- Flecha de regreso en un control circular semitransparente arriba a la izquierda y menú de opciones arriba a la derecha.
-- Se mantiene el orden de contenido: **acciones principales/estado personal (Historial/Pendientes) → sinopsis → botón de calificación → acceso a Visionados**.
-- El estado personal continúa visible en la ficha mediante las acciones correspondientes (Historial/Pendientes); no se traslada a otra pantalla ni se oculta.
-- La calificación no es una sección de la ficha. Se representa mediante un botón compacto: antes de asignar una nota dice **«Calificar»**; después de confirmar una puntuación, el mismo botón muestra solo el número, por ejemplo **«7/10»**. Al pulsarlo se abre el selector para establecer o modificar la nota.
-- No se muestran estrellas en la ficha. Las diez estrellas aparecen únicamente dentro del panel de selección/edición de calificación.
-- La asignación de la nota sigue las reglas específicas de los visionados: si hay varios, se elige el registro destino; si no existe ninguno, la nota queda provisional para el siguiente visionado.
-- «Visionados» se presenta como una fila o botón compacto pulsable; puede mostrar un contador (por ejemplo, «Visionados · 3»). No muestra las filas de visionados en la ficha.
-- Al pulsar «Visionados» se abre una vista secundaria dedicada con los registros individuales en orden cronológico descendente, indicando fecha, hora cuando se conoce y calificación de cada visionado.
-- Desde esa vista se puede consultar cada repetición sin sobrescribir los registros anteriores.
-- La píldora inferior Personal/Descubrir no aparece en la ficha ni en la vista de visionados. La navegación secundaria utiliza regreso contextual.
-- La misma estructura se presenta en Obsidiana y Cuarzo, con sus paletas confirmadas.
-- Títulos, imágenes, fechas, metadatos, contadores y estados de estas maquetas son datos de ejemplo; en la aplicación solo se presentarán valores reales disponibles.
+- Se conserva la composición original: cabecera panorámica a todo el ancho con imagen y degradado inferior, título superpuesto y metadatos básicos disponibles.
+- Se conservan la flecha de regreso arriba a la izquierda y el menú de opciones arriba a la derecha.
+- Debajo de la cabecera se mantiene el orden aprobado: **acciones principales (Historial/Pendientes) → sinopsis → calificación personal → visionados**.
+- Se conservan la estructura ligera, el espacio y los divisores discretos entre secciones; no añadir tarjetas pesadas, insignias ni una organización nueva.
+- El estado se representa mediante las acciones principales Historial/Pendientes, como en el diseño acordado.
+- La calificación ocupa el lugar previsto en esa composición, pero se representa como un botón, no como una sección: antes de calificar dice **«Calificar»**; después de confirmar, muestra la nota, por ejemplo **«7/10»**. Al pulsarlo se abre el selector para asignar o modificar la nota.
+- No se muestran estrellas en la ficha. Las diez estrellas aparecen solo dentro del panel de calificación.
+- «Visionados» conserva su lugar en la composición, pero funciona como entrada pulsable (puede indicar el número de registros). La ficha no despliega las filas individuales.
+- Al pulsar «Visionados» se abre una pantalla secundaria con las entradas individuales, en orden cronológico descendente, incluyendo fecha, hora cuando se conoce y calificación propia.
+- Se mantienen las reglas ya acordadas: cada visionado es independiente; cuando hay varios se elige el visionado al que corresponde una nueva calificación; sin visionados, la nota queda provisional para asociarse al siguiente.
+- No aparece la píldora inferior Personal/Descubrir en la ficha ni en la pantalla de visionados. La navegación secundaria usa regreso contextual.
+- La misma composición se conserva en Obsidiana y Cuarzo; solo se adaptan las superficies, textos, contornos y acentos a las paletas aprobadas.
+- Los títulos, imágenes, fechas, metadatos y contadores de los ejemplos son ilustrativos; en la aplicación solo se presentarán datos reales disponibles.
 
 
 ## Ficha cinematográfica — Registrar visionado
