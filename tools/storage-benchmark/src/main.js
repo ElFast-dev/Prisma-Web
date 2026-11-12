@@ -348,6 +348,47 @@ async function runAll() {
   }
 }
 
+async function cleanupOwnTestData() {
+  const notes = [];
+  if (navigator.storage?.getDirectory) {
+    try {
+      const root = await navigator.storage.getDirectory();
+      await root.removeEntry("prisma-storage-benchmark-v1", { recursive: true }).catch((error) => {
+        if (error?.name !== "NotFoundError") throw error;
+      });
+      notes.push("Carpeta OPFS temporal revisada");
+    } catch (error) {
+      notes.push("OPFS: " + (error?.message || String(error)));
+    }
+  } else {
+    notes.push("OPFS no está expuesto; no se pudo revisar la carpeta");
+  }
+
+  if (typeof indexedDB.databases === "function") {
+    try {
+      const databases = await indexedDB.databases();
+      const names = databases
+        .map((item) => item.name)
+        .filter((name) => typeof name === "string" && name.startsWith("prisma-dexie-benchmark-"));
+      for (const name of names) {
+        await new Promise((resolve, reject) => {
+          const request = indexedDB.deleteDatabase(name);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error || new Error("No se pudo borrar " + name));
+          request.onblocked = () => reject(new Error("Cierre otras pestañas que usen " + name));
+        });
+      }
+      notes.push("Bases IndexedDB propias revisadas: " + names.length);
+    } catch (error) {
+      notes.push("IndexedDB: " + (error?.message || String(error)));
+    }
+  } else {
+    notes.push("indexedDB.databases() no está disponible; las bases de prueba completadas se eliminan al terminar cada ronda");
+  }
+
+  $("cleanupStatus").textContent = notes.join(". ") + ".";
+}
+
 function downloadReport() {
   if (!lastReport) return;
   const blob = new Blob([JSON.stringify(lastReport, null, 2)], { type: "application/json" });
@@ -363,3 +404,9 @@ function downloadReport() {
 
 $("run").addEventListener("click", runAll);
 $("download").addEventListener("click", downloadReport);
+$("cleanup").addEventListener("click", async () => {
+  if ($("run").disabled) return;
+  if (!confirm("¿Eliminar solo las bases y la carpeta OPFS propias de este benchmark?")) return;
+  $("cleanupStatus").textContent = "Limpiando…";
+  await cleanupOwnTestData();
+});
