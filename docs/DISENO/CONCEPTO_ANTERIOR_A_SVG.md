@@ -1,7 +1,7 @@
 # Concepto visual anterior a los SVG — Prisma
 
 **Origen:** decisiones visuales del 5 al 7 de noviembre de 2026, recuperadas del historial Git del repositorio Android.  
-**Estado:** concepto histórico localizado; se conserva para reconstrucción y comparación. No es aún una aprobación de pantalla PWA.
+**Estado:** composición de Personal y concepto de Descubrir confirmados expresamente por el propietario para guiar la interfaz PWA; detalles responsive y visuales finos se adaptarán y validarán.
 
 > **Preferencia del propietario, confirmada el 12 de noviembre de 2026:** esta es la dirección visual anterior a los SVG que recuerda como su favorita. Obsidiana y Cuarzo se conservan. Los próximos conceptos se reconstruyen directamente en la conversación para que pueda visualizarlos y elegir; **no se deben generar imágenes de interfaz con IA**.
 
@@ -152,3 +152,18 @@ El SVG que muestra la columna de cuatro filas pertenece a la reducción posterio
 - [Color de selección de la píldora](https://github.com/ElFast-dev/Prisma/commit/1ce9c5cae3a9a3ac800a0cc7057387f4d13613fd)
 
 Esta recuperación describe lo que se registró en el proyecto anterior. El propietario confirmó expresamente el 12 de noviembre de 2026 que la cuadrícula de Personal (Historial, Pendientes, Ocultos y Estadísticas) con la fila completa Gestionar listas debajo es exactamente la composición anterior a los SVG que más le gustaba. También ha reconfirmado los temas Obsidiana/Cuarzo y la píldora flotante Personal/Descubrir. La composición histórica de Descubrir se presentará por separado en una maqueta conversacional para que el propietario la confirme o ajuste antes de aprobarla para la PWA.
+
+## 10. Confirmación expresa del propietario — Descubrir
+
+El 12 de noviembre de 2026, después de visualizar una maqueta conceptual en el chat, el propietario confirmó que quiere conservar este concepto de Descubrir:
+- barra superior continua e integrada con búsqueda, Filtros y Ajustes;
+- Feed visual de tres columnas;
+- pósteres verticales 2:3;
+- sin títulos ni descripciones debajo de los pósteres;
+- desplazamiento continuo;
+- píldora flotante inferior Personal/Descubrir;
+- ambos temas, Obsidiana y Cuarzo.
+
+Esta composición queda confirmada como dirección visual de Descubrir para Prisma Web. La maqueta conversacional es una reconstrucción conceptual, no el diseño final pixel-perfect ni una aprobación de cada estado todavía no mostrado. Los marcadores Vista/Pendiente, mosaico alternativo, modos Equilibrado/Afinidad/Exploración, filtros concretos, respuesta a búsqueda y comportamiento ante falta de datos se detallarán y visualizarán por separado antes de implementarse.
+
+La estructura debe adaptarse a PWA responsive, respetando áreas seguras, navegación gestual, accesibilidad y rendimiento. No se deben copiar medidas Android de forma mecánica.
