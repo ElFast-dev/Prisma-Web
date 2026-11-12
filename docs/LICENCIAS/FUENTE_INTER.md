@@ -1,30 +1,17 @@
-# Fuente Inter — Prisma Web
+# Licencia tipográfica — Inter
 
-Prisma conserva Inter como familia tipográfica global aprobada para ofrecer una presentación consistente y disponible sin conexión.
+Este documento conserva información de licencia de la familia Inter consultada durante la etapa anterior. No implica que Inter esté elegida como tipografía de la PWA.
 
-- Familia: Inter variable.
-- Origen previsto: repositorio oficial de Google Fonts, familia Inter.
+- Familia: Inter.
+- Origen previsto: repositorio oficial de Google Fonts.
 - Titular indicado por la licencia: The Inter Project Authors.
 - Licencia: SIL Open Font License 1.1.
-- Licencia histórica: conservada en el registro original de Android y en el recurso de licencia correspondiente.
 
-## Uso en la PWA
+## Antes de usarla en Prisma
 
-- La fuente se distribuirá como recurso estático dentro del build de Prisma.
-- No se dependerá de una petición a Google Fonts en tiempo de ejecución.
-- Los pesos utilizados son 400, 500 y 600.
-- El binario de fuente debe descargarse del origen oficial durante la fase de recursos, verificarse y acompañarse de su licencia. No copiar archivos tipográficos sin verificar origen y licencia.
-- La tipografía debe funcionar offline después de instalar/cargar la PWA.
+- Verificar de nuevo la licencia del archivo exacto que se vaya a distribuir.
+- Evaluar tamaño, pesos necesarios, carga offline y rendimiento en Android.
+- Compararla con alternativas del sistema que podrían evitar descargar una fuente adicional.
+- Incluir el archivo de licencia junto al recurso final.
 
-Las decisiones de familia, pesos y escala están en [Estado visual](../DISENO/ESTADO_VISUAL.md).
-# Fuente Inter incluida en Prisma
-
-Prisma incorpora Inter como recurso local para mantener una presentación tipográfica consistente y disponible sin conexión.
-
-- Fuente: Inter variable, archivo Inter[opsz,wght].ttf.
-- Origen: repositorio oficial de Google Fonts, familia Inter.
-- Titular indicado por la licencia: The Inter Project Authors.
-- Licencia: SIL Open Font License 1.1.
-- Copia de la licencia incluida en la aplicación: app/src/main/assets/licenses/Inter-OFL-1.1.txt.
-
-La fuente se utiliza como recurso tipográfico de la interfaz. La familia global, pesos 400/500/600 y escala tipográfica se mantienen según docs/DISENO/ESTADO_VISUAL.md.
+No descargar ni añadir binarios tipográficos al repositorio hasta que la decisión visual y técnica esté aprobada.
