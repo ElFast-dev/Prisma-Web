@@ -26,7 +26,7 @@ Las propuestas nuevas de Prisma-Web tampoco son vinculantes por existir. En espe
 4. `docs/ROADMAP.md`: resultados necesarios, sin hitos artificiales.
 5. `docs/TECNICO/ARQUITECTURA.md`: alternativas técnicas, no stack aprobado.
 6. `docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md`: hosting y origen pendiente.
-7. `docs/TECNICO/VERSIONADO.md`: modelo simplificado de ediciones funcionales.
+7. `docs/TECNICO/ENTREGAS.md`: modelo simplificado de ediciones funcionales.
 8. `docs/DISENO/ESTADO_VISUAL.md`: referencias visuales que necesitan validación web.
 9. `docs/DECISIONES/REGISTRO.md`: decisiones expresas, propuestas y descartes.
 
