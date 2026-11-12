@@ -119,3 +119,20 @@ No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni lo
 - Cada registro creado es independiente. Una repetición nunca sobrescribe fechas, horas ni calificaciones anteriores.
 - La estructura y estados se presentan en Obsidiana y Cuarzo, sin píldora inferior.
 
+
+
+## Ficha cinematográfica — Calificación personal
+
+**Estado:** dirección de interacción confirmada por el propietario el 12 de noviembre de 2026.
+
+- La acción «Calificar» abre un panel compacto sobre la ficha.
+- La escala se compone de diez estrellas enteras, sin fracciones; al seleccionar una estrella se actualiza el número visible en el centro (por ejemplo, «7 / 10»).
+- El usuario confirma mediante una acción explícita «Guardar calificación» o «Calificar».
+- Si existe un único visionado, la nota corresponde a ese registro.
+- Si existen varios visionados, el panel presenta sus fechas/horas y calificaciones actuales, y exige seleccionar el registro destino antes de confirmar. No se asigna ni modifica una nota en otro visionado por defecto.
+- Si aún no hay visionados, la calificación se guarda como provisional y se asocia al siguiente visionado que se registre.
+- Cada visionado conserva su propia calificación; modificar una puntuación afecta solo al registro elegido.
+- La puntuación personal más reciente es la que se presenta como resumen en la ficha; si todavía no hay visionados, se presenta la calificación provisional.
+- La escala y jerarquía se mantienen equivalentes en Obsidiana y Cuarzo. Los colores de estrella y superficies respetan las paletas aprobadas.
+- Las calificaciones personales son datos locales y no se envían a TMDB.
+
