@@ -76,6 +76,7 @@ El benchmark alterna el orden Dexie/SQLite entre rondas para reducir el sesgo de
 - No importes películas, visionados ni copias personales.
 - No pulses «Borrar datos del sitio» de Brave.
 - Cada ronda elimina solo la base Dexie y el directorio OPFS con nombre propio del benchmark.
+- Si una ronda se interrumpe, el panel «Limpiar restos de pruebas» elimina solo las bases con prefijo `prisma-dexie-benchmark-` y la carpeta OPFS `prisma-storage-benchmark-v1`.
 - No cierres Brave ni Termux mientras la ronda está en curso.
 - Si el navegador se ralentiza, detén la comparación y usa primero el dataset pequeño.
 - Detén el servidor con Ctrl+C al terminar.
