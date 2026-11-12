@@ -2,6 +2,8 @@
 
 **Propósito:** reconstruir la visión que se definió con la IA anterior sin confundir decisiones aprobadas, ideas futuras y detalles técnicos exclusivos de Android.
 
+> **Preferencia visual:** el concepto anterior a los SVG, con Personal 2×2, Gestionar listas debajo y Descubrir con Feed, es la referencia que el propietario recuerda y quiere volver a visualizar. Ver [CONCEPTO_ANTERIOR_A_SVG.md](CONCEPTO_ANTERIOR_A_SVG.md). Los mockups se construirán en la conversación; no se generarán imágenes de interfaz con IA.
+
 **Fuentes revisadas:** `feature/fase1-android-foundation` del repositorio anterior, con sus requisitos, estado visual, conceptos SVG y código de las pantallas Android. La rama contenía la versión documental/visual más completa y un diario local parcialmente implementado.
 
 ## 1. Qué es Prisma
