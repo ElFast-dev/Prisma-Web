@@ -80,4 +80,4 @@ Un commit, documento, build, prueba automatizada, pantalla estática o CI verde 
 
 ## 7. Identificación de entregas
 
-Se descarta el sistema anterior de SemVer, preversiones y mapas numéricos futuros. La nueva regla sencilla está en [Identificación de entregas](TECNICO/VERSIONADO.md): solo se asignará una edición pública cuando exista un conjunto coherente de funciones completas y aceptadas. Los cambios internos se identifican por commit, no por versiones de producto.
+Se descarta el sistema anterior de SemVer, preversiones y mapas numéricos futuros. La nueva regla sencilla está en [Identificación de entregas](TECNICO/ENTREGAS.md): solo se asignará una edición pública cuando exista un conjunto coherente de funciones completas y aceptadas. Los cambios internos se identifican por commit, no por versiones de producto.
