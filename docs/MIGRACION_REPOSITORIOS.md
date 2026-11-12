@@ -56,6 +56,16 @@ Las puntas se registran para trazabilidad histórica. No se ha importado la hist
 
 No se trasladaron Kotlin, Gradle, APK, workflows de Android, keystores de prueba ni certificados TLS de instrumentación. No se ha intentado migrar el historial Git entero ni conservar una app Android ejecutable porque el propietario cambió expresamente la plataforma.
 
+### Elementos de GitHub revisados antes de eliminar
+
+- Issues: 0 abiertas y 0 cerradas devueltas por la búsqueda.
+- Pull Requests: 0.
+- GitHub Releases: colección vacía.
+- Las ramas Android de desarrollo se registraron arriba; no existe rama de código PWA en el repositorio antiguo.
+- La rama `main` del nuevo repositorio no contiene workflows Android ni código de aplicación.
+
+No hay conversaciones de Issues/PR ni Releases que deban trasladarse. No se ha intentado copiar ejecuciones o artefactos temporales de Actions; no son fuentes de producto y pertenecen a la etapa Android.
+
 ## 4. Secuencia final para el cambio de nombre
 
 La conexión GitHub disponible permite leer y modificar archivos, crear commits y ramas, pero no expone acciones de administración para eliminar o renombrar repositorios. Los dos cambios finales deben realizarse desde la interfaz de GitHub por el propietario.
