@@ -90,14 +90,16 @@ No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni lo
 
 ## Ficha cinematográfica
 
-**Estado:** estructura visual aprobada por el propietario el 12 de noviembre de 2026 y aclarada el mismo día para mantener visibles el estado y la calificación, separando únicamente el detalle de visionados.
+**Estado:** estructura visual confirmada por el propietario el 12 de noviembre de 2026 y afinada para mantener controles personales compactos.
 
 - Cabecera panorámica a todo el ancho, con imagen, degradado inferior, título superpuesto y metadatos básicos disponibles.
 - Flecha de regreso en un control circular semitransparente arriba a la izquierda y menú de opciones arriba a la derecha.
-- Se mantiene el orden de contenido ya confirmado: **acciones principales/estado personal (Historial/Pendientes) → sinopsis → calificación personal → acceso a Visionados**.
+- Se mantiene el orden de contenido: **acciones principales/estado personal (Historial/Pendientes) → sinopsis → botón de calificación → acceso a Visionados**.
 - El estado personal continúa visible en la ficha mediante las acciones correspondientes (Historial/Pendientes); no se traslada a otra pantalla ni se oculta.
-- La calificación personal continúa visible en la ficha, como sección propia, y puede abrir su panel de edición según las reglas documentadas.
-- «Visionados» se presenta como una fila o botón compacto pulsable; puede mostrar un contador de registros (por ejemplo, «Visionados · 3»). No muestra las filas de visionados en la ficha.
+- La calificación no es una sección de la ficha. Se representa mediante un botón compacto: antes de asignar una nota dice **«Calificar»**; después de confirmar una puntuación, el mismo botón muestra solo el número, por ejemplo **«7/10»**. Al pulsarlo se abre el selector para establecer o modificar la nota.
+- No se muestran estrellas en la ficha. Las diez estrellas aparecen únicamente dentro del panel de selección/edición de calificación.
+- La asignación de la nota sigue las reglas específicas de los visionados: si hay varios, se elige el registro destino; si no existe ninguno, la nota queda provisional para el siguiente visionado.
+- «Visionados» se presenta como una fila o botón compacto pulsable; puede mostrar un contador (por ejemplo, «Visionados · 3»). No muestra las filas de visionados en la ficha.
 - Al pulsar «Visionados» se abre una vista secundaria dedicada con los registros individuales en orden cronológico descendente, indicando fecha, hora cuando se conoce y calificación de cada visionado.
 - Desde esa vista se puede consultar cada repetición sin sobrescribir los registros anteriores.
 - La píldora inferior Personal/Descubrir no aparece en la ficha ni en la vista de visionados. La navegación secundaria utiliza regreso contextual.
