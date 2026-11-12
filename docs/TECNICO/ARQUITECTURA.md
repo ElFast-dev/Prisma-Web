@@ -275,3 +275,29 @@ La arquitectura se aprueba cuando la solución seleccionada ha sido comparada co
 - [SQLite WASM: persistencia OPFS, VFS y concurrencia](https://sqlite.org/wasm/doc/tip/persistence.md).
 - [MDN: cuotas y desalojo del almacenamiento web](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
 
+
+
+## Dispositivo de referencia para validar arquitectura
+
+**Perfil facilitado por el propietario:** Samsung Galaxy A03, SM-A035M (a03ub), Android 13 / API 33, One UI 5.1 Core, Unisoc T606 (2× Cortex-A75 + 6× Cortex-A55), 4 GB de RAM física, arquitectura arm64. Es el dispositivo mínimo de referencia para la primera experiencia, no una garantía de compatibilidad universal. La versión exacta de Chrome Android está pendiente de confirmar.
+
+**Condición de almacenamiento observada el 12 de noviembre de 2026:** aproximadamente 6,2 GB libres de 109 GB internos (alrededor del 5,7 % libre). Es una observación puntual que puede cambiar; no representa la cuota de IndexedDB/OPFS. Prisma debe consultar la cuota real mediante las APIs del navegador y no inferirla del espacio general del teléfono.
+
+### Implicaciones obligatorias
+
+- Priorizar un arranque ligero, división de código, carga diferida de imágenes y evitar mantener pósteres/imágenes grandes en memoria si no están visibles.
+- Evitar trabajo intensivo en el hilo principal; las tareas pesadas se medirán y, si hace falta, se aislarán en Workers.
+- La RAM compartida con Android es limitada. Los 4 GB físicos no deben tratarse como memoria disponible para Prisma; no se diseñará contando con zRAM/swap como sustituto de RAM física.
+- El almacenamiento interno está casi lleno en la observación inicial. No ejecutar pruebas que llenen deliberadamente el teléfono ni descargar datasets grandes; usar fixtures sintéticos controlados y limpiar exclusivamente los datos de prueba creados por el propio banco.
+- La tarjeta SD no es una ubicación automática para IndexedDB ni OPFS. OPFS es privado al origen y el navegador administra su ubicación física; las copias portables se exportarán como archivos visibles y su traslado a la SD quedará a cargo del usuario mediante Android, salvo que el soporte real de un selector de archivos se verifique en la versión de Chrome usada.
+- OPFS exige contexto seguro y está sujeto a cuotas del navegador. Sus operaciones síncronas de acceso a archivos se usan dentro de Web Workers; no se debe bloquear la interfaz con ellas.
+- El entorno Termux/Node 24 puede apoyar herramientas y servidores de desarrollo, pero no sustituye las pruebas de APIs web en Chrome Android. Las mediciones de Node en Termux no se considerarán benchmarks de la PWA.
+- El ADB activado permite una ruta de depuración remota si existe un ordenador anfitrión compatible; no se asumirá que esa herramienta está disponible hasta verificarla.
+
+### Candidatos bajo esta carga
+
+Dexie/IndexedDB mantiene ventaja inicial por evitar el coste adicional de SQLite WASM y OPFS, pero debe superar las pruebas de rendimiento, transacciones, cuota y migración. SQLite/OPFS solo se elegirá si el A03 demuestra una ventaja material en el flujo real que compense el tamaño adicional, memoria, complejidad de Worker y riesgo de concurrencia.
+
+La configuración de Argon2id para copias se medirá en este dispositivo. OWASP publica varias combinaciones de memoria/iteraciones con distintos compromisos; se probará primero una configuración robusta y se ajustará dentro de las configuraciones recomendadas, sin caer por debajo de los mínimos de seguridad publicados solo para ganar velocidad. El cifrado autenticado se realizará por Web Crypto cuando el formato y las APIs sean compatibles, sin asumir que Web Crypto proporciona acceso a Android Keystore.
+
+Fuentes: [MDN — OPFS](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system), [MDN — cuotas y desalojo](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria), [OWASP — Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
