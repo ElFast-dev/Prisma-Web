@@ -11,7 +11,7 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-001 | Prisma se prepara primero como PWA para uso principal en Android. | Aprobada |
 | P-002 | `ElFast-dev/Prisma-Web` será la base del nuevo proyecto; el repositorio anterior se retirará y el nuevo se renombrará a `Prisma`. | Aprobada; falta acción administrativa |
 | P-003 | Primero se completan los fundamentos necesarios; después se comienza la aplicación. | Aprobada |
-| P-004 | El avance y las ediciones deben representar capacidades funcionales reales. | Aprobada |
+| P-004 | El avance y las versiones públicas deben representar capacidades funcionales reales y respetar compatibilidad. | Aprobada |
 | P-005 | Prisma no debe generar ningún gasto para el propietario: objetivo permanente de 0 USD. | Aprobada |
 | P-006 | Cloudflare Pages no se utilizará como alojamiento de Prisma. | Rechazada expresamente |
 | P-007 | Prisma utilizará Semantic Versioning 2.0 en formato MAYOR.MENOR.PARCHE. | Aprobada |
@@ -30,10 +30,10 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
 | T-002 | IndexedDB para datos estructurados locales. | Candidata; validar con casos y volumen reales |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
-| T-004 | Web Workers, OPFS o WebAssembly. | No introducir salvo necesidad medida |
+| T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
 | T-005 | GitHub Pages desde el repositorio público. | Candidato de 0 USD; pendiente evaluar límites y origen compartido |
 | T-006 | Actualización PWA controlada. | Candidata; especificar lo necesario para proteger datos y operaciones |
-| T-007 | SemVer 2.0 en formato MAYOR.MENOR.PARCHE. | Aprobado por el propietario; pendiente definir el contrato público de la primera entrega |
+| T-007 | Definir con precisión el contrato público y la compatibilidad de los datos antes de la primera publicación. | Pendiente; SemVer 2.0 ya está aprobado |
 | T-008 | Cifrado de copias con KDF y AES-GCM. | Requiere comparación, benchmark y revisión antes de elegir algoritmo y parámetros |
 
 ## Decisiones retiradas
@@ -47,10 +47,10 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 ## Pendientes que bloquean el inicio del código
 
 1. Aprobar el primer recorrido útil y su alcance.
-2. Resolver la tecnología mínima y los límites reales del navegador.
+2. Comparar las mejores opciones tecnológicas y resolver los límites reales del navegador.
 3. Aprobar persistencia local, recuperación y formato de copia.
 4. Seleccionar un origen HTTPS de 0 USD, sin obligación de pagar.
 5. Revalidar el diseño visual de ese recorrido.
-6. Aprobar el conjunto mínimo de pruebas y aceptar el inicio del desarrollo.
+6. Aprobar el plan de validación adecuado al riesgo y aceptar el inicio del desarrollo.
 
 Las decisiones menores pueden tomarse cuando el recorrido que las necesita esté en desarrollo, siempre que no cambien el alcance, el coste, la privacidad ni la integridad de los datos.
