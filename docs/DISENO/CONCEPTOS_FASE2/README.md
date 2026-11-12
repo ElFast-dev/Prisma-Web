@@ -1,4 +1,4 @@
-> **Adaptación de plataforma:** estas referencias fueron aprobadas para Prisma y se conservan en la migración PWA. Sus composiciones y jerarquías aprobadas se mantienen; las unidades Android (dp/sp) se traducen a CSS responsive y se validan en pantalla real. El código Android y la afirmación de implementación/CI que aparecen en el registro son históricos, no indican que la pantalla ya esté implementada en la PWA.
+> **Adaptación PWA:** estas referencias fueron aprobadas para Prisma y se conservan en la migración web. Sus composiciones y jerarquías aprobadas se mantienen; las unidades Android (dp/sp) se traducen a CSS responsive y se validan en pantalla real. Las menciones a Compose, CI y a los hitos numéricos 0.4.0/0.5.0 pertenecen a la historia de desarrollo Android y no representan implementación ni versiones publicadas de Prisma Web.
 
 # Conceptos visuales de Fase 2 — Historial, Pendientes y ficha local
 
