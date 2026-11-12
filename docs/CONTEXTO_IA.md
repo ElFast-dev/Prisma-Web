@@ -36,4 +36,8 @@ Los documentos técnicos restantes son notas de apoyo y deben leerse solo cuando
 
 Una tarea cuenta como terminada cuando produce una decisión necesaria o una capacidad verificable por el propietario. En una función, comprobar el recorrido real, la persistencia tras cerrar/reabrir y el comportamiento offline cuando sea requisito.
 
+El versionado oficial es SemVer 2.0 (MAYOR.MENOR.PARCHE), documentado en `docs/TECNICO/VERSIONADO.md`. No reservar números para fases futuras ni aumentar versiones por commits o builds.
+
+La selección técnica debe priorizar la mejor solución demostrable para Prisma. No asumir que lo básico o lo más sencillo es preferible. Comparar alternativas modernas y maduras mediante seguridad, rendimiento en Android, estabilidad, accesibilidad, compatibilidad PWA, mantenimiento, licencias y coste total de 0 USD. No confundir calidad con complejidad gratuita o novedad.
+
 No equiparar commits, documentos, scaffolding, pruebas o CI verde con avance funcional.
