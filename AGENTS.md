@@ -63,7 +63,7 @@ No convertir esta preparación en una fase documental infinita. Resolver únicam
 
 ## Entregas y versiones
 
-Usar [Identificación de entregas](docs/TECNICO/VERSIONADO.md). No usar SemVer, alpha/beta/rc, IDs de fase-hito ni números por commits, CI, documentación, refactors o builds. Una edición pública solo existe cuando sus funciones están completas y aceptadas.
+Usar [Identificación de entregas](docs/TECNICO/ENTREGAS.md). No usar SemVer, alpha/beta/rc, IDs de fase-hito ni números por commits, CI, documentación, refactors o builds. Una edición pública solo existe cuando sus funciones están completas y aceptadas.
 
 ## Trabajo en GitHub
 
