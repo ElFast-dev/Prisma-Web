@@ -3,74 +3,110 @@
 **Estado:** propuesta para aprobación de Fase 0.  
 **Principio:** una versión cuenta el avance real del producto, no la actividad del repositorio.
 
-## 1. Tres identificadores distintos
+## 1. Tres identificadores separados
 
-1. **Versión de producto:** SemVer visible para el usuario, por ejemplo `0.1.0`. Solo cambia al cumplir las reglas de este documento.
-2. **Build interno:** identifica un artefacto de una ejecución concreta de CI; usar SHA corto del commit y número de ejecución como metadatos de diagnóstico. No se presenta como una nueva versión de Prisma.
-3. **Commit Git:** registra un cambio de código o documentación. Un commit no equivale a una Release.
+| Identificador | Qué describe | Ejemplo | ¿Es versión de producto? |
+|---|---|---|---|
+| Hito de desarrollo | Trabajo planificado dentro del roadmap | F2-H1 | No |
+| Build técnico | Artefacto/preview exacto de una ejecución | CI #84 · SHA `a1b2c3d` | No |
+| Versión pública | Capacidad de Prisma terminada, verificada y aceptada | `0.1.0` | Sí |
 
-No asignar una versión nueva por cada commit, merge, prueba, despliegue, corrección documental o ejecución de CI.
+Un commit, una CI verde, una preview, un cambio documental o una pantalla aislada no son una versión de Prisma. No aumentar números porque haya pasado un día, se haya creado un archivo o se haya completado una fase interna.
 
-## 2. Significado de MAJOR.MINOR.PATCH
+## 2. Reglas SemVer
 
-Antes de 1.0.0:
-- `0.MINOR.0`: hito de producto terminado, verificable, aceptado y utilizable. Solo aumenta MINOR al añadir una capacidad completa o grupo coherente de capacidades aprobado.
-- `0.MINOR.PATCH`: corrección real de una versión publicada, sin introducir una capacidad nueva. PATCH incrementa solo cuando se publica la corrección.
-- Documentación, refactor, cambios de CI, dependencia interna o pruebas sin efecto visible no cambian la versión de producto.
+Se aplica SemVer 2.0.0:
 
-Desde 1.0.0:
-- MAJOR: cambio incompatible de comportamiento o formato de datos que requiera migración explícita.
-- MINOR: nueva capacidad compatible y aprobada.
-- PATCH: corrección compatible.
+- **MAJOR:** desde 1.0.0, cambios incompatibles en el contrato del producto, datos o copias que requieran migración explícita.
+- **MINOR:** una capacidad completa, visible y compatible con las funciones anteriores.
+- **PATCH:** una corrección real de una versión publicada, sin añadir capacidad nueva.
 
-## 3. Mapa propuesto de hitos
+Antes de 1.0.0 se mantiene MAJOR en cero:
+- `0.MINOR.0` representa una entrega de producto completa y aceptada.
+- `0.MINOR.PATCH` representa una corrección publicada de esa entrega.
+- Las preversiones usan `-alpha.N`, `-beta.N` o `-rc.N`. El número N identifica iteraciones de candidatos, no progreso funcional.
+- Los cambios internos, pruebas, refactors, documentación y CI no incrementan SemVer.
 
-Este mapa es una propuesta semántica inicial, no una orden de publicar todos los números. Los hitos se pueden reordenar o dividir antes de aprobar el roadmap; nunca se asigna un número solo para llenar la secuencia.
+No se publica un tag ni una Release solo para llenar un hueco de numeración.
 
-| Versión objetivo | Nombre del hito | Qué debe poder hacer el usuario |
+## 3. Identificadores de desarrollo
+
+El roadmap utiliza IDs que no se confunden con SemVer:
+- `F0-H1`: migración y autoridad documental.
+- `F0-H2`: propósito, alcance, MVP y decisiones visuales.
+- `F0-H3`: arquitectura, modelo de datos, almacenamiento y seguridad.
+- `F0-H4`: origen, alojamiento, actualizaciones, CI y mantenimiento.
+- `F0-H5`: versionado, aceptación y preparación del inicio de implementación.
+- `F1-H1`: shell PWA instalable.
+- `F1-H2`: instalación/offline, temas, diagnósticos de almacenamiento y actualización controlada.
+- Las fases funcionales posteriores reciben hitos F2-Hn, F3-Hn, etc.
+
+Los IDs se crean en el roadmap cuando el alcance y sus criterios están definidos. No se convierten en números de versión pública.
+
+## 4. Mapa propuesto de versiones de producto
+
+Los números son objetivos semánticos sujetos a aprobación; no obligan a publicar todas las versiones. Cada uno existe solo si la capacidad descrita está terminada y supera la aceptación.
+
+| Versión | Qué representa | Puerta de salida |
 |---|---|---|
-| `0.1.0` | Diario local utilizable | Crear películas manualmente; Pendientes; Historial; varios visionados con fecha y calificación; Ocultos/restauración; listas básicas; búsqueda local; offline; exportar y restaurar copia cifrada. |
-| `0.2.0` | Catálogo TMDB | Configurar token; buscar películas; resolver coincidencias ambiguas; guardar ficha/metadatos; caché local de imágenes; fallback offline. Cierra el alcance funcional del MVP si todos los criterios pasan. |
-| `0.3.0` | Colecciones avanzadas | Colores, collages, fijación, orden manual, filtros y contadores avanzados aprobados. |
-| `0.4.0` | Experiencia cinematográfica completa | Feed y filtros avanzados, ficha ampliada, créditos, tráileres, relacionadas, colecciones y disponibilidad cuando existan fuentes válidas. |
-| `0.5.0` | Estadísticas | Estadísticas locales completas, explicaciones sustentadas y visualizaciones verificables. |
-| `0.6.0` | Espectro | Aprendizaje local, afinidad, recomendaciones explicables y controles aprobados; sin enviar perfil personal. |
-| `0.7.0` | Experiencia de versiones | Changelog e historial visible y actualización PWA controlada, sin APK. |
-| `1.0.0` | Prisma completa | Todo el alcance aprobado para 1.0.0 terminado, protegido, migrable, accesible, probado en teléfono y aceptado por el propietario. |
+| `0.1.0-alpha.1` | Primera preversión realmente utilizable del diario local | Alta manual, Pendientes, Historial, visionados repetidos, fechas y calificaciones, Ocultos/restauración, listas básicas, búsqueda local, modo avión y copia cifrada verificable. Debe ser una experiencia conectada de extremo a extremo, no un prototipo. |
+| `0.1.0` | Primer MVP estable de Prisma | Todo el alcance del MVP, incluido TMDB esencial, selección supervisada, caché local, fallback offline, copias cifradas y restauración, ambos temas y aceptación completa de requisitos. |
+| `0.2.0` | Organización cinematográfica avanzada | Listas avanzadas y organización adicional aprobada, completamente operativas. |
+| `0.3.0` | Experiencia cinematográfica completa | Descubrir avanzado, ficha ampliada, créditos, tráileres, colecciones, películas relacionadas y disponibilidad cuando existan datos válidos. |
+| `0.4.0` | Estadísticas | Estadísticas locales completas, reproducibles y explicadas con evidencia. |
+| `0.5.0` | Espectro | Aprendizaje local, recomendaciones explicables, confianza/muestra suficiente y modos aprobados. |
+| `0.6.0` | Experiencia de versiones | Historial/changelog y actualización PWA controlada, sin APK. |
+| `1.0.0` | Prisma completa | Todo el alcance aprobado de 1.0.0 terminado, migrable, protegido, accesible, probado y aceptado por el propietario. |
 
-Los números intermedios no son obligaciones ni metas temporales. Si el alcance se completa con menos hitos, no se crean versiones vacías. Si un hito resulta demasiado grande, puede dividirse solo antes de su implementación y con significado visible claro.
+Si el primer diario local no resulta útil o no es seguro para guardar datos reales, no se publica `0.1.0-alpha.1`. Si dos capacidades pueden entregarse juntas y son coherentes, no se crea una versión intermedia solo por separado. Si surge una capacidad no prevista, se registra primero y se decide qué versión semántica le corresponde.
 
-## 4. Reglas para crear una Release
+## 5. Builds y previews
 
-Una Release `vX.Y.Z` solo se publica cuando:
-- existe una capacidad o corrección correspondiente al número;
-- el recorrido está conectado de extremo a extremo;
-- se probó en Chrome Android en teléfono real;
-- se verificaron persistencia, reapertura y offline cuando corresponda;
-- ambos temas Obsidiana/Cuarzo mantienen paridad;
-- no hay P0/P1 abiertos;
-- las migraciones y copias/restauraciones aplicables están verificadas;
-- el changelog en español describe lo que cambió para el usuario y enumera límites conocidos.
+- Las previews de Cloudflare y los artefactos de CI se identifican por rama, run y SHA del commit.
+- Etiqueta recomendada: `PRISMA-DEV · CI #<run> · <sha7>`.
+- El build informa el commit exacto, fecha UTC, rama y entorno; no finge tener una versión pública.
+- La carcasa PWA, los tests, cambios documentales y previews no reciben una versión SemVer.
+- No instalar ni usar una preview como Prisma principal ni guardar datos personales en ella.
 
-No crear tags de versión para scaffolding, fundamentos documentales o builds que no sean usables.
+## 6. Puerta obligatoria de Release
 
-## 5. Pruebas previas y candidatos
+Una versión pública solo se publica cuando:
+1. Su capacidad existe en la interfaz y el propietario puede completar el recorrido.
+2. Los datos persisten tras cerrar y reabrir la PWA.
+3. Se prueba en Chrome Android en el teléfono real.
+4. El modo offline funciona donde el requisito lo exige.
+5. Obsidiana y Cuarzo mantienen paridad.
+6. No quedan defectos P0/P1 abiertos.
+7. Copias, restauraciones y migraciones aplicables están verificadas.
+8. La actualización desde la versión anterior no destruye datos.
+9. El changelog español describe lo que el usuario puede hacer, límites conocidos y cambios de datos.
+10. El propietario acepta expresamente la entrega.
 
-Los builds de prueba se identifican con SHA y CI. Si hace falta un candidato de Release, usar un sufijo `-alpha.N` o `-rc.N` asociado a la misma versión objetivo; N solo cuenta iteraciones de candidatos y no representa progreso del producto. No publicar candidatos como versiones estables.
+La CI es evidencia de calidad, no la puerta única ni sustituto de la prueba manual.
 
-## 6. Changelog obligatorio
+## 7. Correcciones PATCH
+
+Se publica PATCH únicamente cuando:
+- hay una versión ya publicada;
+- la corrección resuelve un defecto que afecta al usuario o a la seguridad;
+- se ejecutan pruebas focalizadas y regresión relevante;
+- el changelog explica el problema corregido.
+
+No crear PATCH por cambiar dependencias internas, mensajes de desarrollo, docs o formateo sin efecto visible.
+
+## 8. Changelog obligatorio
 
 Cada Release contiene:
-- Versión y fecha.
-- Capacidades nuevas que el usuario puede completar.
-- Correcciones.
-- Cambios de datos/migraciones y compatibilidad de copias.
-- Pruebas realizadas y dispositivos/navegadores realmente probados.
-- Riesgos o limitaciones conocidas.
-- Instrucciones de actualización y recuperación si corresponde.
+- versión y fecha;
+- nuevas capacidades realmente utilizables;
+- correcciones;
+- cambios de esquema IndexedDB, formato .prisma o compatibilidad de copias;
+- pruebas realizadas y navegador/dispositivo realmente probados;
+- problemas conocidos y limitaciones;
+- instrucciones de actualización y recuperación.
 
-Si no hay cambio visible, no hay Release nueva. La numeración debe poder explicarse siempre con una frase: «Esta versión existe porque ahora el usuario puede…».
+La frase que justifica cada número debe poder completarse así: **«Esta versión existe porque ahora el usuario puede…»**.
 
-## 7. 1.0.0
+## 9. Significado de 1.0.0
 
-`1.0.0` no es un número por antigüedad. Se reserva hasta completar y aceptar el alcance completo de la sección 1.0 de requisitos: MVP, experiencia cinematográfica, Descubrir avanzado, gestión avanzada de listas, estadísticas, Espectro, actualizaciones, privacidad, seguridad, rendimiento, accesibilidad y recuperación. El propietario aprueba el cierre.
+`1.0.0` no se alcanza por antigüedad, cantidad de commits ni por publicar el MVP. Se reserva para la primera versión completa que incluye MVP, experiencia cinematográfica, Descubrir avanzado, gestión avanzada de listas, estadísticas, Espectro, experiencia de versiones, seguridad, privacidad, rendimiento, accesibilidad y recuperación según el alcance aprobado. Requiere aceptación expresa del propietario.
