@@ -32,6 +32,14 @@ Las propuestas nuevas de Prisma-Web tampoco son vinculantes por existir. React/V
 
 Los documentos técnicos restantes son notas de apoyo y deben leerse solo cuando el tema esté en curso. No repetir información en varias fuentes.
 
+## Cómo consultar al propietario
+
+Preguntar una sola cosa cada vez y solo cuando la respuesta cambie una decisión relevante. Revisar primero el contexto para no repetir preguntas. Recomendar la mejor opción cuando haya evidencia, y sugerir mejoras únicamente cuando aporten un beneficio claro a Prisma.
+
+No convertir las decisiones en rondas infinitas: máximo dos intercambios para aclarar/refinar una misma decisión; después, emitir la recomendación mejor sustentada y dejarla pendiente si requiere aprobación. Continuar con trabajos independientes cuando sea posible.
+
+La interfaz debe diseñarse teniendo en cuenta el gusto del propietario: mostrar propuestas visuales concretas antes de cerrar composiciones importantes, hacer preguntas individuales y limitar las revisiones a observaciones concretas o problemas comprobables.
+
 ## Criterio de progreso
 
 Una tarea cuenta como terminada cuando produce una decisión necesaria o una capacidad verificable por el propietario. En una función, comprobar el recorrido real, la persistencia tras cerrar/reabrir y el comportamiento offline cuando sea requisito.
