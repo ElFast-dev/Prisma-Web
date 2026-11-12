@@ -41,9 +41,9 @@ El propietario ha facilitado el siguiente perfil para pruebas reales:
 - **Modelo:** Samsung Galaxy A03, SM-A035M (a03ub).
 - **Sistema:** Android 13 (API 33), One UI 5.1 Core.
 - **CPU:** Unisoc T606, 2× Cortex-A75 + 6× Cortex-A55.
-- **RAM:** 4 GB físicos; el espacio libre observado rondaba 1 GB y es variable.
+- **RAM:** 4 GB físicos; el valor `navigator.deviceMemory = 4` también fue informado por la sonda, pero no representa memoria libre.
 - **Arquitectura:** arm64-v8a.
-- **Almacenamiento:** 109 GB internos; se observaron unos 6,2 GB libres al facilitar el perfil (dato temporal, no cuota del navegador).
+- **Almacenamiento:** 109 GB internos; se observaron unos 6,2 GB libres inicialmente (dato temporal; el propietario puede liberar espacio; no equivale a cuota del navegador).
 - **Medio extraíble:** tarjeta microSD cercana a 7 GB, FAT32.
 - **Pantalla:** densidad informada de 300 dpi; el perfil no incluye aún la resolución exacta.
 - **Navegador:** Brave Android 1.99.56, motor Chromium 157.0.8103.50 (informado por el propietario el 12 de noviembre de 2026).
@@ -59,9 +59,9 @@ No es necesario registrar información de SIM, operador, identificadores de cuen
 4. Comparar búsqueda, historial, inserción de visionados, actualización de calificación, orden cronológico y operaciones transaccionales.
 5. Registrar memoria y respuesta de la interfaz mientras el navegador conserva otras aplicaciones en segundo plano; comprobar que no haya cierres/reinicios de pestaña, congelaciones ni pérdida de cambios.
 6. Registrar `navigator.storage.estimate()` solo como valor reportado y potencialmente modificado por el navegador; la documentación de Brave desktop menciona valores fijos, pero no se extrapolará a Android. Consultar `navigator.storage.persist()` / `persisted()` por separado y registrar el resultado real de persistencia.
-7. Detectar por separado en Brave Android `navigator.storage.getDirectory`, `createSyncAccessHandle` dentro de Worker y los selectores `showOpenFilePicker` / `showSaveFilePicker`. El artículo de Brave que lista la desactivación de File System API está redactado para escritorio; no presupone el mismo resultado en Android. Si OPFS está expuesto, probar HTTPS/localhost, Worker, escritura, lectura, cuota y recuperación; si no, documentarlo y descartarlo para este navegador. No colocar datos reales durante la comparativa.
+7. **Completado parcialmente:** Brave Android expuso OPFS y permitió escribir/leer; `SyncAccessHandle` también funcionó dentro de Worker. Los selectores `showOpenFilePicker` / `showSaveFilePicker` no estuvieron expuestos. Falta repetir OPFS en el hostname HTTPS definitivo y probar persistencia y cuota ahí. No colocar datos reales durante la comparativa.
 8. Medir derivación Argon2id, cifrado y descifrado de una copia sintética de tamaño acotado; medir tiempo y memoria máxima. Nunca reducir parámetros por debajo de una configuración mínima aceptada para acelerar la prueba.
-9. Probar exportación de un backup como archivo descargable y su restauración mediante el selector de archivo estándar de Android. Comprobar aparte `showOpenFilePicker` y `showSaveFilePicker`, pero no hacer que el respaldo dependa de esas APIs ni asumir que IndexedDB/OPFS puede trasladarse a la SD.
+9. **Pendiente:** completar ida y vuelta de archivo usando descarga estándar y `<input type="file">` de Android; los selectores avanzados no están expuestos en el reporte. No hacer que el respaldo dependa de File System Access API ni asumir que IndexedDB/OPFS puede trasladarse a la SD.
 10. Comprobar instalación, modo avión, recuperación tras cerrar/reabrir y actualización del Service Worker sin perder transacciones.
 
 ### Condiciones de seguridad de las pruebas
@@ -108,4 +108,23 @@ Para la comparativa de framework, mantener idéntico diseño/flujo entre las dos
 
 Se ha añadido `tools/browser-probe/` para ejecutar una prueba local, sin dependencias ni telemetría, en el navegador de referencia. La sonda crea solo recursos con nombres propios `prisma-browser-probe` y comprueba IndexedDB, rollback de transacción, AES-GCM de Web Crypto, OPFS (si está expuesto), SyncAccessHandle en Worker, persistencia, Service Worker, descarga y lectura de JSON mediante el selector estándar.
 
-Instrucciones para instalarla en Termux y servirla en `http://127.0.0.1:8765/`: [tools/browser-probe/README.md](../../tools/browser-probe/README.md). El uso de loopback se acepta como contexto seguro para Service Worker en navegadores compatibles. La sonda no sustituye pruebas de la aplicación ni decide por sí sola el almacenamiento.
+Instrucciones para instalarla en Termux y servirla en `http://127.0.0.1:18765/`: [tools/browser-probe/README.md](../../tools/browser-probe/README.md). El uso de loopback se acepta como contexto seguro para Service Worker en navegadores compatibles. La sonda no sustituye pruebas de la aplicación ni decide por sí sola el almacenamiento.
+
+
+## Resultado de la primera sonda — Galaxy A03 / Brave
+
+Informe recibido el 12 de noviembre de 2026 a las 22:33 UTC, generado desde `http://127.0.0.1:18765/`.
+
+| Comprobación | Resultado observado | Alcance |
+|---|---|---|
+| IndexedDB | Correcto | Lectura/escritura/borrado y durabilidad strict aceptada |
+| Rollback | Correcto | Sin registro parcial |
+| Web Crypto | Correcto | AES-256-GCM ida y vuelta sintética |
+| OPFS | Correcto | Crear/escribir/leer/limpiar |
+| OPFS Worker | Correcto | SyncAccessHandle |
+| persist()/persisted() | true / true | Solo el origen localhost de la sonda |
+| Service Worker | Controlador activo | Aún no acredita modo avión |
+| File System Access pickers | No expuestos | Debe probarse fallback estándar |
+
+Uso/cuota informados por `estimate()`: 0,05 MB / 2.048 MB. No se tratan como cuota garantizada. El informe no confirma la recarga del marcador ni la prueba offline en modo avión. Tampoco incluye resultado de importar el JSON con selector estándar.
+
