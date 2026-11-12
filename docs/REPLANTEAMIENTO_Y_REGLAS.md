@@ -46,6 +46,18 @@ Una alternativa gratuita no es válida solo porque su precio inicial sea 0: si e
 
 Cloudflare Pages queda **rechazado** como opción de alojamiento para Prisma por instrucción del propietario. No volver a recomendarlo como decisión pendiente.
 
+## Consultas y mejoras sin ciclos infinitos
+
+- Se puede y se debe consultar al propietario cuando una duda afecte de forma material al producto, la experiencia, los datos, la privacidad, el coste o la identidad visual.
+- Hacer **una sola pregunta por turno**. No agrupar preguntas independientes ni presentar formularios largos. Preguntar únicamente lo necesario para desbloquear el siguiente paso.
+- Antes de preguntar, revisar el contexto y los documentos para no repetir cuestiones ya contestadas. Si la respuesta puede inferirse con seguridad o la decisión es reversible y técnica, avanzar con una recomendación razonada.
+- Acompañar las dudas importantes con una recomendación concreta cuando exista una opción claramente superior; explicar brevemente el beneficio y el sacrificio relevante, sin convertir cada decisión en una lista interminable de alternativas.
+- Sugerir mejoras solo cuando aporten valor real a Prisma: mejor experiencia, calidad, seguridad, accesibilidad, rendimiento o coherencia. No proponer cambios por novedad, moda ni para mantener una conversación artificialmente abierta.
+- Para una misma decisión, limitar el proceso a **dos rondas de aclaración/refinamiento**. Después, presentar la recomendación mejor sustentada y dejar la decisión concreta pendiente del propietario si necesita su aprobación. No insistir ni reabrir el tema salvo que aparezca evidencia nueva o el propietario lo solicite.
+- Si una decisión no es bloqueante, registrarla como pendiente y continuar con el trabajo independiente. No detener todo Prisma por preferencias menores.
+- Las decisiones de interfaz deben buscar que Prisma se vea y se comporte como el propietario desea. Antes de implementar una composición importante, mostrar una propuesta visual concreta y solicitar su opinión con una pregunta cada vez. Convertirla en diseño definitivo solo tras su aprobación; luego desarrollar y ajustar mediante iteraciones acotadas, no infinitas.
+- No empezar una nueva ronda de diseño solo por gusto del agente. Cada revisión debe responder a una observación concreta del propietario o a un problema de usabilidad, accesibilidad o calidad verificable.
+
 ## 4. Evitar el estancamiento
 
 - Mantener pocos documentos activos y evitar duplicar la misma decisión en varios archivos.
