@@ -69,6 +69,21 @@ async function inspectBenchmarkOpfsDirectory() {
   }
 }
 
+async function inspectDexieBenchmarkDatabases() {
+  if (typeof indexedDB.databases !== "function") {
+    return { supported: false, names: [], error: "indexedDB.databases() no está expuesto" };
+  }
+  try {
+    const databases = await indexedDB.databases();
+    const names = databases
+      .map((entry) => entry.name)
+      .filter((name) => typeof name === "string" && name.startsWith("prisma-dexie-benchmark-"));
+    return { supported: true, names };
+  } catch (error) {
+    return { supported: true, names: [], error: error?.message || String(error) };
+  }
+}
+
 async function storageEstimate() {
   try {
     if (!navigator.storage?.estimate) return null;
@@ -316,7 +331,9 @@ async function runAll() {
       ? storageAfter.usage - storageBefore.usage
       : null;
     const opfsCleanup = await inspectBenchmarkOpfsDirectory();
+    const indexedDbCleanup = await inspectDexieBenchmarkDatabases();
     summary.opfsCleanupPassed = opfsCleanup.exists === false;
+    summary.dexieCleanupPassed = indexedDbCleanup.supported && indexedDbCleanup.names.length === 0;
     summary.integrityPassed = summary.integrityPassed && summary.opfsCleanupPassed;
     $("cleanupCheck").className = "status " + (
       opfsCleanup.exists === false ? "ok" : opfsCleanup.exists === true ? "warn" : "bad"
@@ -330,6 +347,15 @@ async function runAll() {
       $("integrity").className = "status bad";
       $("integrity").textContent = "Los datos de prueba pasaron la integridad, pero no se pudo confirmar la limpieza del directorio OPFS.";
     }
+    $("indexedDbCleanupCheck").className = "status " + (
+      indexedDbCleanup.supported && indexedDbCleanup.names.length === 0 ? "ok" :
+      indexedDbCleanup.supported && indexedDbCleanup.names.length > 0 ? "warn" : "pending"
+    );
+    $("indexedDbCleanupCheck").textContent = indexedDbCleanup.supported
+      ? indexedDbCleanup.names.length === 0
+        ? "IndexedDB temporal: no quedan bases con el prefijo del benchmark."
+        : "ATENCIÓN: quedan bases IndexedDB: " + indexedDbCleanup.names.join(", ") + ". Usa la limpieza y comparte el informe."
+      : "No se pudo enumerar IndexedDB: " + (indexedDbCleanup.error || "API no disponible") + ".";
 
     lastReport = {
       tool: "Prisma Storage Benchmark",
@@ -350,9 +376,12 @@ async function runAll() {
       storageAfter,
       storageDeltaBytes,
       opfsCleanup,
+      indexedDbCleanup,
       cleanupVerification: {
         sqliteRemoveVfsAllTrue: summary.sqliteCleanupPassed,
-        opfsBenchmarkDirectoryAbsent: opfsCleanup.exists === false
+        opfsBenchmarkDirectoryAbsent: opfsCleanup.exists === false,
+        dexieDatabasesEnumerated: indexedDbCleanup.supported,
+        dexieBenchmarkDatabasesAbsent: indexedDbCleanup.supported ? indexedDbCleanup.names.length === 0 : null
       },
       dataset: config,
       rounds: totalRounds,
@@ -372,7 +401,7 @@ async function runAll() {
         "SQLite totalMs incluye inicialización de Worker, WASM y VFS; Dexie se importa antes de pulsar Ejecutar. Los tiempos totales no son directamente equivalentes. La tabla separa inicialización SQLite para evitar ocultar ese coste.",
         "El valor de StorageManager.estimate es informativo y no se considera cuota garantizada.",
         "SQLite SAH pool limita conexiones concurrentes; el benchmark no convierte ese VFS en una decisión de arquitectura aprobada.",
-        "vfsRemoved registra el resultado oficial de PoolUtil.removeVfs(); opfsCleanup comprueba si el directorio exclusivo todavía existe después de las rondas."
+        "vfsRemoved registra el resultado oficial de PoolUtil.removeVfs(); opfsCleanup comprueba si el directorio OPFS exclusivo sigue existiendo; indexedDbCleanup enumera las bases Dexie que quedan con el prefijo propio del benchmark."
       ]
     };
     $("download").disabled = false;
@@ -419,7 +448,12 @@ async function cleanupOwnTestData() {
           request.onblocked = () => reject(new Error("Cierre otras pestañas que usen " + name));
         });
       }
-      notes.push("Bases IndexedDB propias revisadas: " + names.length);
+      const remaining = await indexedDB.databases();
+      const leftovers = remaining.map((item) => item.name)
+        .filter((name) => typeof name === "string" && name.startsWith("prisma-dexie-benchmark-"));
+      notes.push(leftovers.length === 0
+        ? "Bases IndexedDB propias eliminadas y ausencia verificada"
+        : "Persisten bases IndexedDB propias: " + leftovers.join(", "));
     } catch (error) {
       notes.push("IndexedDB: " + (error?.message || String(error)));
     }
