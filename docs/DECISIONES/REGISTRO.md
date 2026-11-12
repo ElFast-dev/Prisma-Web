@@ -39,7 +39,7 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | ID | Propuesta | Estado |
 |---|---|---|
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
-| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM 3.54.1/OPFS para el diario inicial. | Dexie es la candidata preferente; falta benchmark real en Android y prueba de concurrencia, durabilidad, recuperación y cuota |
+| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | Dexie es la candidata preferente; falta benchmark real en Android y prueba de concurrencia, durabilidad, recuperación y cuota |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
 | T-005 | Firebase Hosting clásico en Spark como alojamiento estático con hostname web.app dedicado. | Candidato recomendado de 0 USD; falta aprobar proyecto/site ID y verificar configuración sin facturación. GitHub Pages queda desaconsejado por origen compartido |
