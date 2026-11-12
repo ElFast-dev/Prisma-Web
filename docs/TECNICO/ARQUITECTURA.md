@@ -169,7 +169,7 @@ La elección definitiva se documentará cuando el prototipo demuestre una difere
 ## Comparativa de almacenamiento: resultado de investigación
 
 **Revisión documental:** 12 de noviembre de 2026.  
-**Estado:** recomendación técnica provisional; requiere benchmark en el Android objetivo antes de aprobarse. Dexie 4.4.7 es la versión estable publicada el 19 de octubre de 2026. SQLite core 3.54.1 es la versión estable publicada el 16 de octubre de 2026; el proyecto SQLite/WASM mantiene además su propio ciclo de versiones, que debe verificarse antes de fijar el paquete.
+**Estado:** recomendación técnica provisional; requiere benchmark en el Android objetivo antes de aprobarse. Dexie 4.4.7 es la versión estable publicada el 19 de octubre de 2026. SQLite core/WASM 3.55.0 debe verificarse en el paquete exacto antes de fijar dependencias; el proyecto SQLite/WASM mantiene su propio ciclo de versiones.
 
 ### Candidata A — Dexie 4.4.7 sobre IndexedDB
 
@@ -221,7 +221,7 @@ Fuentes: [guía oficial de persistencia OPFS](https://sqlite.org/wasm/doc/tip/pe
 
 ### Recomendación provisional
 
-Para el primer diario local, **Dexie 4.4.7 sobre IndexedDB es la candidata preferente**, con transacciones y durabilidad estricta en las operaciones críticas donde Android/Chrome lo soporte y las mediciones justifiquen el coste. Esta recomendación no sustituye el benchmark con el modelo de datos real.
+Para el primer diario local, **Dexie 4.4.7 sobre IndexedDB es la candidata preferente**, con transacciones y durabilidad estricta en las operaciones críticas. La prueba real del Galaxy A03 confirma IndexedDB y durabilidad estricta en Brave, pero todavía falta comparar el rendimiento de Dexie con SQLite/OPFS usando el modelo de datos real.
 
 No se elige porque sea la alternativa más básica. Se elige provisionalmente porque combina una biblioteca madura, migraciones y transacciones, almacenamiento nativo del navegador y menos restricciones de despliegue/concurrencia que SQLite OPFS. No añade sincronización ni requiere servicios externos.
 
@@ -292,7 +292,7 @@ La arquitectura se aprueba cuando la solución seleccionada ha sido comparada co
 - La RAM compartida con Android es limitada. Los 4 GB físicos no deben tratarse como memoria disponible para Prisma; no se diseñará contando con zRAM/swap como sustituto de RAM física.
 - El espacio interno puede liberarse antes de probar; no se exige conservar la cifra inicial de 6,2 GB. Cada ejecución registra espacio libre y cuota web. No llenar deliberadamente el teléfono ni descargar datasets voluminosos; usar fixtures sintéticos acotados y limpiar exclusivamente los datos creados por el banco de pruebas.
 - La tarjeta SD no es una ubicación automática para IndexedDB ni OPFS. OPFS es privado al origen y el navegador administra su ubicación física. No se prometerá escritura directa a la SD; el respaldo debe funcionar mediante un archivo portable usando mecanismos compatibles con el navegador.
-- El artículo de soporte de Brave que enumera la desactivación de File System API y la modificación de `StorageManager.estimate()` describe las diferencias de Brave para escritorio; no demuestra por sí solo que la compilación Android tenga idéntico comportamiento. En Brave Android se comprobarán por separado y en ejecución `navigator.storage.getDirectory`, `FileSystemFileHandle.createSyncAccessHandle`, `showOpenFilePicker` y `showSaveFilePicker`. OPFS solo podrá ser candidato si la prueba real en el Galaxy A03 termina correctamente. La importación/exportación tendrá siempre una alternativa basada en selector HTML de archivos y descarga estándar, sin depender de los selectores avanzados.
+- La sonda ejecutada por el propietario el 12 de noviembre de 2026 confirma en Brave Android 1.99.56 / Chromium 157.0.8103.50 que `navigator.storage.getDirectory`, OPFS y `createSyncAccessHandle` dentro de un Worker funcionan en el Galaxy A03. Por tanto, OPFS es una alternativa viable en este navegador; no se extrapola la restricción de Brave desktop a Android. Los selectores `showOpenFilePicker` / `showSaveFilePicker` no están expuestos, de modo que la importación/exportación debe basarse en selector HTML estándar y descarga de archivos. Esa ruta estándar aún debe probarse.
 - El entorno Termux/Node 24 puede apoyar herramientas y servidores de desarrollo, pero no sustituye las pruebas de APIs web en Brave Android. Las mediciones de Node en Termux no se considerarán benchmarks de la PWA.
 - El ADB activado permite una ruta de depuración remota si existe un ordenador anfitrión compatible; no se asumirá que esa herramienta está disponible hasta verificarla.
 
@@ -303,3 +303,25 @@ Dexie/IndexedDB mantiene ventaja inicial por evitar el coste adicional de SQLite
 La configuración de Argon2id para copias se medirá en este dispositivo. OWASP publica varias combinaciones de memoria/iteraciones con distintos compromisos; se probará primero una configuración robusta y se ajustará dentro de las configuraciones recomendadas, sin caer por debajo de los mínimos de seguridad publicados solo para ganar velocidad. El cifrado autenticado se realizará por Web Crypto cuando el formato y las APIs sean compatibles, sin asumir que Web Crypto proporciona acceso a Android Keystore.
 
 Fuentes: [Brave — funciones que se desactivan de Chromium](https://support.brave.app/hc/en-us/articles/10742158329613-What-does-Brave-remove-from-the-Chromium-engine), [Brave — notas de versión Android](https://brave.com/latest/), [MDN — OPFS](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system), [MDN — cuotas y desalojo](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria), [OWASP — Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+
+
+### Evidencia de compatibilidad en Brave Android — 12 de noviembre de 2026
+
+El propietario ejecutó `tools/browser-probe` en su Galaxy A03 SM-A035M, Brave 1.99.56 / Chromium 157.0.8103.50, con origen local `http://127.0.0.1:18765/`.
+
+**Operaciones demostradas:**
+- IndexedDB: escritura, lectura, borrado y durabilidad estricta aceptadas.
+- Rollback: una transacción abortada no dejó datos parciales.
+- OPFS: directorio/archivo creado, escrito, leído y eliminado correctamente.
+- OPFS en Worker: `SyncAccessHandle` escribió y leyó correctamente.
+- Web Crypto: AES-256-GCM cifró y descifró el texto sintético.
+- Persistencia: `persist() = true`, `persisted() = true` en el origen local.
+- Service Worker: registrado y controlador activo.
+- Selectores avanzados `showOpenFilePicker` y `showSaveFilePicker`: no expuestos.
+
+**Lo que aún no demuestra:** el marcador de IndexedDB no se ha verificado después de recargar; el Service Worker no se ha probado todavía en modo avión; la importación mediante `<input type="file">` y la descarga estándar todavía no han completado una ida y vuelta informada; la concesión de persistencia y la cuota deben verificarse de nuevo en el hostname HTTPS real. La cifra de 2.048 MB devuelta por `estimate()` es una observación, no una capacidad garantizada.
+
+El User-Agent muestra `Android 10; K` por la reducción de User-Agent de Chromium para Android; no invalida el dato del sistema Android 13. `deviceMemory` y `hardwareConcurrency` son valores expuestos por el navegador y no equivalen al estado real de memoria libre ni al inventario físico de CPU.
+
+Fuentes: [Chromium — User-Agent Reduction](https://www.chromium.org/updates/ua-reduction/), [MDN — persist()](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist), [MDN — cuotas y desalojo](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria), [SQLite WASM — OPFS y concurrencia](https://sqlite.org/wasm/doc/tip/persistence.md).
+
