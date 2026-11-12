@@ -6,7 +6,7 @@ Prisma se está reconstruyendo como una **Progressive Web App (PWA) instalable e
 
 ## Estado del proyecto
 
-<badge>Fundación documental — en preparación</badge>
+**Estado:** Fundación documental — en preparación.
 
 - Repositorio de trabajo: `ElFast-dev/Prisma-Web` (pendiente de renombrar a `ElFast-dev/Prisma`).
 - El repositorio nuevo estaba vacío al iniciar esta migración.
@@ -40,6 +40,10 @@ Prisma no pretende ser otra red social ni un catálogo genérico. Es un espacio 
 8. [Estado visual](docs/DISENO/ESTADO_VISUAL.md)
 9. [Licencia y autorización particular de TMDB](docs/LICENCIAS/TMDB_PRISMA.md)
 10. [Migración de repositorios](docs/MIGRACION_REPOSITORIOS.md)
+12. [Registro de decisiones](docs/DECISIONES/REGISTRO.md)
+13. [Modelo conceptual de datos](docs/TECNICO/MODELO_DE_DATOS.md)
+14. [Pruebas y calidad](docs/TECNICO/PRUEBAS_Y_CALIDAD.md)
+15. [Alojamiento y origen](docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md)
 11. [Archivo de la etapa Android](docs/ARCHIVO/ANDROID/)
 
 ## Versionado
