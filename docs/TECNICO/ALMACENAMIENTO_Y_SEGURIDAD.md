@@ -20,7 +20,7 @@ El almacenamiento web está sujeto a cuota y políticas del navegador. Por defec
 
 La interfaz debe explicar los límites, detectar errores de cuota y ofrecer una copia manual recuperable. Una limpieza automática solo puede afectar recursos reconstruibles, nunca el diario.
 
-La elección concreta entre IndexedDB/Dexie y SQLite/OPFS está en [Arquitectura — comparativa de almacenamiento](ARQUITECTURA.md#comparativa-de-almacenamiento-resultado-de-investigacion). La sonda del Galaxy A03 confirmó ambas rutas base (IndexedDB y OPFS/Worker) en Brave; falta comparar Dexie real frente a SQLite/WASM con la misma carga. No crear dos bases autoritativas.
+La elección concreta entre IndexedDB/Dexie y SQLite/OPFS está en [Arquitectura — comparativa de almacenamiento](ARQUITECTURA.md#comparativa-de-almacenamiento-resultado-de-investigacion). La sonda del Galaxy A03 confirmó ambas rutas base (IndexedDB y OPFS/Worker) en Brave; se preparó `tools/storage-benchmark/` para comparar Dexie 4.4.7 con SQLite WASM 3.54.1-build1 bajo la misma carga. Falta ejecutar el benchmark y resolver las limitaciones de concurrencia de SAH pool. No crear dos bases autoritativas.
 
 ### Durabilidad de escrituras
 
@@ -75,7 +75,7 @@ La política concreta se define cuando se aprueben el almacenamiento y el primer
 
 El Samsung Galaxy A03 objetivo cuenta con 4 GB de RAM física y tenía unos 6,2 GB libres de almacenamiento interno al registrar el perfil. Esto obliga a limitar las copias temporales durante importación/restauración, evitar cargar el archivo entero varias veces en memoria y medir KDF/cifrado/descifrado en el teléfono real.
 
-OPFS es almacenamiento privado del origen, no una carpeta que el usuario pueda gestionar directamente ni un destino seleccionable en la tarjeta SD. Se somete a las cuotas del navegador; borrar los datos del sitio borra también OPFS. La sonda confirmó su disponibilidad en Brave Android 1.99.56 y la operación de SyncAccessHandle en Worker; falta repetir la prueba en el origen HTTPS final. Por eso la copia de seguridad debe ser un archivo portátil separado del almacenamiento de trabajo. La SD puede ser un destino manual del archivo exportado a través del sistema Android si el usuario lo mueve allí; no se debe prometer escritura directa hasta probar la API disponible en Chrome.
+OPFS es almacenamiento privado del origen, no una carpeta que el usuario pueda gestionar directamente ni un destino seleccionable en la tarjeta SD. Se somete a las cuotas del navegador; borrar los datos del sitio borra también OPFS. La sonda confirmó su disponibilidad en Brave Android 1.99.56 y la operación de SyncAccessHandle en Worker en `localhost`; falta repetir la prueba en el origen HTTPS final. Por eso la copia de seguridad debe ser un archivo portátil separado del almacenamiento de trabajo. La SD puede ser un destino manual del archivo exportado a través del sistema Android si el usuario lo mueve allí; no se debe prometer escritura directa hasta probar la API disponible en Chrome.
 
 Los selectores avanzados `showOpenFilePicker` y `showSaveFilePicker` no estuvieron expuestos en Brave. La ruta de copias usará mecanismos compatibles como selector HTML estándar y descarga de archivo; falta completar su prueba de ida y vuelta en el teléfono.
 
