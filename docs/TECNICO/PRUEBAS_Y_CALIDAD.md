@@ -128,3 +128,18 @@ Informe recibido el 12 de noviembre de 2026 a las 22:33 UTC, generado desde `htt
 
 Uso/cuota informados por `estimate()`: 0,05 MB / 2.048 MB. No se tratan como cuota garantizada. El informe no confirma la recarga del marcador ni la prueba offline en modo avión. Tampoco incluye resultado de importar el JSON con selector estándar.
 
+
+
+## Benchmark de almacenamiento Dexie vs SQLite
+
+La comparación automatizada se encuentra en `tools/storage-benchmark/`. Es una herramienta de evaluación, no código de la aplicación.
+
+- Instala versiones fijadas: Dexie 4.4.7 y `@sqlite.org/sqlite-wasm@3.54.1-build1`.
+- Ejecuta primero 1.000 películas × 3 visionados y descarga el JSON; solo después, si el teléfono funciona con normalidad, ejecuta 10.000 × 3.
+- El informe contiene tres rondas por motor y medianas; conserva también los tiempos de inicialización WASM/VFS separados.
+- Se deben comprobar los indicadores de integridad antes de considerar los tiempos.
+- SQLite SAH pool no proporciona concurrencia multi-pestaña transparente. Un benchmark rápido no demuestra que sea la mejor arquitectura de Prisma.
+- Si se interrumpe una ronda, la herramienta permite limpiar únicamente la carpeta OPFS y las bases IndexedDB con prefijos propios.
+- El benchmark aún no se ha ejecutado en el Galaxy A03. No declarar elección de almacenamiento hasta recibir y revisar sus informes.
+
+Instrucciones de ejecución en Termux: [tools/storage-benchmark/README.md](../../tools/storage-benchmark/README.md).
