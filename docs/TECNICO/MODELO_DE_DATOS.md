@@ -1,74 +1,39 @@
-# Modelo conceptual de datos — Prisma
+# Modelo de datos — Prisma
 
-**Estado:** propuesta base para aprobación de Fase 0.  
-**Objetivo:** definir entidades e invariantes antes de crear el esquema IndexedDB.
+**Estado:** borrador conceptual; no constituye un esquema aprobado ni autoriza crear IndexedDB.
 
-## 1. Reglas
+## Propósito
 
-- Una película tiene un identificador local estable, independiente del título.
-- El identificador TMDB es opcional; una película manual debe poder enriquecerse y vincularse a TMDB sin duplicar ni perder datos propios.
-- Los visionados son registros independientes: registrar otro visionado nunca sobrescribe uno anterior.
-- Historial no es una lista de títulos duplicados: cada película aparece una vez y contiene cero o más visionados.
-- Ocultar conserva el estado anterior y no borra ningún dato.
-- Las listas personalizadas son independientes de Pendientes, Historial y Ocultos; una película puede pertenecer a varias listas, sin duplicarse dentro de la misma.
-- Espectro usa datos locales; su perfil puede recalcularse y nunca sustituye la fuente original de eventos.
+Recoger reglas candidatas que eviten pérdida o duplicación de información. Antes de convertirlas en tablas, stores, índices o migraciones, deben validarse con los recorridos reales aprobados.
 
-## 2. Entidades conceptuales
+## Reglas que deben comprobarse
 
-### Movie
-Identidad local, título, año opcional, estado de biblioteca, identificador TMDB opcional, metadatos disponibles, fechas de creación/actualización y referencias de imágenes locales.
+- Una película local necesita una identidad estable que no dependa solo del título.
+- Vincularla más tarde con un catálogo externo no debe duplicarla ni borrar información introducida por el usuario.
+- Si se permiten visionados múltiples, cada registro debe conservarse de forma independiente.
+- Cambiar el estado de una película no debe borrar su historial.
+- Quitar una película de una lista no debe borrar la película ni sus visionados.
+- Los datos derivados de estadísticas o recomendaciones nunca sustituyen los datos originales.
 
-### Viewing
-Identificador propio, Movie ID, fecha/hora del visionado (si se conoce), zona horaria o contexto necesario para conservar la fecha local, calificación individual y notas solo si ya están aprobadas en requisitos. Una película puede tener muchos Viewing.
+Estas invariantes son candidatas. Su alcance y semántica deben revisarse junto con el primer recorrido.
 
-### HiddenState
-Movie ID, instante de ocultación y estado previo (Vista/Pendiente/sin marcador) para restaurar exactamente el estado anterior. Ocultar no elimina Viewing ni listas.
+## Entidades candidatas
 
-### CustomList
-Identificador, nombre, descripción opcional y campos de organización permitidos por la fase. Sus restricciones de unicidad y longitud se conservan según requisitos.
+Podrían existir conceptos como película, visionado, estado oculto, lista, relación película-lista, metadatos externos y preferencias. No se fija todavía el conjunto final ni sus campos.
 
-### CustomListMovie
-Relación entre CustomList y Movie, con restricción única compuesta para impedir duplicados dentro de la misma lista.
+El perfil de Espectro, sus señales y cualquier caché derivada se diseñarán solo cuando esa función haya sido aprobada y exista una necesidad concreta de persistirlos.
 
-### MovieMetadata
-Datos de catálogo obtenidos de TMDB, con procedencia, fecha de consulta y campos disponibles. No se debe tratar un dato remoto ausente como si fuera un valor inventado.
+## Decisiones pendientes
 
-### AppPreference
-Tema Obsidiana/Cuarzo y otras preferencias locales aprobadas. No mezclar preferencias con entidades cinematográficas.
+Antes de congelar el modelo:
+- acordar qué significa añadir, retirar, ocultar y restaurar una película;
+- definir la semántica de fechas incompletas o desconocidas;
+- decidir cómo se representan visionados repetidos;
+- decidir qué datos son originales, editables, externos o reconstruibles;
+- definir recuperación y migración sin destruir la base anterior.
 
-### SpectrumProfile
-Perfil derivado localmente y versionado, acompañado de fecha/versión del algoritmo. Se puede reconstruir desde las señales originales y no contiene telemetría remota.
+La versión técnica del esquema de almacenamiento, si se necesita, será independiente de la edición pública de Prisma.
 
-## 3. Relaciones
+## Regla
 
-- Movie 1:N Viewing.
-- Movie N:M CustomList mediante CustomListMovie.
-- Movie 1:0..1 HiddenState activo.
-- Movie 1:0..1 MovieMetadata enlazado a TMDB (el metadato puede ser parcial).
-- AppPreference y SpectrumProfile son registros locales independientes.
-
-## 4. Índices e invariantes necesarios
-
-- Índice de búsqueda normalizada por título local (insensible a mayúsculas/minúsculas y tildes).
-- Índice de Movie por TMDB ID para evitar duplicados cuando exista ID estable.
-- Índice de Viewing por Movie ID y fecha para consultas de historial y estadísticas.
-- Índices de asociación por CustomList ID y Movie ID.
-- Operaciones de cambio de estado y asociación ejecutadas en transacciones.
-- No eliminar una Movie al quitarla de una lista.
-- Al borrar una CustomList, eliminar solo la lista y sus relaciones, nunca Movie ni Viewing.
-- La calificación pertenece al Viewing, no a Movie.
-- Las fechas se almacenan en un formato inequívoco y se muestran respetando la semántica local de la fecha de visionado.
-
-## 5. Esquema físico y migraciones
-
-La versión física de IndexedDB, nombres de stores, índices y versiones de migración se definen en la especificación técnica de la fase que vaya a implementar el diario. Cada migración debe ser monotónica, reversible mediante copia o recuperación, y probada con fixtures de versiones anteriores. Nunca destruir la base anterior antes de validar la nueva.
-
-## 6. Pendientes antes de congelar
-
-- Revisar todos los casos históricos de fechas/horas y visionados repetidos.
-- Confirmar semántica de una película que vuelve a añadirse a Pendientes después de haber sido vista.
-- Definir la estrategia de normalización de títulos y acentos.
-- Definir el límite y formato exacto de campos de metadatos TMDB.
-- Determinar qué parte de SpectrumProfile se persiste y qué parte se calcula bajo demanda.
-
-No empezar la codificación del esquema hasta aprobar estos invariantes.
+No crear base de datos física ni código de migración a partir de este borrador. Diseñar únicamente el modelo necesario para las funciones aprobadas y probarlo antes de guardar datos reales.
