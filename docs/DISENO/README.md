@@ -2,6 +2,10 @@
 
 Este directorio conserva referencias visuales de la etapa anterior. Su contenido no es una especificación web definitiva.
 
+## Concepto anterior a los SVG
+
+- [Concepto visual original anterior a la simplificación SVG](CONCEPTO_ANTERIOR_A_SVG.md): Personal 2×2, Gestionar listas en una fila completa, Feed cinematográfico y navegación flotante.
+
 ## Dirección visual y temas confirmados
 
 - [Visión anterior de Prisma y estado de sus decisiones](VISION_HEREDADA.md).
