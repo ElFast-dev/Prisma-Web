@@ -36,6 +36,7 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | T-006 | Actualización PWA controlada. | Candidata; especificar lo necesario para proteger datos y operaciones |
 | T-007 | Definir con precisión el contrato público y la compatibilidad de los datos antes de la primera publicación. | Pendiente; SemVer 2.0 ya está aprobado |
 | T-008 | Cifrado de copias con KDF y AES-GCM. | Requiere comparación, benchmark y revisión antes de elegir algoritmo y parámetros |
+| T-009 | Svelte 5 + SvelteKit 3 + adapter-static (con React 19.3 + React Router 8.5 como comparación obligatoria). | Candidata preferente para prototipo; no aprobada hasta comparar en Android real |
 
 ## Decisiones retiradas
 
