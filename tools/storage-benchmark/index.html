@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Prisma · Benchmark de almacenamiento</title>
+<style>
+:root{color-scheme:dark;--bg:#171a20;--surface:#222831;--surface2:#29333e;--border:#3a4552;--text:#f0f0f0;--muted:#b5bec8;--accent:#70aee0;--ok:#8cc9a3;--warn:#f0c674;--bad:#f28b82}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
+main{width:min(820px,100%);margin:auto;padding:20px 15px 42px}
+.kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(24px,6vw,34px);line-height:1.15;margin:8px 0}h2{font-size:17px;margin:0 0 10px}
+p{color:var(--muted);margin:8px 0}.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px;margin:13px 0}
+.note{background:#202933;border:1px solid var(--border);padding:12px 14px;border-radius:14px;color:var(--muted);margin:14px 0}.note strong{color:var(--text)}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+select,button{font:inherit;border-radius:12px;min-height:46px;padding:10px 13px}
+select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+button{border:0;background:var(--accent);color:#10202d;font-weight:700;cursor:pointer}
+button.secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+button:disabled{opacity:.55;cursor:wait}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions>*{flex:1 1 220px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px}
+.metric span{display:block;font-size:12px;color:var(--muted)}.metric b{display:block;margin-top:3px;overflow-wrap:anywhere}
+.progress{height:7px;background:var(--surface2);border-radius:8px;overflow:hidden;margin:10px 0}
+.progress>i{display:block;width:0;height:100%;background:var(--accent);transition:width .2s}
+.status{font-size:13px;color:var(--muted)}.status.ok{color:var(--ok)}.status.warn{color:var(--warn)}.status.bad{color:var(--bad)}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+th{color:var(--muted);font-weight:650}small{font-size:12px;color:var(--muted)}
+footer{margin-top:20px}
+@media(max-width:480px){main{padding:16px 12px 34px}.grid{grid-template-columns:1fr 1fr}.panel{padding:13px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="kicker">Prisma · Herramienta técnica independiente</div>
+  <h1>Benchmark de almacenamiento</h1>
+  <p>Compara Dexie sobre IndexedDB con SQLite WASM sobre OPFS SAH pool usando la misma carga sintética.</p>
+</header>
+
+<div class="note"><strong>No es la aplicación Prisma.</strong> Crea y elimina únicamente bases temporales propias de este benchmark. No importa tu historial, no modifica datos de la sonda anterior, no envía telemetría y no escribe archivos personales.</div>
+
+<section class="panel">
+  <h2>Dispositivo y carga</h2>
+  <div class="grid">
+    <div>
+      <label for="dataset">Dataset de prueba</label>
+      <select id="dataset">
+        <option value="1000:3">1.000 películas × 3 visionados (3.000)</option>
+        <option value="5000:3">5.000 películas × 3 visionados (15.000)</option>
+        <option value="10000:3">10.000 películas × 3 visionados (30.000)</option>
+      </select>
+    </div>
+    <div class="metric">
+      <span>Rondas por alternativa</span>
+      <b>3 · mediana informada</b>
+    </div>
+    <div class="metric">
+      <span>Dexie</span>
+      <b>4.4.7 · IndexedDB · strict</b>
+    </div>
+    <div class="metric">
+      <span>SQLite WASM</span>
+      <b>3.54.1-build1 · OPFS SAH pool</b>
+    </div>
+  </div>
+  <p><small>Recomendación: comienza con 1.000 × 3. Ejecuta 10.000 × 3 solo si el teléfono está respondiendo con normalidad y has liberado espacio suficiente.</small></p>
+  <div class="actions">
+    <button id="run">Ejecutar comparación (3 rondas)</button>
+    <button id="download" class="secondary" disabled>Descargar informe JSON</button>
+  </div>
+  <div class="progress"><i id="progressBar"></i></div>
+  <div id="status" class="status" aria-live="polite">Preparado. No hay datos de prueba guardados.</div>
+</section>
+
+<section class="panel">
+  <h2>Resultados</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Operación</th><th>Dexie · mediana</th><th>SQLite · mediana</th></tr></thead>
+      <tbody id="resultRows"><tr><td colspan="3">Ejecuta la comparación para generar resultados.</td></tr></tbody>
+    </table>
+  </div>
+  <div id="integrity" class="status" style="margin-top:12px"></div>
+</section>
+
+<section class="panel">
+  <h2>Qué mide</h2>
+  <div class="grid">
+    <div class="metric"><span>Apertura</span><b>Inicio de la base de datos</b></div>
+    <div class="metric"><span>Inserción</span><b>Películas y visionados en una transacción</b></div>
+    <div class="metric"><span>Consultas</span><b>Películas por año, película por título y visionados ordenados</b></div>
+    <div class="metric"><span>Actualización</span><b>Modificar una calificación individual</b></div>
+    <div class="metric"><span>Integridad</span><b>Rollback sin registro parcial</b></div>
+    <div class="metric"><span>Reapertura</span><b>Cerrar, abrir de nuevo y verificar conteo</b></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Limitaciones de la comparación</h2>
+  <p>SQLite SAH pool funciona dentro de un Worker y no ofrece varias conexiones concurrentes normales a la misma base. El resultado de rendimiento no basta para elegirla: también debemos resolver el uso de varias pestañas. El benchmark elimina su propio VFS al terminar.</p>
+  <p>El tamaño/uso informado por <code>navigator.storage.estimate()</code> no se usa como cuota garantizada. No se mide memoria física exacta porque Brave puede limitar esos datos.</p>
+</section>
+<footer><small>Prisma-Web · tools/storage-benchmark · Sin framework UI · Sin telemetría · Dependencias fijadas y locales.</small></footer>
+</main>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
