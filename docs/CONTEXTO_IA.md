@@ -16,7 +16,7 @@ El propietario aprueba el producto, el alcance, las decisiones importantes y las
 
 `docs/ARCHIVO/ANDROID/` es un archivo de consulta, no una especificación activa. Los requisitos, modelos, procesos, versiones, tecnologías y diseños heredados se deben revisar desde cero antes de reutilizarlos.
 
-Las propuestas nuevas de Prisma-Web tampoco son vinculantes por existir. En especial, React/Vite, IndexedDB, Argon2id, Workers, OPFS, Cloudflare y SemVer no se consideran automáticamente aprobados. Cloudflare y el sistema anterior de SemVer están descartados.
+Las propuestas nuevas de Prisma-Web tampoco son vinculantes por existir. React/Vite, IndexedDB, Argon2id, Workers y OPFS no se consideran aprobados sin comparación. SemVer 2.0 sí está aprobado como formato oficial de versiones. Cloudflare Pages está rechazado.
 
 ## Fuentes de verdad
 
@@ -26,7 +26,7 @@ Las propuestas nuevas de Prisma-Web tampoco son vinculantes por existir. En espe
 4. `docs/ROADMAP.md`: resultados necesarios, sin hitos artificiales.
 5. `docs/TECNICO/ARQUITECTURA.md`: alternativas técnicas, no stack aprobado.
 6. `docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md`: hosting y origen pendiente.
-7. `docs/TECNICO/ENTREGAS.md`: modelo simplificado de ediciones funcionales.
+7. `docs/TECNICO/VERSIONADO.md`: política oficial SemVer 2.0.
 8. `docs/DISENO/ESTADO_VISUAL.md`: referencias visuales que necesitan validación web.
 9. `docs/DECISIONES/REGISTRO.md`: decisiones expresas, propuestas y descartes.
 
