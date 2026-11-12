@@ -43,3 +43,21 @@ No crear workflows que repitan el mismo trabajo. No usar runners de pago, servic
 Cada entrega debe decir qué puede hacer ahora el usuario, cómo se probó y en qué dispositivo/navegador, qué casos offline se verificaron, qué límites conocidos quedan y si hubo cambios de datos o recuperación.
 
 No afirmar que una función está probada si solo pasó CI o se inspeccionó el código.
+
+
+## Pruebas específicas del primer recorrido
+
+Datos de prueba sintéticos; no usar información personal real durante la selección técnica.
+
+- 1,000 y 10,000 películas; 1, 3 y 10 visionados por película.
+- Registrar dos visionados de la misma película y comprobar que ambos sobreviven a cierre/reapertura.
+- Asignar/modificar una nota y comprobar que solo cambia el visionado seleccionado.
+- Probar calificación provisional y su transferencia atómica al siguiente visionado.
+- Probar fecha de día completo sin hora, instante exacto, cambio de zona horaria y hora estimada por duración.
+- Forzar errores de cuota y fallo de transacción; no confirmar cambios parciales.
+- Cerrar la PWA durante operaciones, reabrir y comprobar consistencia.
+- Abrir dos pestañas/PWA simultáneas y comprobar ausencia de corrupción o bloqueos silenciosos.
+- Exportar, restaurar en una base de prueba limpia y comparar conteos/identidades; probar contraseña errónea y archivo alterado.
+- Repetir el recorrido sin conexión y con red interrumpida.
+
+Para la comparativa de framework, mantener idéntico diseño/flujo entre las dos muestras. Medir build estático, carga inicial, tiempo de interacción, fluidez, tamaño comprimido, memoria y navegación en el teléfono Android objetivo. No declarar una elección como verificada en Android hasta ejecutar las pruebas en un dispositivo real.
