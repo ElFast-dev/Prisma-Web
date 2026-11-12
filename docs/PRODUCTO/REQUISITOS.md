@@ -1,8 +1,8 @@
 # Requisitos de producto — Prisma Web
 
-**Estado:** base consolidada para aprobación de Fase 0.  
-**Fecha de migración:** 12 de noviembre de 2026.  
-**Plataforma elegida:** PWA instalable en Android.  
+**Estado:** borrador de producto en revisión; no es una lista de funciones aprobadas.  
+**Fecha de revisión:** 12 de noviembre de 2026.  
+**Plataforma de trabajo:** PWA para uso principal en Android.  
 **Referencia histórica completa:** `docs/ARCHIVO/ANDROID/REQUISITOS.md`.
 
 ## 1. Visión
@@ -77,7 +77,7 @@ Se conserva la estructura aprobada de dos secciones principales:
 - **Personal:** Historial, Pendientes, Ocultos y Gestionar listas en el MVP.
 - **Descubrir:** búsqueda de películas y acceso a su ficha.
 
-Estadísticas se incorpora en la experiencia completa posterior al MVP. No se muestra un acceso vacío o deshabilitado en el MVP.
+Estadísticas es una función candidata posterior a la primera entrega. No se muestra un acceso vacío o deshabilitado en el MVP.
 
 Los nombres propios se mantienen: **Espectro**, **Obsidiana** y **Cuarzo**. La interfaz y los mensajes se mantienen en español.
 
@@ -90,9 +90,9 @@ Los nombres propios se mantienen: **Espectro**, **Obsidiana** y **Cuarzo**. La i
 - Un fallo de TMDB no debe bloquear el diario local.
 - Una restauración se valida por completo antes de modificar la base actual.
 
-## 8. Criterios generales de aceptación
+## 8. Criterios candidatos de aceptación
 
-- Los recorridos MVP se completan desde pantallas visibles en un teléfono Android.
+- Los recorridos aprobados se completan desde pantallas visibles en un teléfono Android.
 - Los datos sobreviven a cierre, reapertura y reinicio del dispositivo dentro de los límites documentados del almacenamiento web.
 - El flujo diario funciona sin red con datos guardados.
 - La exportación cifrada puede restaurarse en una instalación/origen compatible.
