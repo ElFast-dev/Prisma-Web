@@ -1,39 +1,50 @@
 # Modelo de datos — Prisma
 
-**Estado:** borrador conceptual; no constituye un esquema aprobado ni autoriza crear IndexedDB.
+**Estado:** contrato conceptual del primer recorrido; no constituye un esquema físico ni autoriza crear la base de datos antes de la aprobación técnica.
 
-## Propósito
+## Entidades necesarias para el primer recorrido
 
-Recoger reglas candidatas que eviten pérdida o duplicación de información. Antes de convertirlas en tablas, stores, índices o migraciones, deben validarse con los recorridos reales aprobados.
+### Película local
 
-## Reglas que deben comprobarse
+- Identificador local estable (UUID), independiente del título y del año.
+- Título obligatorio; año opcional.
+- Información descriptiva/metadatos opcionales, claramente distinguibles entre dato introducido por el usuario y dato externo.
+- La identidad local no cambia al vincular posteriormente un ID de TMDB.
+- La película y sus visionados se conservan como entidades separadas.
 
-- Una película local necesita una identidad estable que no dependa solo del título.
-- Vincularla más tarde con un catálogo externo no debe duplicarla ni borrar información introducida por el usuario.
-- Si se permiten visionados múltiples, cada registro debe conservarse de forma independiente.
-- Cambiar el estado de una película no debe borrar su historial.
-- Quitar una película de una lista no debe borrar la película ni sus visionados.
-- Los datos derivados de estadísticas o recomendaciones nunca sustituyen los datos originales.
+### Visionado
 
-Estas invariantes son candidatas. Su alcance y semántica deben revisarse junto con el primer recorrido.
+Cada reproducción es un registro independiente, con identificador propio y vínculo a la película.
 
-## Entidades candidatas
+Campos conceptuales:
+- Película a la que pertenece.
+- Momento de inicio.
+- Precisión temporal explícita: solo día, fecha/hora exacta o fecha/hora estimada.
+- Origen del momento: ahora, fecha de estreno, selección manual o ajuste estimado por duración.
+- Calificación personal opcional entera de 1 a 10.
+- Fechas de creación/modificación necesarias para ordenar y auditar cambios.
 
-Podrían existir conceptos como película, visionado, estado oculto, lista, relación película-lista, metadatos externos y preferencias. No se fija todavía el conjunto final ni sus campos.
+No transformar una fecha que solo conoce el día en una hora ficticia. Para instantes concretos se conserva el instante inequívoco y la información necesaria para presentarlo correctamente en la zona horaria local. Un cálculo basado en duración se marca como estimado.
 
-El perfil de Espectro, sus señales y cualquier caché derivada se diseñarán solo cuando esa función haya sido aprobada y exista una necesidad concreta de persistirlos.
+### Calificación provisional
 
-## Decisiones pendientes
+Si el usuario califica una película antes de tener un visionado, la nota queda provisionalmente vinculada a la película. Al crear el siguiente visionado se transfiere a ese registro en la misma operación y se elimina el estado provisional. Cuando ya existen varios visionados, el usuario elige expresamente el registro que desea calificar. Una edición afecta solo al visionado seleccionado.
 
-Antes de congelar el modelo:
-- acordar qué significa añadir, retirar, ocultar y restaurar una película;
-- definir la semántica de fechas incompletas o desconocidas;
-- decidir cómo se representan visionados repetidos;
-- decidir qué datos son originales, editables, externos o reconstruibles;
-- definir recuperación y migración sin destruir la base anterior.
+## Invariantes de integridad
 
-La versión técnica del esquema de almacenamiento, si se necesita, será independiente de la edición pública de Prisma.
+- Cada visionado conserva su identidad y no se sobrescribe al crear una repetición.
+- Una película puede tener cero, uno o muchos visionados.
+- Eliminar o modificar una calificación no altera fecha ni identidad del visionado.
+- La calificación provisional solo existe mientras la película no tenga visionados; se consume al crear el siguiente.
+- Cambiar el estado de una película no elimina registros de visionado.
+- Vincular la película local con metadatos externos no duplica la película ni pierde datos introducidos por el usuario.
+- Una operación que crea un visionado y consume una calificación provisional debe ser atómica.
+- Las restauraciones validan identidades, relaciones y duplicados antes de tocar datos existentes.
+
+## Ampliaciones posteriores
+
+Estados Pendientes/Ocultos y su restauración, listas, TMDB y cachés, estadísticas y Espectro se incorporan al modelo cuando el alcance de cada función se apruebe. No crear entidades especulativas para funciones futuras.
 
 ## Regla
 
-No crear base de datos física ni código de migración a partir de este borrador. Diseñar únicamente el modelo necesario para las funciones aprobadas y probarlo antes de guardar datos reales.
+Mantener el modelo independiente de Dexie/IndexedDB o SQLite/OPFS hasta terminar la comparación. No crear stores, tablas, índices ni migraciones físicas antes de aprobar el almacenamiento canónico.
