@@ -1,50 +1,54 @@
-# Registro de decisiones — Prisma Web
+# Registro de decisiones — Prisma
 
 **Última revisión:** 12 de noviembre de 2026.
 
-Este registro separa decisiones del propietario, decisiones heredadas que siguen vigentes y propuestas técnicas. Una propuesta no se considera aprobada por aparecer en esta documentación.
+Este registro contiene decisiones expresas del propietario y propuestas claramente separadas. Los documentos antiguos no convierten una propuesta en decisión.
 
 ## Decisiones expresas del propietario
 
 | ID | Decisión | Estado |
 |---|---|---|
-| P-001 | Prisma se desarrollará primero como PWA para utilizar el teléfono como dispositivo principal de ejecución, almacenamiento y procesamiento. | Aprobada |
-| P-002 | `ElFast-dev/Prisma-Web` será el nuevo repositorio principal; el antiguo `ElFast-dev/Prisma` dejará de utilizarse y se eliminará después de comprobar la migración; el nuevo se renombrará a `Prisma`. | Aprobada; migración en curso |
-| P-003 | Antes de crear la aplicación se completarán sus cimientos de producto, arquitectura, almacenamiento, seguridad, versionado, pruebas y organización. | Aprobada |
-| P-004 | Las versiones deben corresponder al avance real y capacidades terminadas, no aumentar por commits o builds arbitrarios. | Aprobada |
+| P-001 | Prisma se prepara primero como PWA para uso principal en Android. | Aprobada |
+| P-002 | `ElFast-dev/Prisma-Web` será la base del nuevo proyecto; el repositorio anterior se retirará y el nuevo se renombrará a `Prisma`. | Aprobada; falta acción administrativa |
+| P-003 | Primero se completan los fundamentos necesarios; después se comienza la aplicación. | Aprobada |
+| P-004 | El avance y las ediciones deben representar capacidades funcionales reales. | Aprobada |
+| P-005 | Prisma no debe generar ningún gasto para el propietario: objetivo permanente de 0 USD. | Aprobada |
+| P-006 | Cloudflare Pages no se utilizará como alojamiento de Prisma. | Rechazada expresamente |
 
-## Decisiones de producto heredadas que siguen vigentes
+## Material heredado
 
-- Diario cinematográfico personal, solo películas.
-- Datos personales, historial, calificaciones, listas, estadísticas y perfil Espectro en el dispositivo.
-- Sin cuenta, backend propio, nube, funciones sociales, anuncios ni telemetría personal.
-- Offline para datos guardados.
-- TMDB como fuente externa de metadatos/imágenes, no del diario.
-- Copias manuales cifradas.
-- Espectro local y explicable.
-- Temas Obsidiana y Cuarzo con paridad.
-- Identidad visual y reglas funcionales no dependientes de Android preservadas en el archivo de decisiones anterior y el estado visual actual.
+Los documentos, ramas, procesos y diseños del repositorio Android se conservan para consulta histórica. No se consideran decisiones vigentes hasta que el propietario los confirme o se demuestre su utilidad y se apruebe su adaptación.
 
-## Propuestas técnicas para aprobar antes de implementar
+Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprobaciones web automáticas.
 
-| ID | Propuesta | Motivo | Estado |
-|---|---|---|---|
-| T-001 | React + TypeScript + Vite; frontend estático modular. | Desarrollo rápido y mantenible por IA, tipado y build sencillo. | Propuesta |
-| T-002 | IndexedDB como base autoritativa; Cache Storage para shell e imágenes; OPFS solo si una necesidad medida lo justifica. | Menos complejidad y separación entre datos personales y caché. | Propuesta |
-| T-003 | Web Workers para búsqueda pesada, estadísticas y Espectro. | Evitar bloquear la interfaz. | Propuesta |
-| T-004 | Exportación `.prisma` con Argon2id + AES-256-GCM, sujeto a benchmark de teléfono y revisión criptográfica. | Copia portable cifrada. | Propuesta |
-| T-005 | Hosting estático con origen dedicado; primera opción a evaluar: Cloudflare Pages conectado al repositorio y hostname exclusivo `*.pages.dev` o dominio propio. | Despliegues automáticos, previews y aislamiento del almacenamiento por origen. | Propuesta |
-| T-006 | Actualización PWA controlada: detectar nueva versión, informar y pedir acción explícita para activarla. | Mantener control del usuario y evitar recarga durante una operación. | Propuesta |
-| T-007 | Mapa de hitos SemVer de `VERSIONADO.md`. | Hacer que cada número represente una capacidad verificable. | Propuesta |
+## Propuestas técnicas abiertas
 
-## Decisiones bloqueantes pendientes
+| ID | Propuesta | Estado |
+|---|---|---|
+| T-001 | React + TypeScript + Vite. | Reabierta; comparar con una solución más sencilla |
+| T-002 | IndexedDB para datos estructurados locales. | Candidata; validar con casos y volumen reales |
+| T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
+| T-004 | Web Workers, OPFS o WebAssembly. | No introducir salvo necesidad medida |
+| T-005 | GitHub Pages desde el repositorio público. | Candidato de 0 USD; pendiente evaluar límites y origen compartido |
+| T-006 | Actualización PWA controlada. | Candidata; especificar lo necesario para proteger datos y operaciones |
+| T-007 | Ediciones funcionales secuenciales, sin SemVer ni preversiones. | Modelo documentado; se evaluará en la primera entrega |
+| T-008 | Cifrado de copias con KDF y AES-GCM. | Requiere comparación, benchmark y revisión antes de elegir algoritmo y parámetros |
 
-1. Aprobación final del mapa de versiones `0.1.0` a `0.7.0` y de sus entregables.
-2. Alojamiento y origen HTTPS de producción. No instalar la PWA con datos reales hasta fijarlo.
-3. Confirmar el proveedor de hosting y autorizar la conexión de su GitHub App a este repositorio.
-4. Benchmark de Argon2id/WASM en el teléfono antes de congelar parámetros de la exportación.
-5. Elegir la biblioteca mínima para operar IndexedDB (API directa, `idb` o Dexie) en la especificación de implementación, con justificación y lockfile.
+## Decisiones retiradas
 
-## Registro de cambios
+- Cloudflare Pages como opción principal o recomendada.
+- El mapa SemVer `0.1.0` a `1.0.0`, preversiones alpha/beta/rc y asignación de números a fases futuras.
+- Los IDs de fase-hito como medida del avance del producto.
+- La asunción de que los diseños Android son especificaciones finales para la PWA.
+- La aprobación automática de React, Vite, Argon2id, Workers u OPFS.
 
-- 2026-11-12: apertura de Prisma Web; PWA y repositorio nuevo aprobados por el propietario; propuestas técnicas iniciales documentadas.
+## Pendientes que bloquean el inicio del código
+
+1. Aprobar el primer recorrido útil y su alcance.
+2. Resolver la tecnología mínima y los límites reales del navegador.
+3. Aprobar persistencia local, recuperación y formato de copia.
+4. Seleccionar un origen HTTPS de 0 USD, sin obligación de pagar.
+5. Revalidar el diseño visual de ese recorrido.
+6. Aprobar el conjunto mínimo de pruebas y aceptar el inicio del desarrollo.
+
+Las decisiones menores pueden tomarse cuando el recorrido que las necesita esté en desarrollo, siempre que no cambien el alcance, el coste, la privacidad ni la integridad de los datos.
