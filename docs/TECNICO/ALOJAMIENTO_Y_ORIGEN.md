@@ -1,86 +1,73 @@
-# Alojamiento, dominio y origen — Prisma Web
+# Alojamiento y origen — Prisma
 
-**Estado:** decisión pendiente y bloqueante antes del primer despliegue con datos reales.  
-**Recomendación técnica actual:** Cloudflare Pages con integración GitHub y un subdominio dedicado `*.pages.dev`, o un dominio propio dedicado conectado a Cloudflare Pages.
+**Estado:** decisión pendiente.  
+**Restricción obligatoria:** coste total de 0 USD.  
+**Cloudflare Pages:** rechazado por el propietario.
 
-## 1. Requisito de origen
+## Condiciones obligatorias
 
-Prisma almacena datos mediante APIs del navegador asociadas al origen web. El origen está formado por protocolo, hostname y puerto; la ruta no crea un aislamiento de origen. Por tanto, alojar un proyecto bajo `https://elfast-dev.github.io/Prisma` no separa IndexedDB de otros proyectos bajo `https://elfast-dev.github.io`.
+- Precio de 0 USD sin período de prueba.
+- No exigir tarjeta ni método de pago para publicar y mantener el sitio.
+- No activar facturación automática ni consumo variable.
+- No depender de funciones, bases de datos o almacenamiento que requieran un plan superior.
+- Servir archivos estáticos por HTTPS.
+- Permitir un origen estable para la PWA.
+- Explicar las cuotas y qué sucede al alcanzarlas.
+- No obligar a comprar un dominio; se prefiere el subdominio gratuito del proveedor.
 
-No utilizar un hostname provisional para el diario real. Antes de instalar Prisma con datos personales hay que decidir el origen HTTPS de producción y mantenerlo estable.
+Una alternativa que detenga una función esencial hasta contratar un plan superior queda descartada. Si una cuota puede suspender toda la aplicación, el riesgo debe quedar documentado y ser aceptado expresamente.
 
-## 2. Primera opción: Cloudflare Pages
+## Candidato principal: GitHub Pages
 
-Recomiendo evaluar Cloudflare Pages con GitHub Integration.
+GitHub Pages puede publicar archivos estáticos desde un repositorio público con GitHub Free. El repositorio actual es público. No se necesita comprar dominio y los sitios `github.io` admiten HTTPS.
 
-La documentación oficial confirma:
-- conexión de un proyecto Pages a un repositorio GitHub;
-- despliegue automático al hacer push a una rama;
-- despliegues de vista previa para ramas y Pull Requests;
-- URLs de preview por commit/branch;
-- estado de despliegue y checks visibles en el repositorio GitHub;
-- hostname de proyecto bajo `*.pages.dev`.
+URL de proyecto candidata cuando el repo tenga el nombre final:
 
-Para Prisma esto permite que la IA publique cambios web y que Cloudflare reconstruya y despliegue la PWA sin generar APK. Las previews permiten revisar una propuesta antes de promoverla a producción.
+`https://elfast-dev.github.io/Prisma/`
 
-**Precaución:** Cloudflare indica que, una vez creado un proyecto mediante Git Integration, no se puede cambiar ese mismo proyecto a Direct Upload. Conviene crear el proyecto con Git Integration desde el principio. La integración requiere instalar/autorizar la GitHub App de Cloudflare y conceder acceso al repositorio correspondiente.
+La PWA tendría que funcionar bajo `/Prisma/`: base de recursos, `start_url`, `scope`, manifest y alcance del Service Worker deben configurarse y probarse. No se implementará hasta comprobarlo en Chrome Android.
 
-Fuentes oficiales:
-- https://developers.cloudflare.com/pages/configuration/git-integration/
-- https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/
-- https://developers.cloudflare.com/pages/configuration/preview-deployments/
-- https://developers.cloudflare.com/pages/platform/known-issues/
+Límites oficiales documentados:
+- tamaño máximo publicado de 1 GB;
+- ancho de banda flexible de 100 GB por mes;
+- límite flexible de 10 compilaciones por hora, exceptuado cuando se usa un workflow personalizado de GitHub Actions;
+- despliegues que tarden más de 10 minutos expiran.
 
-## 3. Hostname propuesto
+Si se exceden las cuotas, GitHub puede limitar o dejar de servir el sitio. No se debe suponer disponibilidad ilimitada. Los runners estándar de GitHub Actions en repositorios públicos son gratuitos.
 
-Primera opción a comprobar al crear el proyecto: `https://prisma.pages.dev`.
+## Riesgo de origen compartido
 
-No se afirma que esté disponible. Cloudflare asigna un subdominio único al proyecto; si el nombre está ocupado, escoger un nombre estable y exclusivo para Prisma, por ejemplo `prisma-elfast.pages.dev`, y registrarlo aquí antes del primer despliegue que almacene datos reales.
+`https://elfast-dev.github.io/Prisma/` y otros sitios de proyecto del mismo usuario comparten el origen `https://elfast-dev.github.io`. La ruta `/Prisma/` no crea un límite de seguridad separado para IndexedDB, Cache Storage ni otras APIs asociadas al origen.
 
-Alternativa preferida a largo plazo: un subdominio de dominio propio dedicado (si el propietario dispone de uno), apuntando a Cloudflare Pages. No inventar ni asumir que el usuario posee un dominio.
+Por tanto:
+- no afirmar que el subdirectorio aísla los datos;
+- no alojar contenido ajeno o no confiable bajo el mismo hostname;
+- comprobar si la cuenta ya publica otros sitios GitHub Pages;
+- aceptar expresamente si ese nivel de aislamiento es suficiente para el diario local.
 
-**No conectar el repositorio a Cloudflare Pages hasta que se haya renombrado `Prisma-Web` a `Prisma`**, para evitar tener que reparar la integración por el cambio de nombre del repositorio.
+La conexión GitHub consultada mostró los repositorios `Prisma` y `Prisma-Web`; eso no basta para demostrar que no existan otras publicaciones Pages en la cuenta.
 
-## 4. Producción y previews
+## Opciones descartadas o no seleccionadas
 
-- La rama `main` será la rama de producción.
-- Los Pull Requests y ramas de trabajo obtendrán previews de Cloudflare.
-- Cada preview es un origen distinto: no debe leer, importar ni utilizar la base de datos de producción.
-- No usar tokens reales de TMDB ni secretos productivos en previews.
-- La aplicación debe detectar el entorno y deshabilitar import/export de datos reales en previews.
-- El manifiesto y Service Worker de producción deben tener `start_url` y `scope` correspondientes al hostname canónico.
-- Nunca instalar la preview como aplicación principal ni guardar el diario personal en ella.
+- **Cloudflare Pages:** rechazado expresamente.
+- **Netlify Free, Render Free y Vercel Hobby:** no se eligen por defecto. Sus niveles gratuitos tienen cuotas y condiciones propias. Antes de considerarlos hay que verificar qué ocurre al agotarlas y si una capacidad esencial exige pagar.
+- **Dominio propio:** no se presupone que el propietario tenga uno y no se comprará uno para Prisma.
 
-## 5. Requisitos de producción
+## Producción, previews y datos
 
-- HTTPS obligatorio.
-- Hostname dedicado y estable.
-- No cambiar protocolo, hostname o puerto después de guardar datos reales.
-- No publicar el mismo Service Worker en el hostname de producción y en previews.
-- No cachear HTML/API de forma que una actualización mezcle versiones incompatibles.
-- Previews no utilizan la base de datos ni credenciales de producción.
-- Producción solo desde la rama principal aprobada.
-- Cambios de hosting/origen requieren plan de migración de datos probado y autorización del propietario.
+- No guardar datos reales en una preview o URL temporal.
+- No usar tokens reales de TMDB en pruebas o previews.
+- Mantener estable el hostname de producción una vez que existan datos.
+- Las previews no acceden a credenciales ni al diario de producción.
+- Todo cambio de origen requiere exportación, restauración y verificación antes de abandonar el origen anterior.
 
-## 6. Alternativas
+## Decisión pendiente
 
-- Dominio propio conectado a Cloudflare Pages u otro hosting estático.
-- GitHub Pages con dominio personalizado dedicado; evitar el subdirectorio compartido `usuario.github.io/Prisma` para datos personales.
-- Otro hosting estático con hostname propio, HTTPS, integración GitHub, previews y reglas de caché apropiadas para PWA.
+GitHub Pages es solo un candidato. Antes de habilitar Pages se debe aprobar la URL exacta, aceptar el origen compartido y sus límites, y definir cómo se publicará desde el repositorio `Prisma`. No conectar ningún hosting hasta cerrar estos puntos.
 
-## 7. Decisión necesaria
+## Fuentes oficiales
 
-Antes de Fase 1 y de guardar datos reales, aprobar:
-1. proveedor de hosting;
-2. hostname exacto;
-3. rama de producción;
-4. política de preview;
-5. estrategia de migración si el origen debe cambiar en el futuro.
-
-La elección define el origen de IndexedDB, Cache Storage y OPFS y no es un detalle cosmético.
-
-## Fuentes de origen web
-
-- MDN — definición de origen: https://developer.mozilla.org/en-US/docs/Glossary/Origin
-- MDN — separación de IndexedDB por origen: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology
-- GitHub Docs — renombrar repositorios: https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository
+- [Crear un sitio GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site)
+- [Límites de GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)
+- [Facturación de GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+- [HTTPS en GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https)
