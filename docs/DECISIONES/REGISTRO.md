@@ -14,6 +14,8 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-004 | El avance y las ediciones deben representar capacidades funcionales reales. | Aprobada |
 | P-005 | Prisma no debe generar ningún gasto para el propietario: objetivo permanente de 0 USD. | Aprobada |
 | P-006 | Cloudflare Pages no se utilizará como alojamiento de Prisma. | Rechazada expresamente |
+| P-007 | Prisma utilizará Semantic Versioning 2.0 en formato MAYOR.MENOR.PARCHE. | Aprobada |
+| P-008 | No se elegirán tecnologías básicas por comodidad: se evaluarán opciones de alta calidad y se escogerá la mejor solución demostrable dentro del coste de 0 USD. | Aprobada |
 
 ## Material heredado
 
@@ -25,19 +27,19 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 
 | ID | Propuesta | Estado |
 |---|---|---|
-| T-001 | React + TypeScript + Vite. | Reabierta; comparar con una solución más sencilla |
+| T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
 | T-002 | IndexedDB para datos estructurados locales. | Candidata; validar con casos y volumen reales |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | No introducir salvo necesidad medida |
 | T-005 | GitHub Pages desde el repositorio público. | Candidato de 0 USD; pendiente evaluar límites y origen compartido |
 | T-006 | Actualización PWA controlada. | Candidata; especificar lo necesario para proteger datos y operaciones |
-| T-007 | Ediciones funcionales secuenciales, sin SemVer ni preversiones. | Modelo documentado; se evaluará en la primera entrega |
+| T-007 | SemVer 2.0 en formato MAYOR.MENOR.PARCHE. | Aprobado por el propietario; pendiente definir el contrato público de la primera entrega |
 | T-008 | Cifrado de copias con KDF y AES-GCM. | Requiere comparación, benchmark y revisión antes de elegir algoritmo y parámetros |
 
 ## Decisiones retiradas
 
 - Cloudflare Pages como opción principal o recomendada.
-- El mapa SemVer `0.1.0` a `1.0.0`, preversiones alpha/beta/rc y asignación de números a fases futuras.
+- La asignación anticipada de números SemVer a fases o funciones futuras. SemVer sí se mantiene como sistema oficial.
 - Los IDs de fase-hito como medida del avance del producto.
 - La asunción de que los diseños Android son especificaciones finales para la PWA.
 - La aprobación automática de React, Vite, Argon2id, Workers u OPFS.
