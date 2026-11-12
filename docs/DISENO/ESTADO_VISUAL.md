@@ -1,3 +1,7 @@
+> **Confirmación del propietario — 12 de noviembre de 2026:** se conservan expresamente los temas **Obsidiana** y **Cuarzo** como identidad visual de Prisma. Sus paletas recuperadas del proyecto anterior están detalladas en [TEMAS_OBSIDIANA_Y_CUARZO.md](TEMAS_OBSIDIANA_Y_CUARZO.md). No se reabren sus nombres ni se sustituyen sus colores por una propuesta nueva sin petición del propietario.
+>
+> La visión completa de la IA anterior, con la distinción entre conceptos previamente aprobados, propuestas futuras y decisiones pendientes, está en [VISION_HEREDADA.md](VISION_HEREDADA.md). La antigua rama registró aprobaciones de algunas composiciones; estas se conservan como antecedentes reales, pero su adaptación a PWA se revisa en contexto web antes de implementarlas. Las preferencias de los dos temas sí han sido reconfirmadas ahora.
+
 # Estado visual — Prisma
 
 **Estado:** material visual heredado en revisión para PWA. No es una especificación final aprobada para web.
