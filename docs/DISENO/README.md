@@ -1,20 +1,15 @@
 # Diseño visual — Prisma
 
-Este directorio conserva decisiones y referencias visuales aprobadas del producto y las adapta a una PWA responsive. Los SVG son activos vectoriales editables; no significan que las pantallas estén implementadas.
+Este directorio conserva referencias visuales de la etapa anterior. Su contenido no es una especificación web definitiva.
 
-## Fuentes de diseño
+## Fuentes de revisión
 
-- [Estado visual y registro de aprobaciones](ESTADO_VISUAL.md)
-- [Conceptos visuales del MVP](CONCEPTOS_MVP/README.md)
-- [Conceptos de Historial, Pendientes y ficha local](CONCEPTOS_FASE2/README.md)
-- [Guía de iconografía](ICONOGRAFIA/README.md)
-- [Vectores aprobados](ICONOGRAFIA/VECTORES_APROBADOS/README.md)
+- [Estado visual](ESTADO_VISUAL.md): reglas para reevaluar el material heredado.
+- [Conceptos antiguos del MVP](CONCEPTOS_MVP/README.md).
+- [Conceptos antiguos de Historial, Pendientes y ficha](CONCEPTOS_FASE2/README.md).
+- [Guía de iconografía](ICONOGRAFIA/README.md).
+- [Vectores conservados](ICONOGRAFIA/VECTORES_APROBADOS/README.md).
 
-## Reglas
+## Regla
 
-1. Conservar las decisiones expresamente aprobadas de estructura, jerarquía, contenido, color y comportamiento.
-2. Adaptar medidas Android heredadas a CSS responsive sin reinterpretar silenciosamente el diseño.
-3. Presentar conceptos de pantallas nuevas o rediseños importantes antes de implementarlos.
-4. Validar Obsidiana y Cuarzo con paridad funcional.
-5. No sustituir los SVG originales ni introducir iconos alternativos por conveniencia técnica.
-6. Los archivos de referencia pueden contener textos de CI o detalles de Compose de la etapa Android. Son antecedentes, no pruebas de implementación PWA.
+No implementar un diseño porque exista un SVG o porque su nombre contenga «aprobado». Validar primero el recorrido, después la experiencia responsive, la accesibilidad y la paridad de temas. Mantener los originales como referencia hasta aprobar una revisión nueva.
