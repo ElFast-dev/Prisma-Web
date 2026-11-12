@@ -56,6 +56,19 @@ function elapsed(start) {
   return Number((performance.now() - start).toFixed(2));
 }
 
+async function inspectBenchmarkOpfsDirectory() {
+  try {
+    const root = await navigator.storage.getDirectory();
+    const dir = await root.getDirectoryHandle("prisma-storage-benchmark-v1", { create: false });
+    const entries = [];
+    for await (const [name] of dir.entries()) entries.push(name);
+    return { exists: true, entries };
+  } catch (error) {
+    if (error?.name === "NotFoundError") return { exists: false, entries: [] };
+    return { exists: null, error: error?.message || String(error) };
+  }
+}
+
 async function storageEstimate() {
   try {
     if (!navigator.storage?.estimate) return null;
@@ -249,12 +262,15 @@ function showResults(dexieRuns, sqliteRuns, config) {
     item.expectedYearCount === config.expectedYearCount
   );
 
-  $("integrity").className = "status " + (valid ? "ok" : "bad");
-  $("integrity").textContent = valid
-    ? "Integridad comparable: los dos motores devolvieron los conteos esperados, actualizaron una sola nota y revirtieron la transacción sintética."
-    : "ATENCIÓN: hay diferencias de integridad entre motores o rondas. Conserva el informe y no elijas una base de datos todavía.";
+  const sqliteCleanupPassed = sqliteRuns.every((run) => run.vfsRemoved === true);
+  const integrityPassed = valid && sqliteCleanupPassed;
 
-  return { dexie, sqlite, integrityPassed: valid };
+  $("integrity").className = "status " + (integrityPassed ? "ok" : "bad");
+  $("integrity").textContent = integrityPassed
+    ? "Integridad y limpieza: ambos motores devolvieron los conteos esperados; SQLite confirmó removeVfs() = true."
+    : "ATENCIÓN: hay diferencias de integridad o SQLite no confirmó la eliminación de su VFS temporal. No elijas una base todavía.";
+
+  return { dexie, sqlite, integrityPassed, sqliteCleanupPassed };
 }
 
 function updateProgress(done, total, message) {
@@ -294,7 +310,9 @@ async function runAll() {
     const expectedYearCount = movieCount <= 20 ? 0 : Math.floor((movieCount - 1 - 20) / 47) + 1;
     const config = { movieCount, viewsPerMovie, expectedViews, expectedYearCount };
     const summary = showResults(dexieRuns, sqliteRuns, config);
+    await new Promise((resolve) => setTimeout(resolve, 300));
     const storageAfter = await storageEstimate();
+    const opfsCleanup = await inspectBenchmarkOpfsDirectory();
 
     lastReport = {
       tool: "Prisma Storage Benchmark",
@@ -313,6 +331,7 @@ async function runAll() {
       hardwareConcurrencyReported: navigator.hardwareConcurrency || null,
       storageBefore,
       storageAfter,
+      opfsCleanup,
       dataset: config,
       rounds: totalRounds,
       dexie: {
@@ -330,7 +349,8 @@ async function runAll() {
         "SQLite usa OPFS SAH pool dentro de un Worker; Dexie usa IndexedDB con chromeTransactionDurability strict.",
         "SQLite totalMs incluye inicialización de Worker, WASM y VFS; Dexie se importa antes de pulsar Ejecutar. Los tiempos totales no son directamente equivalentes. La tabla separa inicialización SQLite para evitar ocultar ese coste.",
         "El valor de StorageManager.estimate es informativo y no se considera cuota garantizada.",
-        "SQLite SAH pool limita conexiones concurrentes; el benchmark no convierte ese VFS en una decisión de arquitectura aprobada."
+        "SQLite SAH pool limita conexiones concurrentes; el benchmark no convierte ese VFS en una decisión de arquitectura aprobada.",
+        "vfsRemoved registra el resultado oficial de PoolUtil.removeVfs(); opfsCleanup comprueba si el directorio exclusivo todavía existe después de las rondas."
       ]
     };
     $("download").disabled = false;
