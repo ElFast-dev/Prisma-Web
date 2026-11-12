@@ -35,28 +35,30 @@ No debe sentirse como otro catálogo ni como una red social. Debe ser cinematogr
 9. Obsidiana y Cuarzo tienen la misma cobertura funcional y prioridad.
 10. No introducir SDK, servicios, analítica o dependencias externas sin justificación y aprobación.
 
-## 4. Primera entrega candidata — alcance por revisar
+## 4. Primer recorrido funcional acordado
 
-La primera entrega candidata debería permitir completar de principio a fin este recorrido, si el propietario confirma que sigue siendo la prioridad:
+La primera capacidad vertical que guiará el desarrollo y las pruebas será el diario local básico:
 
-**Crear una película manualmente o encontrarla con TMDB → guardarla en Pendientes → registrar uno o varios visionados con fecha y calificación → encontrarla en Historial → ocultarla y restaurarla conservando el estado previo → crear una lista personalizada y añadir/quitar películas → consultar y modificar el diario sin conexión → exportar una copia cifrada y restaurarla sin perder datos.**
+**Crear manualmente una película → añadirla a Historial → registrar uno o varios visionados → calificar cada visionado → abrir Visionados para consultar sus registros → cerrar y reabrir Prisma y comprobar que los datos siguen disponibles → repetir el trabajo sin conexión.**
 
-Incluye:
-- PWA instalable, navegación Personal/Descubrir y temas Obsidiana/Cuarzo.
-- Catálogo local y alta manual con título obligatorio y año opcional.
-- Historial, Pendientes y Ocultos con búsqueda local.
-- Registros de visionado independientes; un nuevo visionado no sobrescribe los anteriores.
-- Fecha/hora cuando se conozca y calificación personal por visionado.
-- Restauración de películas ocultas a su estado previo.
-- Listas personalizadas básicas: crear, renombrar, eliminar, añadir y quitar películas sin duplicados.
-- TMDB esencial: token configurado por el usuario, búsqueda por título, selección supervisada ante coincidencias ambiguas y datos básicos disponibles.
-- Caché local de metadatos e imágenes consultadas.
-- Funcionamiento offline para datos guardados.
-- Exportación/restauración manual cifrada, comprobación de integridad y recuperación ante fallos.
-- Gestión visible del espacio usado, cuota estimada y resultado de almacenamiento persistente.
-- Publicación web con changelog en español. No requiere APK ni instalación desde una tienda.
+Alcance de ese recorrido:
+- Alta manual de una película con título obligatorio y año opcional.
+- Identidad local estable, independiente del título.
+- Incorporación al Historial.
+- Visionados múltiples como registros independientes.
+- Fechas con precisión explícita: día conocido sin hora, instante exacto o instante estimado.
+- Calificación personal entera de 1 a 10 por visionado; las estrellas solo aparecen en el selector, no en la ficha.
+- Si hay varios visionados, el usuario elige a cuál asignar o modificar la nota. Si aún no existe ninguno, la calificación queda provisional y se asocia al siguiente.
+- Acceso «Visionados» que abre la vista con registros individuales.
+- Persistencia local y consulta/modificación offline del diario guardado.
+- Exportación y restauración manual cifrada, verificada antes de almacenar datos personales reales.
+- Temas Obsidiana y Cuarzo para las pantallas implementadas.
 
-**No se considerará utilizable una entrega que sea** una base de datos sin pantallas conectadas, una interfaz con controles inactivos, un prototipo que pierde datos al cerrar o una búsqueda offline que solo muestra datos simulados.
+La alta manual se incluye para validar el diario sin exigir una API externa. TMDB, el feed de Descubrir y sus filtros no son dependencias de este primer recorrido; se incorporarán después. El historial, las calificaciones y las listas nunca se transmiten a TMDB.
+
+Este alcance inicial no convierte automáticamente en parte de la primera entrega pública las funciones futuras de Pendientes, Ocultos, listas, estadísticas o Espectro. Se priorizarán después, sin asignar versiones anticipadas.
+
+**Criterio de utilidad:** no se guardarán datos personales reales en una versión que todavía no pueda exportarlos y restaurarlos íntegramente. No se considerará completo un prototipo con datos simulados, controles inactivos o persistencia no verificada.
 
 ## 5. Funciones candidatas posteriores (no aprobadas automáticamente)
 
