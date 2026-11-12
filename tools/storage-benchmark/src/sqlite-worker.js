@@ -31,7 +31,8 @@ function buildDataset(movieCount, viewsPerMovie) {
     targetTitle: `Prisma Film ${pad(targetIndex)}`,
     targetViewId: `view-${pad(targetIndex)}-0`,
     expectedViews: movieCount * viewsPerMovie,
-    expectedViewsForTarget: viewsPerMovie
+    expectedViewsForTarget: viewsPerMovie,
+    expectedYearCount: movieCount <= 20 ? 0 : Math.floor((movieCount - 1 - 20) / 47) + 1
   };
 }
 
@@ -203,7 +204,8 @@ async function executeBenchmark(movieCount, viewsPerMovie, round) {
       rollbackRemaining,
       reopenedCount,
       expectedViews: data.expectedViews,
-      expectedViewsForTarget: data.expectedViewsForTarget
+      expectedViewsForTarget: data.expectedViewsForTarget,
+      expectedYearCount: data.expectedYearCount
     };
   } finally {
     try {
