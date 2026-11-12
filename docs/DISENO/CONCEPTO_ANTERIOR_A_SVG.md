@@ -3,6 +3,8 @@
 **Origen:** decisiones visuales del 5 al 7 de noviembre de 2026, recuperadas del historial Git del repositorio Android.  
 **Estado:** concepto histórico localizado; se conserva para reconstrucción y comparación. No es aún una aprobación de pantalla PWA.
 
+> **Preferencia del propietario, confirmada el 12 de noviembre de 2026:** esta es la dirección visual anterior a los SVG que recuerda como su favorita. Obsidiana y Cuarzo se conservan. Los próximos conceptos se reconstruyen directamente en la conversación para que pueda visualizarlos y elegir; **no se deben generar imágenes de interfaz con IA**.
+
 ## 1. Por qué existe este documento
 
 La IA anterior pasó de una visión visual amplia de Prisma a una composición MVP simplificada. En esa evolución se dibujaron SVG para describir las versiones básicas. El propietario ha aclarado que el diseño que le gustaba era el anterior a esa simplificación/SVG.
