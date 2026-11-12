@@ -253,13 +253,13 @@ async function cleanup(){
  try{
   const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith(CACHE_PREFIX)).map(k=>caches.delete(k)));
   const regs=await navigator.serviceWorker.getRegistrations();
-  await Promise.all(regs.filter(reg=>new URL(reg.scope).pathname==="/").map(reg=>reg.unregister()));
+  const ownScript=new URL("./sw.js",location.href).href;await Promise.all(regs.filter(reg=>[reg.active,reg.waiting,reg.installing].some(w=>w&&w.scriptURL===ownScript)).map(reg=>reg.unregister()));
   notes.push("Caché y Service Worker de sonda revisados");
  }catch(e){notes.push("Service Worker: "+e.message);}
  $("cleanupResult").textContent=notes.join(". ")+".";
 }
 function detect(){
- $("engine").textContent=navigator.userAgent.match(/(?:Chrome|Chromium)\\/([0-9.]+)/)?.[1]||"No identificado";
+ $("engine").textContent=navigator.userAgent.split("Chrome/")[1]?.split(" ")[0]||navigator.userAgent.split("Chromium/")[1]?.split(" ")[0]||"No identificado";
  $("secure").textContent=String(isSecureContext);
  $("memory").textContent=navigator.deviceMemory?navigator.deviceMemory+" GB (aprox.)":"No expuesta";
  $("browser").textContent="Comprobando Brave…";
