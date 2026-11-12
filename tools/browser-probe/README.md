@@ -23,10 +23,10 @@ PY
 En Termux:
 
 ```sh
-python -m http.server 8765 --bind 127.0.0.1 --directory "$HOME/prisma-browser-probe"
+python -m http.server 18765 --bind 127.0.0.1 --directory "$HOME/prisma-browser-probe"
 ```
 
-Mantén esa sesión abierta y abre en Brave: `http://127.0.0.1:8765/`. No abras el archivo mediante `file://`.
+Mantén esa sesión abierta y abre en Brave: `http://127.0.0.1:18765/`. No abras el archivo mediante `file://`.
 
 ## Pruebas
 
