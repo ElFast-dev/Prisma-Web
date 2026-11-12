@@ -40,3 +40,10 @@ Fuentes oficiales consultadas para el diseño de la PWA. Las decisiones concreta
 ## Notas
 
 Las cuotas del navegador son variables, no una reserva de capacidad. La persistencia puede denegarse y el usuario siempre puede borrar los datos del sitio. File System Access y OPFS son APIs de capacidades que deben detectarse en ejecución. Web Crypto no es equivalente a Android Keystore.
+
+
+## Hosting y origen
+
+- MDN — Origin: https://developer.mozilla.org/en-US/docs/Glossary/Origin
+- Cloudflare Pages — Integración GitHub: https://developers.cloudflare.com/pages/configuration/git-integration/github-integration/
+- Cloudflare Pages — Integración Git: https://developers.cloudflare.com/pages/configuration/git-integration/
