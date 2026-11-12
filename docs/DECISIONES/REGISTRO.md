@@ -28,7 +28,7 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | ID | Propuesta | Estado |
 |---|---|---|
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
-| T-002 | IndexedDB para datos estructurados locales. | Candidata; validar con casos y volumen reales |
+| T-002 | IndexedDB, bibliotecas de datos, OPFS y opciones SQLite/WASM para datos locales. | Comparar por integridad, rendimiento, migraciones, cuota, seguridad y coste; no elegir por ser la opción básica |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
 | T-005 | GitHub Pages desde el repositorio público. | Candidato de 0 USD; pendiente evaluar límites y origen compartido |
