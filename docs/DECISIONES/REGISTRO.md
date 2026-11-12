@@ -22,6 +22,7 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-012 | El panel de Filtros se presenta como un panel inferior expandido sobre Descubrir, con grupos desplegables, edición provisional, restablecimiento y aplicación explícita; conserva el Feed detrás y su posición. | Confirmado para Prisma Web |
 | P-013 | Ajustes se organiza en Apariencia (selector Obsidiana/Cuarzo), Conexiones (TMDB) y Datos locales (almacenamiento y copias de seguridad), con una nota discreta de privacidad. | Confirmado como dirección visual para Prisma Web |
 | P-014 | La píldora Personal/Descubrir solo aparece en las pantallas raíz Personal y Descubrir; se oculta en subsecciones y vistas de detalle, como Historial, Pendientes, Ocultos, listas, Ajustes y fichas cinematográficas. | Confirmado para Prisma Web |
+| P-015 | La ficha cinematográfica presenta cabecera panorámica con título superpuesto; debajo, acciones principales, sinopsis, calificación personal y visionados, en ese orden. | Confirmado como dirección visual para Prisma Web |
 
 ## Material heredado
 
