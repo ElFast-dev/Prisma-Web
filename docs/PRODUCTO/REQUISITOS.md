@@ -19,7 +19,7 @@ No debe sentirse como otro catálogo ni como una red social. Debe ser cinematogr
 - Distribución como PWA instalable; experiencia optimizada primero para Chrome Android, con degradación clara cuando una API no esté disponible.
 - El navegador aloja la aplicación; el teléfono conserva y procesa los datos.
 - No se requiere una cuenta de Prisma ni un backend propio.
-- Alcance inicial: películas. Series y episodios quedan fuera de la versión 1.0.0.
+- Alcance inicial candidato: películas. La decisión sobre series y episodios se revisará antes de fijar el alcance de la primera entrega.
 - La aplicación debe adaptarse a tamaños de pantalla y densidades diferentes sin romper los recorridos.
 
 ## 3. Principios no negociables
@@ -35,7 +35,7 @@ No debe sentirse como otro catálogo ni como una red social. Debe ser cinematogr
 9. Obsidiana y Cuarzo tienen la misma cobertura funcional y prioridad.
 10. No introducir SDK, servicios, analítica o dependencias externas sin justificación y aprobación.
 
-## 4. MVP — primera versión realmente utilizable
+## 4. Primera entrega candidata — alcance por revisar
 
 El MVP debe permitir completar de principio a fin este recorrido:
 
@@ -56,9 +56,9 @@ Incluye:
 - Gestión visible del espacio usado, cuota estimada y resultado de almacenamiento persistente.
 - Publicación web con changelog en español. No requiere APK ni instalación desde una tienda.
 
-**No se acepta como MVP** una base de datos sin pantallas conectadas, una interfaz con controles inactivos, un prototipo que pierde datos al cerrar o una búsqueda offline que solo muestra datos simulados.
+**No se considerará utilizable una entrega que sea** una base de datos sin pantallas conectadas, una interfaz con controles inactivos, un prototipo que pierde datos al cerrar o una búsqueda offline que solo muestra datos simulados.
 
-## 5. Fuera del MVP, previsto para la versión completa
+## 5. Funciones candidatas posteriores (no aprobadas automáticamente)
 
 - Estadísticas y visualizaciones completas de hábitos cinematográficos.
 - Espectro: aprendizaje local, recomendaciones personalizadas explicables y modos Afinidad, Equilibrado y Exploración.
@@ -69,7 +69,7 @@ Incluye:
 - Protección avanzada de spoilers.
 - Historial de versiones y experiencia de actualización dentro de Prisma, compatible con el mecanismo de actualizaciones web controladas.
 
-La versión 1.0.0 incluye el MVP y todas las capacidades anteriores que estén aprobadas en los requisitos históricos. Las listas inteligentes que añaden o retiran películas automáticamente siguen siendo una idea futura y no forman parte del compromiso de 1.0.0.
+No existe un mapa de versiones futuras. La composición de entregas se definirá después de validar el primer recorrido útil. Las listas inteligentes que añaden o retiran películas automáticamente siguen siendo una idea sin aprobar.
 
 ## 6. Experiencia y navegación
 
@@ -102,8 +102,8 @@ Los nombres propios se mantienen: **Espectro**, **Obsidiana** y **Cuarzo**. La i
 - Obsidiana y Cuarzo mantienen paridad.
 - Rendimiento, accesibilidad y compatibilidad se verifican en dispositivos reales, incluido el teléfono del propietario.
 
-## 9. Conservación de decisiones anteriores
+## 9. Revisión del material heredado
 
-El documento histórico conserva especificaciones de interacción, nombres, listas, estados, diseños y decisiones del producto tomadas durante la etapa Android. Se conservan todas las decisiones que no dependan de Kotlin, Compose, Room, DataStore, Keystore, APK o de una API exclusivamente nativa. Si una decisión histórica entra en conflicto con la plataforma web, se registra una propuesta de adaptación y no se cambia silenciosamente el comportamiento del producto.
+El archivo Android conserva decisiones y requisitos anteriores para consulta. Ninguno se convierte en especificación web solo porque no dependa de Kotlin o Compose. Revalidar utilidad, prioridad y experiencia PWA, y registrar únicamente las decisiones que el propietario vuelva a confirmar.
 
-**Pendiente de Fase 0:** aprobar formalmente la adaptación web del alcance completo y el mapa de versiones. La elección PWA y el uso de Prisma-Web como repositorio principal ya están expresados por el propietario.
+**Pendiente:** elegir el primer recorrido realmente útil, aprobar su alcance y cerrar los fundamentos técnicos y de coste cero. No se utiliza un mapa de versiones SemVer.
