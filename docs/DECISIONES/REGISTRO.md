@@ -22,9 +22,10 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-012 | El panel de Filtros se presenta como un panel inferior expandido sobre Descubrir, con grupos desplegables, edición provisional, restablecimiento y aplicación explícita; conserva el Feed detrás y su posición. | Confirmado para Prisma Web |
 | P-013 | Ajustes se organiza en Apariencia (selector Obsidiana/Cuarzo), Conexiones (TMDB) y Datos locales (almacenamiento y copias de seguridad), con una nota discreta de privacidad. | Confirmado como dirección visual para Prisma Web |
 | P-014 | La píldora Personal/Descubrir solo aparece en las pantallas raíz Personal y Descubrir; se oculta en subsecciones y vistas de detalle, como Historial, Pendientes, Ocultos, listas, Ajustes y fichas cinematográficas. | Confirmado para Prisma Web |
-| P-015 | La ficha cinematográfica presenta cabecera panorámica con título superpuesto; debajo, acciones principales, sinopsis, calificación personal y visionados, en ese orden. | Confirmado como dirección visual para Prisma Web |
+| P-015 | La ficha cinematográfica prioriza la información de la película. La información personal de Prisma se consulta mediante un acceso compacto «Mi Prisma», sin desplegar en la ficha el historial detallado, las calificaciones ni los registros de visionado. | Confirmado; composición personal separada según P-018 |
 | P-016 | Registrar un visionado utiliza un panel inferior con cuatro opciones: Ahora, Día de estreno, Seleccionar fecha y Ajustar al inicio; fecha/hora se eligen dentro del mismo panel y el cálculo se presenta como estimación. | Confirmado como dirección de interacción para Prisma Web |
 | P-017 | La calificación personal usa una escala de diez estrellas y confirmación explícita; con varios visionados se elige el registro destino y, sin visionados, la nota queda provisional para asociarse al siguiente. | Confirmado como dirección de interacción para Prisma Web |
+| P-018 | La ficha separa la información cinematográfica de la información personal: un acceso compacto «Mi Prisma» abre una vista secundaria con estado, calificación y acceso «Visionados»; los registros individuales solo se muestran al entrar en «Visionados». | Confirmado por el propietario para Prisma Web |
 
 ## Material heredado
 
