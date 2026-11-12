@@ -58,8 +58,8 @@ No es necesario registrar información de SIM, operador, identificadores de cuen
 3. Repetir las pruebas de almacenamiento con datasets sintéticos de 1.000 y 10.000 películas y proporciones de 1, 3 y 10 visionados por película. No importar datos personales del usuario.
 4. Comparar búsqueda, historial, inserción de visionados, actualización de calificación, orden cronológico y operaciones transaccionales.
 5. Registrar memoria y respuesta de la interfaz mientras el navegador conserva otras aplicaciones en segundo plano; comprobar que no haya cierres/reinicios de pestaña, congelaciones ni pérdida de cambios.
-6. Consultar navigator.storage.estimate() y navigator.storage.persist(); mostrar los valores reales y probar persistencia concedida/denegada sin asumir que la concesión es automática.
-7. Primero detectar en Brave si `navigator.storage.getDirectory` está disponible; si existe, probar OPFS en HTTPS y dentro de Worker, incluyendo cuota y manejo de errores. Brave declara que desactiva la File System API, de la que OPFS forma parte, por lo que la ausencia de la API debe registrarse como resultado válido y descartar OPFS para el navegador objetivo. No colocar datos reales en OPFS durante la comparativa.
+6. Registrar `navigator.storage.estimate()` solo como valor reportado y potencialmente modificado por el navegador; la documentación de Brave desktop menciona valores fijos, pero no se extrapolará a Android. Consultar `navigator.storage.persist()` / `persisted()` por separado y registrar el resultado real de persistencia.
+7. Detectar por separado en Brave Android `navigator.storage.getDirectory`, `createSyncAccessHandle` dentro de Worker y los selectores `showOpenFilePicker` / `showSaveFilePicker`. El artículo de Brave que lista la desactivación de File System API está redactado para escritorio; no presupone el mismo resultado en Android. Si OPFS está expuesto, probar HTTPS/localhost, Worker, escritura, lectura, cuota y recuperación; si no, documentarlo y descartarlo para este navegador. No colocar datos reales durante la comparativa.
 8. Medir derivación Argon2id, cifrado y descifrado de una copia sintética de tamaño acotado; medir tiempo y memoria máxima. Nunca reducir parámetros por debajo de una configuración mínima aceptada para acelerar la prueba.
 9. Probar exportación de un backup como archivo descargable y su restauración mediante el selector de archivo estándar de Android. Comprobar aparte `showOpenFilePicker` y `showSaveFilePicker`, pero no hacer que el respaldo dependa de esas APIs ni asumir que IndexedDB/OPFS puede trasladarse a la SD.
 10. Comprobar instalación, modo avión, recuperación tras cerrar/reabrir y actualización del Service Worker sin perder transacciones.
@@ -102,3 +102,10 @@ Datos de prueba sintéticos; no usar información personal real durante la selec
 - Repetir el recorrido sin conexión y con red interrumpida.
 
 Para la comparativa de framework, mantener idéntico diseño/flujo entre las dos muestras. Medir build estático, carga inicial, tiempo de interacción, fluidez, tamaño comprimido, memoria y navegación en el teléfono Android objetivo. No declarar una elección como verificada en Android hasta ejecutar las pruebas en un dispositivo real.
+
+
+## Sonda independiente de APIs del navegador
+
+Se ha añadido `tools/browser-probe/` para ejecutar una prueba local, sin dependencias ni telemetría, en el navegador de referencia. La sonda crea solo recursos con nombres propios `prisma-browser-probe` y comprueba IndexedDB, rollback de transacción, AES-GCM de Web Crypto, OPFS (si está expuesto), SyncAccessHandle en Worker, persistencia, Service Worker, descarga y lectura de JSON mediante el selector estándar.
+
+Instrucciones para instalarla en Termux y servirla en `http://127.0.0.1:8765/`: [tools/browser-probe/README.md](../../tools/browser-probe/README.md). El uso de loopback se acepta como contexto seguro para Service Worker en navegadores compatibles. La sonda no sustituye pruebas de la aplicación ni decide por sí sola el almacenamiento.
