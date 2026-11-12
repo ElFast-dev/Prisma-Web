@@ -20,6 +20,8 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-010 | Personal usa cuatro tarjetas cuadradas en cuadrícula 2×2 (Historial, Pendientes, Ocultos, Estadísticas) y una fila completa de Gestionar listas debajo; es el diseño anterior a SVG que más le gustaba al propietario. | Confirmado para Prisma Web |
 | P-011 | Descubrir conserva la barra integrada de búsqueda/Filtros/Ajustes y el Feed continuo de tres columnas con pósteres 2:3 sin títulos debajo; píldora inferior Personal/Descubrir y ambos temas. | Confirmado para Prisma Web |
 | P-012 | El panel de Filtros se presenta como un panel inferior expandido sobre Descubrir, con grupos desplegables, edición provisional, restablecimiento y aplicación explícita; conserva el Feed detrás y su posición. | Confirmado para Prisma Web |
+| P-013 | Ajustes se organiza en Apariencia (selector Obsidiana/Cuarzo), Conexiones (TMDB) y Datos locales (almacenamiento y copias de seguridad), con una nota discreta de privacidad. | Confirmado como dirección visual para Prisma Web |
+| P-014 | La píldora Personal/Descubrir solo aparece en las pantallas raíz Personal y Descubrir; se oculta en subsecciones y vistas de detalle, como Historial, Pendientes, Ocultos, listas, Ajustes y fichas cinematográficas. | Confirmado para Prisma Web |
 
 ## Material heredado
 
