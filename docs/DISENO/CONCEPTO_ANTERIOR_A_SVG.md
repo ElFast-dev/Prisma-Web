@@ -21,7 +21,7 @@ La pantalla se concibió como un centro personal de navegación, no como una lis
 - Gestionar listas ocupa una fila horizontal completa debajo de la cuadrícula.
 - La pantalla comienza directamente con los accesos; sin logotipo «PRISMA», título repetido «Personal» ni eslogan/subtítulo.
 - Márgenes laterales: 16 unidades de diseño; margen superior: 16 desde el área segura; espacio entre las tarjetas: 12; separación entre la cuadrícula y Gestionar listas: 12.
-- Las tarjetas son transparentes/con superficie propia del tema, con contorno fino de 1 px y radio de 14. El fondo sólido de la tarjeta se adapta a la superficie aprobada para cada tema.
+- La primera exploración había elegido tarjetas transparentes con contorno fino; esa opción se sustituyó después por superficies sólidas adaptadas a cada tema. El último estado visual registrado conserva tarjetas casi cuadradas con superficie `#222222` en Obsidiana y `#FFFFFF` en Cuarzo, contorno fino de 1 px y radio de 14.
 
 ### Composición interior de cada tarjeta
 
@@ -135,7 +135,7 @@ El historial registra dos composiciones de Personal con propósitos diferentes:
 | Sin descripciones largas, contadores discretos | Nombre, descripción y chevron |
 | Diseñado como centro Personal completo | Diseñado como entrada mínima de la primera versión |
 
-El SVG que muestra la columna de cuatro filas pertenece a la reducción posterior. No sustituye el concepto anterior ni demuestra que el propietario haya cambiado su preferencia visual.
+El SVG que muestra la columna de cuatro filas pertenece a la reducción posterior. No sustituye el concepto anterior ni demuestra que el propietario haya cambiado su preferencia visual. La tarjeta sólida con borde fino es la última especificación registrada antes de esa reducción; la alternativa transparente fue una exploración anterior que se descartó posteriormente.
 
 ## 8. Fuentes históricas verificables
 
@@ -143,7 +143,7 @@ El SVG que muestra la columna de cuatro filas pertenece a la reducción posterio
 - [Distribución 2×2 y fila de listas aprobada](https://github.com/ElFast-dev/Prisma/commit/51215e749635a7395c9cba171c9d8a8d085d7259)
 - [Composición interna de icono/contador/nombre](https://github.com/ElFast-dev/Prisma/commit/367d4e31894cae6c27b27f427cd724207b888348)
 - [Tarjetas casi cuadradas](https://github.com/ElFast-dev/Prisma/commit/35400bc76f894f7c532cc700912d45524e586628)
-- [Tarjetas transparentes con borde fino](https://github.com/ElFast-dev/Prisma/commit/a3d1870b4eccb63941d575d6819fd9d6ffeebaaa)
+- [Primera exploración de tarjetas transparentes con borde fino](https://github.com/ElFast-dev/Prisma/commit/a3d1870b4eccb63941d575d6819fd9d6ffeebaaa)
 - [Iconografía lineal minimalista](https://github.com/ElFast-dev/Prisma/commit/c35c2c58ae047e9aa8fd4a6473084422e16a4fb8)
 - [Personal sin encabezado y con contadores](https://github.com/ElFast-dev/Prisma/commit/d91b52e98e88d428db156d8a850f359f0098b60b)
 - [Píldora inferior compacta de 240×64](https://github.com/ElFast-dev/Prisma/commit/397a63faf730c580aae1aa1981359bbce346de7d)
