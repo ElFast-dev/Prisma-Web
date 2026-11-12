@@ -22,8 +22,10 @@ Fuentes oficiales consultadas para el diseño de la PWA. Las decisiones concreta
 - MDN — Service Worker API: https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
 - MDN — Web Workers: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API
 - Chrome Developers — File System Access API: https://developer.chrome.com/docs/capabilities/web-apis/file-system-access
-- vite-plugin-pwa — documentación: https://vite-pwa-org.netlify.app/
-- vite-plugin-pwa — React update prompt: https://vite-pwa-org.netlify.app/frameworks/react
+- MDN — Web App Manifest: https://developer.mozilla.org/en-US/docs/Web/Manifest
+- MDN — Service Worker API: https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+
+No se selecciona todavía ninguna biblioteca PWA específica. Estas referencias explican APIs web; no prescriben React, Vite ni un plugin.
 
 ## GitHub
 
