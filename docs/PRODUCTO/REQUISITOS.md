@@ -37,7 +37,7 @@ No debe sentirse como otro catálogo ni como una red social. Debe ser cinematogr
 
 ## 4. Primera entrega candidata — alcance por revisar
 
-El MVP debe permitir completar de principio a fin este recorrido:
+La primera entrega candidata debería permitir completar de principio a fin este recorrido, si el propietario confirma que sigue siendo la prioridad:
 
 **Crear una película manualmente o encontrarla con TMDB → guardarla en Pendientes → registrar uno o varios visionados con fecha y calificación → encontrarla en Historial → ocultarla y restaurarla conservando el estado previo → crear una lista personalizada y añadir/quitar películas → consultar y modificar el diario sin conexión → exportar una copia cifrada y restaurarla sin perder datos.**
 
@@ -74,10 +74,10 @@ No existe un mapa de versiones futuras. La composición de entregas se definirá
 ## 6. Experiencia y navegación
 
 Se conserva la estructura aprobada de dos secciones principales:
-- **Personal:** Historial, Pendientes, Ocultos y Gestionar listas en el MVP.
+- **Personal:** Historial, Pendientes, Ocultos y Gestionar listas en la primera entrega, si se confirma ese alcance.
 - **Descubrir:** búsqueda de películas y acceso a su ficha.
 
-Estadísticas es una función candidata posterior a la primera entrega. No se muestra un acceso vacío o deshabilitado en el MVP.
+Estadísticas es una función candidata posterior a la primera entrega. No se muestra un acceso vacío o deshabilitado.
 
 Los nombres propios se mantienen: **Espectro**, **Obsidiana** y **Cuarzo**. La interfaz y los mensajes se mantienen en español.
 
