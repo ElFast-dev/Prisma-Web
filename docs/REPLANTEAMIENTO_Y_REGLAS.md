@@ -25,7 +25,7 @@ Se deben volver a evaluar antes de reutilizar:
 - navegación, pantallas, medidas, componentes, iconos y demás recursos visuales;
 - cualquier decisión técnica que solo se hubiera justificado para Android nativo.
 
-Las propuestas creadas durante la preparación de Prisma-Web tampoco quedan aprobadas por estar escritas. React, Vite, IndexedDB, Workers, OPFS, Argon2id y cualquier otra tecnología siguen siendo opciones que deben justificarse. No se elige una herramienta por inercia.
+Las propuestas creadas durante la preparación de Prisma-Web tampoco quedan aprobadas por estar escritas. React, Vite, IndexedDB, Workers, OPFS, Argon2id y cualquier otra tecnología siguen siendo opciones que deben compararse y justificarse. No se elige una herramienta por inercia ni por ser la opción más básica.
 
 El material heredado se clasifica así:
 1. **Confirmado por el propietario:** instrucción expresa y vigente.
