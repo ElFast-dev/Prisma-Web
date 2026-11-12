@@ -33,13 +33,19 @@ Cada decisión tecnológica importante debe incluir alternativas evaluadas, vent
 
 Separar con claridad interfaz/navegación, reglas de producto, persistencia y APIs del navegador/conectividad externa. No crear de inicio microservicios, sistemas de plugins, contenedores de dependencias, buses de eventos, capas genéricas ni carpetas vacías. La estructura crece cuando una necesidad real lo exija.
 
-## Datos locales
+## Almacenamiento local y datos
 
-IndexedDB es una opción candidata para datos estructurados y relaciones; debe validarse con las consultas y el volumen real antes de congelar el esquema.
+IndexedDB, bibliotecas de acceso tipado y transaccional, OPFS y soluciones basadas en SQLite/WASM son candidatas a comparar según el volumen, consultas, relaciones, integridad, velocidad y recuperación que necesite Prisma. Ninguna queda elegida de antemano por ser la API más básica, la más conocida o la que requiera menos código.
 
-Separar datos personales no reconstruibles, metadatos externos que puedan descargarse otra vez e imágenes/recursos temporales. Una caché nunca será la única copia de información personal.
+La evaluación debe considerar:
+- integridad transaccional y resistencia a fallos;
+- consultas, índices, búsquedas y crecimiento de datos;
+- rendimiento y memoria en Android real;
+- límites de cuota, persistencia y comportamiento offline;
+- facilidad de migración, exportación, recuperación y depuración;
+- madurez, mantenimiento, seguridad, licencia y coste de 0 USD.
 
-No introducir OPFS ni SQLite/WASM sin evidencia de que IndexedDB no cubre los casos necesarios.
+Separar datos personales no reconstruibles, metadatos externos que puedan descargarse otra vez e imágenes/recursos temporales. Una caché nunca será la única copia de información personal. La solución final debe elegirse por superioridad demostrable para el caso real, no por prejuicio a favor de lo básico o de lo complejo.
 
 ## Capacidades PWA
 
