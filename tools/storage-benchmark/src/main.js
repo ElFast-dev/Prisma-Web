@@ -1,0 +1,346 @@
+import Dexie from "../node_modules/dexie/dist/dexie.mjs";
+
+const $ = (id) => document.getElementById(id);
+const FIELDS = [
+  ["openMs", "Apertura"],
+  ["dataBuildMs", "Generación del dataset"],
+  ["insertMs", "Inserción + commit"],
+  ["yearQueryMs", "Consulta por año"],
+  ["titleQueryMs", "Búsqueda por título"],
+  ["viewsQueryMs", "Visionados ordenados"],
+  ["updateMs", "Actualizar calificación"],
+  ["rollbackMs", "Rollback"],
+  ["reopenMs", "Cerrar + reabrir"],
+  ["totalMs", "Tiempo total"]
+];
+
+let lastReport = null;
+
+function pad(value, width = 6) {
+  return String(value).padStart(width, "0");
+}
+
+function buildDataset(movieCount, viewsPerMovie) {
+  const movies = [];
+  const views = [];
+  for (let i = 0; i < movieCount; i += 1) {
+    const id = `movie-${pad(i)}`;
+    const title = `Prisma Film ${pad(i)}`;
+    const year = 1980 + (i % 47);
+    movies.push({ id, title, year });
+
+    for (let j = 0; j < viewsPerMovie; j += 1) {
+      views.push({
+        id: `view-${pad(i)}-${j}`,
+        movieId: id,
+        watchedAt: Date.UTC(2020 + (j % 6), (i + j) % 12, 1 + ((i + j) % 27), 20, 0, 0),
+        rating: ((i + j) % 10) + 1
+      });
+    }
+  }
+  const targetIndex = Math.floor(movieCount / 2);
+  return {
+    movies,
+    views,
+    targetMovieId: `movie-${pad(targetIndex)}`,
+    targetTitle: `Prisma Film ${pad(targetIndex)}`,
+    targetViewId: `view-${pad(targetIndex)}-0`,
+    expectedViews: movieCount * viewsPerMovie,
+    expectedViewsForTarget: viewsPerMovie
+  };
+}
+
+function elapsed(start) {
+  return Number((performance.now() - start).toFixed(2));
+}
+
+async function storageEstimate() {
+  try {
+    if (!navigator.storage?.estimate) return null;
+    const value = await navigator.storage.estimate();
+    return {
+      usage: Number.isFinite(value.usage) ? value.usage : null,
+      quota: Number.isFinite(value.quota) ? value.quota : null
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function runDexie(movieCount, viewsPerMovie, round) {
+  const dbName = `prisma-dexie-benchmark-${Date.now()}-${round}`;
+  const db = new Dexie(dbName, { chromeTransactionDurability: "strict" });
+  db.version(1).stores({
+    movies: "id,title,year",
+    views: "id,movieId,watchedAt,[movieId+watchedAt]"
+  });
+
+  const totalStart = performance.now();
+  try {
+    let openStart = performance.now();
+    await db.open();
+    const openMs = elapsed(openStart);
+
+    const buildStart = performance.now();
+    const data = buildDataset(movieCount, viewsPerMovie);
+    const dataBuildMs = elapsed(buildStart);
+
+    const insertStart = performance.now();
+    await db.transaction("rw", db.movies, db.views, async () => {
+      await db.movies.bulkAdd(data.movies);
+      await db.views.bulkAdd(data.views);
+    });
+    const insertMs = elapsed(insertStart);
+
+    let queryStart = performance.now();
+    const yearCount = await db.movies.where("year").equals(2000).count();
+    const yearQueryMs = elapsed(queryStart);
+
+    queryStart = performance.now();
+    const titleMatch = await db.movies.where("title").equals(data.targetTitle).first();
+    const titleQueryMs = elapsed(queryStart);
+
+    queryStart = performance.now();
+    const targetViews = await db.views
+      .where("[movieId+watchedAt]")
+      .between([data.targetMovieId, Dexie.minKey], [data.targetMovieId, Dexie.maxKey])
+      .reverse()
+      .toArray();
+    const viewsQueryMs = elapsed(queryStart);
+
+    const updateStart = performance.now();
+    await db.views.update(data.targetViewId, { rating: 8 });
+    const updatedRating = (await db.views.get(data.targetViewId))?.rating ?? null;
+    const updateMs = elapsed(updateStart);
+
+    const rollbackStart = performance.now();
+    try {
+      await db.transaction("rw", db.movies, async () => {
+        await db.movies.add({ id: "rollback-sentinel", title: "Rollback sentinel", year: 2000 });
+        throw new Error("Rollback sintético solicitado");
+      });
+    } catch {
+      // El error es intencional: la transacción debe revertirse.
+    }
+    const rollbackRemaining = await db.movies.where("id").equals("rollback-sentinel").count();
+    const rollbackMs = elapsed(rollbackStart);
+
+    const reopenStart = performance.now();
+    db.close();
+    await db.open();
+    const reopenedCount = await db.views.count();
+    const reopenMs = elapsed(reopenStart);
+
+    return {
+      backend: "Dexie 4.4.7 / IndexedDB",
+      round,
+      openMs,
+      dataBuildMs,
+      insertMs,
+      yearQueryMs,
+      titleQueryMs,
+      viewsQueryMs,
+      updateMs,
+      rollbackMs,
+      reopenMs,
+      totalMs: elapsed(totalStart),
+      yearCount,
+      titleMatches: titleMatch ? 1 : 0,
+      viewsRead: targetViews.length,
+      totalViews: await db.views.count(),
+      updatedRating,
+      rollbackRemaining,
+      reopenedCount,
+      expectedViews: data.expectedViews,
+      expectedViewsForTarget: data.expectedViewsForTarget
+    };
+  } finally {
+    db.close();
+    try {
+      await db.delete();
+    } catch {
+      // Si la base no llegó a abrirse, el navegador puede no tener nada que eliminar.
+    }
+  }
+}
+
+function createSqliteWorker() {
+  return new Worker(new URL("./sqlite-worker.js", import.meta.url), { type: "module" });
+}
+
+async function runSQLite(movieCount, viewsPerMovie, round) {
+  const worker = createSqliteWorker();
+  try {
+    return await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        worker.terminate();
+        reject(new Error("SQLite Worker agotó el tiempo de espera (120 s)."));
+      }, 120000);
+
+      worker.onmessage = (event) => {
+        const message = event.data;
+        if (message.type === "result") {
+          clearTimeout(timeout);
+          resolve(message.result);
+        } else if (message.type === "error") {
+          clearTimeout(timeout);
+          reject(new Error(message.message || "Error desconocido de SQLite."));
+        }
+      };
+      worker.onerror = (event) => {
+        clearTimeout(timeout);
+        reject(new Error(event.message || "Error del Worker SQLite."));
+      };
+      worker.postMessage({ type: "run", movieCount, viewsPerMovie, round });
+    });
+  } finally {
+    worker.terminate();
+  }
+}
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function summarize(runs) {
+  const summary = {};
+  for (const [field] of FIELDS) {
+    summary[field] = Number(median(runs.map((run) => run[field])).toFixed(2));
+  }
+  return summary;
+}
+
+function ms(value) {
+  return `${Number(value).toFixed(2)} ms`;
+}
+
+function showResults(dexieRuns, sqliteRuns, config) {
+  const dexie = summarize(dexieRuns);
+  const sqlite = summarize(sqliteRuns);
+  $("resultRows").innerHTML = "";
+
+  for (const [field, label] of FIELDS) {
+    const tr = document.createElement("tr");
+    for (const value of [label, ms(dexie[field]), ms(sqlite[field])]) {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.append(td);
+    }
+    $("resultRows").append(tr);
+  }
+
+  const reference = dexieRuns[0];
+  const valid = [...dexieRuns, ...sqliteRuns].every((item) =>
+    item.totalViews === config.expectedViews &&
+    item.reopenedCount === config.expectedViews &&
+    item.viewsRead === config.viewsPerMovie &&
+    item.titleMatches === 1 &&
+    item.updatedRating === 8 &&
+    item.rollbackRemaining === 0 &&
+    item.yearCount === reference.yearCount
+  );
+
+  $("integrity").className = "status " + (valid ? "ok" : "bad");
+  $("integrity").textContent = valid
+    ? "Integridad comparable: los dos motores devolvieron los conteos esperados, actualizaron una sola nota y revirtieron la transacción sintética."
+    : "ATENCIÓN: hay diferencias de integridad entre motores o rondas. Conserva el informe y no elijas una base de datos todavía.";
+
+  return { dexie, sqlite, integrityPassed: valid };
+}
+
+function updateProgress(done, total, message) {
+  $("progressBar").style.width = `${Math.round((done / total) * 100)}%`;
+  $("status").className = "status";
+  $("status").textContent = message;
+}
+
+async function runAll() {
+  const [movieCount, viewsPerMovie] = $("dataset").value.split(":").map(Number);
+  const totalRounds = 3;
+  const dexieRuns = [];
+  const sqliteRuns = [];
+  lastReport = null;
+  $("download").disabled = true;
+  $("run").disabled = true;
+  $("resultRows").innerHTML = "<tr><td colspan='3'>Ejecutando…</td></tr>";
+  $("integrity").textContent = "";
+  const storageBefore = await storageEstimate();
+
+  try {
+    for (let round = 1; round <= totalRounds; round += 1) {
+      if (round % 2 === 1) {
+        updateProgress((round - 1) * 2, totalRounds * 2, `Ronda ${round}/3 · Dexie…`);
+        dexieRuns.push(await runDexie(movieCount, viewsPerMovie, round));
+        updateProgress((round - 1) * 2 + 1, totalRounds * 2, `Ronda ${round}/3 · SQLite WASM / OPFS…`);
+        sqliteRuns.push(await runSQLite(movieCount, viewsPerMovie, round));
+      } else {
+        updateProgress((round - 1) * 2, totalRounds * 2, `Ronda ${round}/3 · SQLite WASM / OPFS…`);
+        sqliteRuns.push(await runSQLite(movieCount, viewsPerMovie, round));
+        updateProgress((round - 1) * 2 + 1, totalRounds * 2, `Ronda ${round}/3 · Dexie…`);
+        dexieRuns.push(await runDexie(movieCount, viewsPerMovie, round));
+      }
+    }
+
+    const expectedViews = movieCount * viewsPerMovie;
+    const config = { movieCount, viewsPerMovie, expectedViews };
+    const summary = showResults(dexieRuns, sqliteRuns, config);
+    const storageAfter = await storageEstimate();
+
+    lastReport = {
+      tool: "Prisma Storage Benchmark",
+      version: 1,
+      generatedAt: new Date().toISOString(),
+      browser: navigator.userAgent,
+      secureContext: isSecureContext,
+      deviceMemoryReported: navigator.deviceMemory || null,
+      hardwareConcurrencyReported: navigator.hardwareConcurrency || null,
+      storageBefore,
+      storageAfter,
+      dataset: config,
+      rounds: totalRounds,
+      dexie: { version: "4.4.7", runs: dexieRuns, median: summary.dexie },
+      sqlite: {
+        packageVersion: "3.54.1-build1",
+        runtimeVersion: sqliteRuns[0]?.sqliteCoreVersion || null,
+        runs: sqliteRuns,
+        median: summary.sqlite
+      },
+      integrityPassed: summary.integrityPassed,
+      notes: [
+        "SQLite usa OPFS SAH pool dentro de un Worker; Dexie usa IndexedDB con chromeTransactionDurability strict.",
+        "La medición incluye inicialización de SQLite WASM y Worker, pero no la instalación npm ni la descarga inicial de dependencias.",
+        "El valor de StorageManager.estimate es informativo y no se considera cuota garantizada.",
+        "SQLite SAH pool limita conexiones concurrentes; el benchmark no convierte ese VFS en una decisión de arquitectura aprobada."
+      ]
+    };
+    $("download").disabled = false;
+    updateProgress(totalRounds * 2, totalRounds * 2, summary.integrityPassed
+      ? "Comparación completada. Las bases sintéticas se han eliminado."
+      : "Comparación terminada con diferencias de integridad; revisa el informe.");
+  } catch (error) {
+    $("status").className = "status bad";
+    $("status").textContent = `La comparación no pudo completarse: ${error.message}`;
+    $("integrity").className = "status bad";
+    $("integrity").textContent = "No se debe elegir un almacenamiento con una prueba incompleta.";
+  } finally {
+    $("run").disabled = false;
+  }
+}
+
+function downloadReport() {
+  if (!lastReport) return;
+  const blob = new Blob([JSON.stringify(lastReport, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "prisma-storage-benchmark-report.json";
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+$("run").addEventListener("click", runAll);
+$("download").addEventListener("click", downloadReport);
