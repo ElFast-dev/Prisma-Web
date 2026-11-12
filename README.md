@@ -21,7 +21,7 @@ La guía vigente es [Replanteamiento y reglas](docs/REPLANTEAMIENTO_Y_REGLAS.md)
 ## Cómo se trabajará
 
 1. Resolver solo los fundamentos necesarios para construir una aplicación completa y segura.
-2. Elegir las soluciones más simples que cumplan los requisitos reales.
+2. Elegir la mejor solución técnica disponible para cada necesidad, priorizando calidad, seguridad, rendimiento, estabilidad y mantenibilidad; no recurrir a herramientas básicas por comodidad.
 3. Desarrollar un recorrido de usuario completo cada vez, desde la interfaz hasta el almacenamiento y la reapertura.
 4. Verificarlo en Android, con y sin conexión cuando corresponda.
 5. Ampliar la aplicación cuando la capacidad anterior ya sea utilizable.
@@ -35,7 +35,7 @@ No se considera progreso suficiente acumular documentación, scaffolding, abstra
 3. [Requisitos de producto — todavía revisables](docs/PRODUCTO/REQUISITOS.md)
 4. [Plan de trabajo](docs/ROADMAP.md)
 5. [Arquitectura — opciones por validar](docs/TECNICO/ARQUITECTURA.md)
-6. [Identificación de entregas](docs/TECNICO/ENTREGAS.md)
+6. [Versionado semántico](docs/TECNICO/VERSIONADO.md)
 7. [Alojamiento y origen — decisión pendiente](docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md)
 8. [Registro de decisiones](docs/DECISIONES/REGISTRO.md)
 9. [Estado visual — referencias por revalidar](docs/DISENO/ESTADO_VISUAL.md)
@@ -45,4 +45,4 @@ Los demás documentos técnicos apoyan estas fuentes, pero sus propuestas no est
 
 ## Entregas
 
-No se mantiene un mapa de versiones futuras. Una edición pública se asignará únicamente cuando Prisma incorpore una capacidad real, coherente y aceptada. Los commits y builds internos se identifican técnicamente y no se presentan como versiones del producto.
+Prisma usa SemVer en formato MAYOR.MENOR.PARCHE. Cada incremento depende del impacto real en compatibilidad y de una entrega aceptada; no se reservan números para fases futuras ni se incrementa por commits, documentos o builds.
