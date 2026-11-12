@@ -61,3 +61,28 @@ No eliminar ni sustituir los originales hasta que exista una revisión visual nu
 - La misma geometría y jerarquía se presenta en Obsidiana y Cuarzo, adaptando exclusivamente las superficies, textos, contornos y acentos a sus paletas confirmadas.
 
 No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni los filtros para ocultar Vista/Pendiente: se mantienen fuera de esta decisión hasta revisar su alcance por separado.
+
+
+## Ajustes
+
+**Estado:** dirección de organización visual aprobada por el propietario el 12 de noviembre de 2026; no es una especificación de cada subpantalla ni una implementación.
+
+- Pantalla titulada «Ajustes», con navegación de regreso y sin la píldora inferior.
+- Tres grupos principales, separados visualmente sin acumular tarjetas: **Apariencia**, **Conexiones** y **Datos locales**.
+- Apariencia contiene «Tema de apariencia» y un selector segmentado de dos opciones: Obsidiana y Cuarzo. El estado seleccionado usa el acento del tema; el cambio se concibe inmediato.
+- Conexiones contiene la entrada TMDB, con descripción breve y un estado ilustrativo de configuración; el estado real deberá provenir de la configuración y verificación reales.
+- Datos locales ofrece entradas a «Almacenamiento» y «Copias de seguridad».
+- Se conserva una nota de privacidad discreta: el diario personal permanece en el dispositivo; TMDB no recibe el historial, listas, calificaciones ni perfil personal.
+- No se incorporan todavía idioma, región, protección de spoilers, mosaico alternativo, modos de Espectro ni actualizaciones dentro de la aplicación.
+- La composición, geometría y jerarquía se mantienen equivalentes en Obsidiana y Cuarzo, con sus respectivas paletas.
+
+## Navegación principal — visibilidad de la píldora
+
+**Estado:** confirmado por el propietario el 12 de noviembre de 2026.
+
+- La píldora flotante con «Personal» y «Descubrir» pertenece exclusivamente al nivel raíz de navegación.
+- Se muestra en la pantalla principal de Personal y en la pantalla principal de Descubrir.
+- Se oculta al entrar en una vista secundaria o de detalle: Historial, Pendientes, Ocultos, Gestionar listas, contenido/edición de listas, Ajustes, almacenamiento, copias de seguridad y ficha cinematográfica.
+- Las vistas secundarias conservan un mecanismo claro para regresar a su contexto anterior (por ejemplo, flecha de regreso); la píldora no sustituye esa navegación contextual.
+- Su geometría y carácter flotante aprobados no cambian. Esta regla controla únicamente dónde aparece.
+
