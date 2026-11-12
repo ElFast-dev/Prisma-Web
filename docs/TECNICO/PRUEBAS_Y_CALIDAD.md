@@ -46,28 +46,28 @@ El propietario ha facilitado el siguiente perfil para pruebas reales:
 - **Almacenamiento:** 109 GB internos; se observaron unos 6,2 GB libres al facilitar el perfil (dato temporal, no cuota del navegador).
 - **Medio extraíble:** tarjeta microSD cercana a 7 GB, FAT32.
 - **Pantalla:** densidad informada de 300 dpi; el perfil no incluye aún la resolución exacta.
-- **Navegador:** Chrome Android; versión exacta pendiente de registrar.
+- **Navegador:** Brave Android 1.99.56, motor Chromium 157.0.8103.50 (informado por el propietario el 12 de noviembre de 2026).
 - **Herramientas:** depuración ADB activada y Termux con Node.js 24 LTS. Termux:API no está instalado/configurado; no se dependerá de él para medir la PWA.
 
 No es necesario registrar información de SIM, operador, identificadores de cuenta ni datos sensibles del dispositivo en el repositorio. El perfil se limita a las características técnicas relevantes para rendimiento, almacenamiento y compatibilidad.
 
 ## Protocolo de prueba en el Galaxy A03
 
-1. Registrar la versión exacta de Chrome (abrir chrome://version en el navegador), espacio libre disponible, estado de batería y si se prueba desde pestaña normal o PWA instalada.
+1. Confirmar que Brave sigue en 1.99.56 / Chromium 157.0.8103.50 (revisar brave://version cuando cambie), registrar el espacio libre disponible, estado de batería y si se prueba desde pestaña normal o PWA instalada.
 2. Probar arranque en frío, navegación y uso repetido con el teléfono en estado normal; repetir después de reiniciar para separar efectos de memoria acumulada.
 3. Repetir las pruebas de almacenamiento con datasets sintéticos de 1.000 y 10.000 películas y proporciones de 1, 3 y 10 visionados por película. No importar datos personales del usuario.
 4. Comparar búsqueda, historial, inserción de visionados, actualización de calificación, orden cronológico y operaciones transaccionales.
 5. Registrar memoria y respuesta de la interfaz mientras el navegador conserva otras aplicaciones en segundo plano; comprobar que no haya cierres/reinicios de pestaña, congelaciones ni pérdida de cambios.
 6. Consultar navigator.storage.estimate() y navigator.storage.persist(); mostrar los valores reales y probar persistencia concedida/denegada sin asumir que la concesión es automática.
-7. Probar OPFS en contexto HTTPS y dentro de Worker, incluyendo cuota, reinicio, limpieza del sitio y manejo de errores. No colocar datos de producción en OPFS durante la comparativa.
+7. Primero detectar en Brave si `navigator.storage.getDirectory` está disponible; si existe, probar OPFS en HTTPS y dentro de Worker, incluyendo cuota y manejo de errores. Brave declara que desactiva la File System API, de la que OPFS forma parte, por lo que la ausencia de la API debe registrarse como resultado válido y descartar OPFS para el navegador objetivo. No colocar datos reales en OPFS durante la comparativa.
 8. Medir derivación Argon2id, cifrado y descifrado de una copia sintética de tamaño acotado; medir tiempo y memoria máxima. Nunca reducir parámetros por debajo de una configuración mínima aceptada para acelerar la prueba.
-9. Probar descarga de un archivo de backup y su restauración. No asumir que IndexedDB/OPFS puede trasladarse a la SD; verificar aparte si Chrome permite al usuario elegir un archivo visible para importar/exportar.
+9. Probar exportación de un backup como archivo descargable y su restauración mediante el selector de archivo estándar de Android. Comprobar aparte `showOpenFilePicker` y `showSaveFilePicker`, pero no hacer que el respaldo dependa de esas APIs ni asumir que IndexedDB/OPFS puede trasladarse a la SD.
 10. Comprobar instalación, modo avión, recuperación tras cerrar/reabrir y actualización del Service Worker sin perder transacciones.
 
 ### Condiciones de seguridad de las pruebas
 
 - No llenar de forma deliberada el almacenamiento interno ni la microSD.
-- No borrar datos de Chrome, datos del sitio ni archivos del usuario como parte de la limpieza.
+- El propietario puede liberar espacio general del teléfono antes de una sesión. El banco de pruebas no borrará datos de Brave, datos del sitio ni archivos personales; solo podrá limpiar el origen y los datasets sintéticos que él mismo haya creado.
 - Toda prueba de borrado se limita al origen y dataset sintético creado específicamente para ella.
 - Una cuota o error de escritura debe detener la operación limpiamente; nunca se permite una escritura parcial que parezca exitosa.
 - El estado «persistente» se verifica mediante el resultado real de la API, no se deduce del modelo del teléfono.
