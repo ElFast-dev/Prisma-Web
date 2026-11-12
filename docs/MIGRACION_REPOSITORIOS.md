@@ -41,6 +41,19 @@ Se inspeccionaron `main` y:
 
 Se eligió `feature/fase1-android-foundation` como la fuente más completa de documentos/activos aprobados al momento de la migración. Se trasladaron los últimos requisitos, roadmap, contexto, diseño técnico, referencias, operación de GitHub, versión Android histórica, validación física y recursos visuales.
 
+### Puntas de ramas registradas antes de retirar el repositorio
+
+| Rama | Commit HEAD |
+|---|---|
+| `main` | `f8d7cc4e0cbff6e27e3bb3901a55c426a0d0c08e` |
+| `fase-1/fundamentos-android` | `017a12ed5635f96e6256a5d3d4241180ded1f5d5` |
+| `feature/ci121-insets-diagnostic` | `36fdf8c1d8964b34c10ba8c5ed49920c822ee2a0` |
+| `feature/ci-fast-feedback` | `fa34d97dfd5d44503914c7847e0dec5e7f877aa4` |
+| `feature/fase1-android-foundation` | `2c5d53307e1fc82a28d898a3331ab18d732d8cf2` |
+| `feature/fase1-theme-datastore-tests` | `ba280514622feb813a6ebc5e9c59d8228619dcf9` |
+
+Las puntas se registran para trazabilidad histórica. No se ha importado la historia Git completa, ni se ha copiado el código Android de las ramas.
+
 No se trasladaron Kotlin, Gradle, APK, workflows de Android, keystores de prueba ni certificados TLS de instrumentación. No se ha intentado migrar el historial Git entero ni conservar una app Android ejecutable porque el propietario cambió expresamente la plataforma.
 
 ## 4. Secuencia final para el cambio de nombre
