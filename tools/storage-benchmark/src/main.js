@@ -313,6 +313,20 @@ async function runAll() {
     await new Promise((resolve) => setTimeout(resolve, 300));
     const storageAfter = await storageEstimate();
     const opfsCleanup = await inspectBenchmarkOpfsDirectory();
+    summary.opfsCleanupPassed = opfsCleanup.exists === false;
+    summary.integrityPassed = summary.integrityPassed && summary.opfsCleanupPassed;
+    $("cleanupCheck").className = "status " + (
+      opfsCleanup.exists === false ? "ok" : opfsCleanup.exists === true ? "warn" : "bad"
+    );
+    $("cleanupCheck").textContent = opfsCleanup.exists === false
+      ? "OPFS temporal: directorio de pruebas eliminado."
+      : opfsCleanup.exists === true
+        ? "ATENCIÓN: aún existe el directorio OPFS de pruebas (" + (opfsCleanup.entries || []).join(", ") + "). Usa la limpieza y conserva este informe."
+        : "No se pudo verificar el directorio OPFS: " + (opfsCleanup.error || "resultado desconocido") + ".";
+    if (!summary.opfsCleanupPassed) {
+      $("integrity").className = "status bad";
+      $("integrity").textContent = "Los datos de prueba pasaron la integridad, pero no se pudo confirmar la limpieza del directorio OPFS.";
+    }
 
     lastReport = {
       tool: "Prisma Storage Benchmark",
