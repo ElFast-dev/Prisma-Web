@@ -108,4 +108,4 @@ Los nombres propios se mantienen: **Espectro**, **Obsidiana** y **Cuarzo**. La i
 
 El archivo Android conserva decisiones y requisitos anteriores para consulta. Ninguno se convierte en especificación web solo porque no dependa de Kotlin o Compose. Revalidar utilidad, prioridad y experiencia PWA, y registrar únicamente las decisiones que el propietario vuelva a confirmar.
 
-**Pendiente:** elegir el primer recorrido realmente útil, aprobar su alcance y cerrar los fundamentos técnicos y de coste cero. No se utiliza un mapa de versiones SemVer.
+**Pendiente:** terminar la validación técnica del primer recorrido y obtener aprobación expresa para comenzar el código de producto. No se utiliza un mapa de versiones SemVer.
