@@ -25,13 +25,13 @@ Este recorrido es una primera capacidad vertical, no una definición de todas la
 - [x] Seleccionar el primer recorrido funcional.
 - [x] Conservar las composiciones visuales y comportamientos aprobados para ese recorrido.
 - [x] Confirmar que la aplicación será local-first, sin cuenta ni backend propio y con coste de 0 USD.
-- [ ] Comparar SvelteKit 3 y React Router 8 con la misma muestra y el mismo comportamiento.
-- [ ] Comparar Dexie/IndexedDB con SQLite/WASM/OPFS en el teléfono Android objetivo.
+- [ ] Comparar SvelteKit 3 y React Router 8 con la misma muestra y el mismo comportamiento en el Galaxy A03 (dispositivo objetivo ya identificado; falta versión exacta de Chrome).
+- [ ] Comparar Dexie/IndexedDB con SQLite/WASM/OPFS en el Galaxy A03, con 4 GB de RAM y poco espacio libre.
 - [ ] Cerrar el modelo conceptual de películas, visionados y calificaciones provisionales.
 - [ ] Aprobar persistencia, formato de copia cifrada, KDF, cifrado autenticado y recuperación segura.
 - [ ] Elegir el alojamiento estático y aprobar el origen HTTPS definitivo sin riesgo de facturación.
 - [ ] Definir actualización PWA sin interrumpir operaciones ni mezclar archivos incompatibles.
-- [ ] Ejecutar pruebas en Android y acordar criterios de aceptación.
+- [ ] Registrar la versión exacta de Chrome y ejecutar pruebas de aceptación en el Galaxy A03.
 - [ ] Recibir autorización expresa para iniciar el código de producto.
 
 ## Recomendaciones técnicas preliminares
