@@ -8,15 +8,26 @@ La PWA debe ser una aplicación cliente que pueda instalarse en Android, conserv
 
 No se presupone un servidor de Prisma. El alojamiento entrega archivos estáticos y cuesta 0 USD. No se incorpora backend, sincronización en nube, telemetría ni servicio de cuenta.
 
-## Elegir tecnología por necesidad
+## Selección de tecnología: máxima calidad demostrable
 
-React + TypeScript + Vite fue una propuesta inicial, no una decisión. Antes de elegir se compararán:
-- JavaScript/TypeScript modular con DOM nativo;
-- un framework de interfaz, solo si la complejidad real de estado, navegación y componentes lo justifica.
+No se fija de antemano un stack. React + TypeScript + Vite fue una propuesta inicial, no una decisión. Tampoco se da preferencia automática al DOM nativo, a herramientas básicas o a una arquitectura reducida.
 
-La decisión se basará en la complejidad de los recorridos, facilidad de mantenimiento, accesibilidad, tamaño del build, rendimiento en el teléfono, compatibilidad PWA/offline, pruebas y disponibilidad gratuita.
+Para cada área se deben comparar las opciones modernas y maduras que puedan resolver el problema, incluidas arquitecturas de interfaz, almacenamiento, procesamiento, cifrado, pruebas y distribución. La elección debe justificar por qué es la mejor para Prisma, no solo por qué es fácil de empezar.
 
-No añadir un framework por moda ni evitarlo por dogma. Elegir lo mínimo que permita mantener la aplicación sin duplicar lógica.
+### Criterios obligatorios de evaluación
+
+1. Seguridad y protección de datos.
+2. Rendimiento medido en Android real, fluidez de interfaz, memoria, consumo y tamaño de descarga.
+3. Estabilidad, madurez, mantenimiento activo y calidad del ecosistema.
+4. Compatibilidad con PWA, Chrome Android, instalación, offline y APIs del navegador.
+5. Experiencia de usuario, accesibilidad y capacidad de implementar interacciones complejas sin degradación.
+6. Mantenibilidad a largo plazo, migraciones, documentación y facilidad de depuración.
+7. Licencia clara, cadena de suministro verificable y coste total de 0 USD.
+8. Capacidad para evolucionar el producto sin reescrituras evitables.
+
+No escoger lo más nuevo por moda, ni lo más conocido por inercia, ni lo más simple para reducir trabajo. La mejor solución puede ser compleja cuando la necesidad lo exige. Una opción básica solo se acepta si la comparación demuestra que no sacrifica calidad y es realmente la mejor para el caso.
+
+Cada decisión tecnológica importante debe incluir alternativas evaluadas, ventajas, desventajas, riesgos, pruebas o benchmarks relevantes y razón de descarte de las otras opciones. Las pruebas deben realizarse en el teléfono Android objetivo cuando rendimiento o compatibilidad puedan cambiar la decisión.
 
 ## Organización del código
 
@@ -38,7 +49,7 @@ No asumir acceso equivalente a una aplicación nativa ni afirmar que una PWA uti
 
 ## Cómputo y dependencias
 
-Web Workers, WebAssembly y bibliotecas especializadas son opcionales. Se incorporan solo si una medición o requisito concreto lo justifica. Mantener dependencias mínimas, fijadas y auditables. Ningún script CDN, analítica o paquete externo se incluye sin necesidad clara.
+Web Workers, WebAssembly y bibliotecas especializadas no se descartan por ser más avanzados: se evalúan como herramientas de primera clase cuando puedan aportar rendimiento, seguridad o mejor experiencia. Se incorporan cuando la evidencia indique que son la mejor solución. Las dependencias deben ser de calidad alta, mantenidas, auditables, fijadas y con licencia compatible; no se limita arbitrariamente su número, pero cada una necesita una justificación de valor y riesgo. Ningún script CDN o analítica personal se añade sin aprobación.
 
 ## Seguridad, copias y TMDB
 
@@ -52,4 +63,4 @@ El hosting debe ser estático, HTTPS y costar 0 USD. Cloudflare Pages está rech
 
 ## Criterio para congelar la arquitectura
 
-La arquitectura se aprueba cuando la tecnología elegida resuelve el primer recorrido, tiene un camino claro para almacenamiento/recuperación/offline y no necesita servicios pagados. No hace falta decidir hoy la arquitectura de funciones que todavía no se han aprobado.
+La arquitectura se aprueba cuando la solución seleccionada ha sido comparada con alternativas de primer nivel, demuestra calidad y rendimiento para el primer recorrido, protege los datos, ofrece un camino claro para recuperación/offline y no necesita servicios pagados. No hace falta congelar hoy la arquitectura de funciones que todavía no se han aprobado; se seleccionará la mejor solución cuando exista el requisito que la necesita.
