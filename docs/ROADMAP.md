@@ -26,7 +26,9 @@ Este recorrido es una primera capacidad vertical, no una definición de todas la
 - [x] Conservar las composiciones visuales y comportamientos aprobados para ese recorrido.
 - [x] Confirmar que la aplicación será local-first, sin cuenta ni backend propio y con coste de 0 USD.
 - [ ] Comparar SvelteKit 3 y React Router 8 con la misma muestra y el mismo comportamiento en el Galaxy A03, usando Brave 1.99.56 / Chromium 157.0.8103.50 como navegador de aceptación.
-- [ ] Ejecutar `tools/storage-benchmark/` (1.000 × 3 primero, luego 10.000 × 3 si no hay problemas) y comparar Dexie 4.4.7 con SQLite WASM 3.54.1-build1 + OPFS SAH pool en el Galaxy A03.
+- [x] Ejecutar benchmark Dexie 4.4.7 vs SQLite WASM 3.54.1-build1 + OPFS SAH pool en 1k, 5k y 10k películas; integridad correcta en las tres cargas.
+- [ ] Verificar removeVfs() y residuo OPFS con la versión corregida del benchmark.
+- [ ] Evaluar OPFS-WL/SharedWorker/Web Locks para concurrencia multi-pestaña en Brave.
 - [ ] Cerrar el modelo conceptual de películas, visionados y calificaciones provisionales.
 - [ ] Verificar el marcador IndexedDB tras recarga, offline real, fallback de importación/exportación y persistencia en el origen HTTPS final.
 - [ ] Aprobar formato de copia cifrada, KDF, cifrado autenticado y recuperación segura.
@@ -39,7 +41,7 @@ Este recorrido es una primera capacidad vertical, no una definición de todas la
 ## Recomendaciones técnicas preliminares
 
 - **Framework:** comparar Svelte 5.57.1 + SvelteKit 3.2.0 con React 19.3.0 + React Router 8.5.1. No seleccionar por popularidad ni por menor número de archivos.
-- **Almacenamiento:** Dexie 4.4.7 sobre IndexedDB y SQLite WASM 3.54.1-build1 + OPFS SAH pool son alternativas reales. La herramienta comparativa ya está preparada; falta ejecutarla y evaluar especialmente el uso de varias pestañas.
+- **Almacenamiento:** SQLite WASM + OPFS SAH pool obtuvo una ventaja clara en inserciones (2,76×–4,33×) con integridad correcta hasta 30.000 visionados. Sigue sin aprobarse por concurrencia SAH pool y limpieza OPFS por verificar; Dexie conserva la ventaja de simplicidad/multi-pestaña.
 - **Hosting:** Firebase Hosting clásico en Spark es el candidato actual por su hostname web.app propio y porque Spark no exige método de pago. Debe aprobarse el proyecto/site ID y aceptar los límites de 10 GB de almacenamiento y 10 GB/mes de transferencia; al agotarlos, el servicio se bloquea o pausa en lugar de cobrar mientras no se active Blaze.
 - **Copias:** se estudia un archivo versionado cifrado con Argon2id y AES-256-GCM; ningún parámetro ni biblioteca queda fijado hasta medirlo y revisarlo.
 
