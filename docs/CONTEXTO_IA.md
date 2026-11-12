@@ -42,6 +42,11 @@ Los requisitos completos anteriores se conservan en `docs/ARCHIVO/ANDROID/REQUIS
 7. `docs/DISENO/ESTADO_VISUAL.md`: decisiones visuales heredadas y adaptación web.
 8. `docs/LICENCIAS/TMDB_PRISMA.md`: transcripción de autorización particular proporcionada por el propietario.
 9. `docs/MIGRACION_REPOSITORIOS.md`: traslado y cambio de nombre.
+10. `docs/DECISIONES/REGISTRO.md`: decisiones del propietario y propuestas técnicas.
+11. `docs/TECNICO/MODELO_DE_DATOS.md`: entidades e invariantes.
+12. `docs/TECNICO/PRUEBAS_Y_CALIDAD.md`: estrategia de validación.
+13. `docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md`: hosting y origen canónico.
+14. `docs/REFERENCIAS_TECNICAS.md`: documentación oficial consultada.
 
 El material en `docs/ARCHIVO/ANDROID/` es histórico y de consulta; no prevalece sobre esta guía, los requisitos actuales ni las decisiones más recientes del propietario.
 
