@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1565" viewBox="0 0 1440 1565">
+<title>Prisma · Guía conceptual de iconografía</title>
+<desc>Diez propuestas conceptuales de iconos de interfaz en Obsidiana y Cuarzo, dos ilustraciones auxiliares y tres ideas para icono de aplicación. Ninguna forma es arte final aprobado.</desc>
+<rect width="1440" height="1565" fill="#ECE8E0"/>
+<text x="56" y="58" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="600" letter-spacing="2.4">PRISMA / SISTEMA VISUAL / ICONOGRAFÍA</text>
+<text x="56" y="112" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="600">Direcciones conceptuales</text>
+<text x="56" y="150" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="16">10 símbolos de interfaz · dos temas · geometría preliminar para orientar el diseño final del propietario</text>
+<text x="56" y="184" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="600" letter-spacing="1.5">ICONOS DE INTERFAZ · 24 × 24 dp COMO REFERENCIA BASE</text>
+<rect x="56" y="205" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="76" y="229" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(86 239) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.2"/><path d="M4.8 20c.7-3.5 3.4-5.7 7.2-5.7s6.5 2.2 7.2 5.7"/></g>
+ <rect x="156" y="229" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(166 239) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.2"/><path d="M4.8 20c.7-3.5 3.4-5.7 7.2-5.7s6.5 2.2 7.2 5.7"/></g>
+ <text x="246" y="251" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Personal</text>
+ <text x="246" y="282" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Acceso a la sección Personal y perfil del espacio personal.</text>
+ <text x="246" y="313" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Silueta humana sencilla; cabeza separada del arco de hombros.</text>
+ <text x="80" y="356" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="160" y="356" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="686" y="356" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="740" y="205" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="760" y="229" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(770 239) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 2.7 9 6.8l4.1 1.5L9 9.8l-1.5 4.1L6 9.8 1.9 8.3 6 6.8Z"/><path d="m17.1 11.4 1 2.8 2.8 1-2.8 1-1 2.8-1-2.8-2.8-1 2.8-1Z"/><path d="m17 2  .55 1.55L19.1 4.1l-1.55.55L17 6.2l-.55-1.55L14.9 4.1l1.55-.55Z"/></g>
+ <rect x="840" y="229" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(850 239) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 2.7 9 6.8l4.1 1.5L9 9.8l-1.5 4.1L6 9.8 1.9 8.3 6 6.8Z"/><path d="m17.1 11.4 1 2.8 2.8 1-2.8 1-1 2.8-1-2.8-2.8-1 2.8-1Z"/><path d="m17 2  .55 1.55L19.1 4.1l-1.55.55L17 6.2l-.55-1.55L14.9 4.1l1.55-.55Z"/></g>
+ <text x="930" y="251" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Descubrir</text>
+ <text x="930" y="282" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Acceso a la búsqueda y exploración.</text>
+ <text x="930" y="313" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Destellos de distintos tamaños; ritmo asimétrico pero equilibrado.</text>
+ <text x="764" y="356" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="844" y="356" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="1370" y="356" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="56" y="395" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="76" y="419" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(86 429) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 8.2A8.1 8.1 0 1 1 4.1 16"/><path d="M4.5 3.5v5h5"/><path d="M12 7.2v5l3.5 2"/></g>
+ <rect x="156" y="419" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(166 429) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 8.2A8.1 8.1 0 1 1 4.1 16"/><path d="M4.5 3.5v5h5"/><path d="M12 7.2v5l3.5 2"/></g>
+ <text x="246" y="441" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Historial</text>
+ <text x="246" y="472" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Acceso a películas ya vistas.</text>
+ <text x="246" y="503" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Arco de retorno con flecha y reloj mínimo; lectura inmediata como historial.</text>
+ <text x="80" y="546" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="160" y="546" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="686" y="546" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="740" y="395" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="760" y="419" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(770 429) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.6h10a1.2 1.2 0 0 1 1.2 1.2v15.4L12 16.4l-6.2 3.8V4.8A1.2 1.2 0 0 1 7 3.6Z"/></g>
+ <rect x="840" y="419" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(850 429) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.6h10a1.2 1.2 0 0 1 1.2 1.2v15.4L12 16.4l-6.2 3.8V4.8A1.2 1.2 0 0 1 7 3.6Z"/></g>
+ <text x="930" y="441" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Pendientes</text>
+ <text x="930" y="472" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Acceso a películas guardadas para ver después.</text>
+ <text x="930" y="503" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Marcador vertical con corte inferior en V; sin añadir check ni reloj.</text>
+ <text x="764" y="546" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="844" y="546" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="1370" y="546" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="56" y="585" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="76" y="609" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(86 619) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.7 12s3.1-5.3 9.3-5.3 9.3 5.3 9.3 5.3-3.1 5.3-9.3 5.3S2.7 12 2.7 12Z"/><circle cx="12" cy="12" r="2.5"/><path d="M4 20 20 4"/></g>
+ <rect x="156" y="609" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(166 619) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.7 12s3.1-5.3 9.3-5.3 9.3 5.3 9.3 5.3-3.1 5.3-9.3 5.3S2.7 12 2.7 12Z"/><circle cx="12" cy="12" r="2.5"/><path d="M4 20 20 4"/></g>
+ <text x="246" y="631" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Ocultos</text>
+ <text x="246" y="662" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Acceso a películas ocultas.</text>
+ <text x="246" y="693" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Ojo lineal atravesado por una diagonal clara; conservar legibilidad a 20 dp.</text>
+ <text x="80" y="736" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="160" y="736" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="686" y="736" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="740" y="585" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="760" y="609" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(770 619) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.3" cy="6" r=".7" fill="#BDBDBD" stroke="none"/><circle cx="4.3" cy="12" r=".7" fill="#BDBDBD" stroke="none"/><circle cx="4.3" cy="18" r=".7" fill="#BDBDBD" stroke="none"/><path d="M8.5 6h11M8.5 12h11M8.5 18h11"/></g>
+ <rect x="840" y="609" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(850 619) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.3" cy="6" r=".7" fill="#8A857B" stroke="none"/><circle cx="4.3" cy="12" r=".7" fill="#8A857B" stroke="none"/><circle cx="4.3" cy="18" r=".7" fill="#8A857B" stroke="none"/><path d="M8.5 6h11M8.5 12h11M8.5 18h11"/></g>
+ <text x="930" y="631" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Gestionar listas</text>
+ <text x="930" y="662" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Acceso a la gestión de listas.</text>
+ <text x="930" y="693" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Tres filas paralelas con puntos de inicio; evitar parecer un menú genérico.</text>
+ <text x="764" y="736" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="844" y="736" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="1370" y="736" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="56" y="775" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="76" y="799" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(86 809) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m8.8 5.5 6.5 6.5-6.5 6.5"/></g>
+ <rect x="156" y="799" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(166 809) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m8.8 5.5 6.5 6.5-6.5 6.5"/></g>
+ <text x="246" y="821" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Chevron derecho</text>
+ <text x="246" y="852" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Indica que una fila conduce a otra pantalla.</text>
+ <text x="246" y="883" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Ángulo abierto y ligero; no convertirlo en flecha larga.</text>
+ <text x="80" y="926" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="160" y="926" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="686" y="926" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="740" y="775" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="760" y="799" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(770 809) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.2" cy="10.2" r="6.1"/><path d="m14.7 14.7 5 5"/></g>
+ <rect x="840" y="799" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(850 809) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.2" cy="10.2" r="6.1"/><path d="m14.7 14.7 5 5"/></g>
+ <text x="930" y="821" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Buscar</text>
+ <text x="930" y="852" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Identifica la búsqueda local y de Descubrir.</text>
+ <text x="930" y="883" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Lupa simple de aro circular y mango corto.</text>
+ <text x="764" y="926" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="844" y="926" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="1370" y="926" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="56" y="965" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="76" y="989" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(86 999) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.8 3.1h4.4l.55 2.25 1.7 1 2.05-1 2.2 3.8-1.7 1.65v2.4l1.7 1.65-2.2 3.8-2.05-1-1.7 1-.55 2.25H9.8l-.55-2.25-1.7-1-2.05 1-2.2-3.8L5 13.2v-2.4L3.3 9.15l2.2-3.8 2.05 1 1.7-1Z"/><circle cx="12" cy="12" r="2.7"/></g>
+ <rect x="156" y="989" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(166 999) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.8 3.1h4.4l.55 2.25 1.7 1 2.05-1 2.2 3.8-1.7 1.65v2.4l1.7 1.65-2.2 3.8-2.05-1-1.7 1-.55 2.25H9.8l-.55-2.25-1.7-1-2.05 1-2.2-3.8L5 13.2v-2.4L3.3 9.15l2.2-3.8 2.05 1 1.7-1Z"/><circle cx="12" cy="12" r="2.7"/></g>
+ <text x="246" y="1011" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Ajustes</text>
+ <text x="246" y="1042" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Abre la configuración de la aplicación.</text>
+ <text x="246" y="1073" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Engranaje geométrico de seis dientes y centro abierto; evitar apariencia de sol.</text>
+ <text x="80" y="1116" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="160" y="1116" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="686" y="1116" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<rect x="740" y="965" width="650" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="760" y="989" width="68" height="68" rx="17" fill="#171A20" />
+ <g transform="translate(770 999) scale(2)" fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></g>
+ <rect x="840" y="989" width="68" height="68" rx="17" fill="#F4F1EA" />
+ <g transform="translate(850 999) scale(2)" fill="none" stroke="#8A857B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></g>
+ <text x="930" y="1011" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Volver</text>
+ <text x="930" y="1042" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Regresa a la pantalla anterior.</text>
+ <text x="930" y="1073" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Flecha hacia la izquierda con eje corto y dos diagonales.</text>
+ <text x="764" y="1116" fill="#9B9B9B" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">OBSIDIANA</text>
+ <text x="844" y="1116" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing=".7">CUARZO</text>
+ <text x="1370" y="1116" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="10" text-anchor="end" letter-spacing=".7">PROPUESTA CONCEPTUAL</text>
+<text x="56" y="1131" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="600" letter-spacing="1.5">ILUSTRACIONES Y MARCADORES · NO SON GLIFOS DE ACCIÓN</text>
+<rect x="56" y="1155" width="650" height="166" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <g transform="translate(78 1181) scale(1.15)"><g transform="translate(0 0)" fill="none" stroke="#70AEE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M48 12 78 31 69 78H27L18 31Z"/><path d="M48 12V78M18 31 48 50 78 31"/></g></g>
+ <text x="196" y="1209" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Prisma vacío · ilustración</text>
+ <text x="196" y="1238" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Componente especial usado en estados sin películas.</text>
+ <text x="196" y="1266" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Referencia existente: 96 × 96 dp; no es un icono de acción.</text>
+ <rect x="740" y="1155" width="650" height="166" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <g transform="translate(760 1181) scale(1.05)"><g fill="none" stroke="#BDBDBD" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="28" width="68" height="50" rx="4"/><path d="M18 28 22 12 84 12 80 28Z"/><path d="m34 12-4 16m26-16-4 16m26-16-4 16M18 48h64M18 63h64"/></g></g>
+ <text x="900" y="1209" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="600">Póster no disponible · marcador</text>
+ <text x="900" y="1238" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="14">Sustituto visual dentro del espacio de póster.</text>
+ <text x="900" y="1266" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="12">Referencia existente: símbolo de 28 dp dentro de 56 × 84 dp.</text>
+<text x="56" y="1336" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="600" letter-spacing="1.5">ICONO DE APLICACIÓN · IDEA DE IDENTIDAD AÚN NO DEFINIDA</text>
+<rect x="56" y="1360" width="420" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="80" y="1385" width="112" height="112" rx="28" fill="#242A35"/>
+ <g transform="translate(80 1385)" fill="none" stroke="#70AEE0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M50 16 82 37 72 88H28L18 37Z"/><path d="M50 16V88M18 37 50 58 82 37"/></g>
+ <text x="214" y="1418" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="600">A · Prisma facetado</text>
+ <text x="214" y="1448" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="13">Volumen geométrico y facetas claras.</text>
+ <text x="214" y="1478" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="11" letter-spacing=".7">IDEA ABIERTA · NO ELEGIDA</text><rect x="500" y="1360" width="420" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="524" y="1385" width="112" height="112" rx="28" fill="#242A35"/>
+ <g transform="translate(524 1385)" fill="none" stroke="#70AEE0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M30 84V25h25c17 0 24 8 24 20S72 66 55 66H30"/><path d="M30 25 50 40 79 45" opacity=".6"/></g>
+ <text x="658" y="1418" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="600">B · Monograma P</text>
+ <text x="658" y="1448" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="13">Inicial abstracta integrada en una faceta.</text>
+ <text x="658" y="1478" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="11" letter-spacing=".7">IDEA ABIERTA · NO ELEGIDA</text><rect x="944" y="1360" width="420" height="174" rx="22" fill="#FFFFFF" stroke="#DDD8CE"/>
+ <rect x="968" y="1385" width="112" height="112" rx="28" fill="#242A35"/>
+ <g transform="translate(968 1385)" fill="none" stroke="#70AEE0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M50 12 76 25 50 38 24 25Z M50 38 76 51 50 64 24 51Z M50 64 76 77 50 90 24 77Z"/><path d="M24 25 50 38 76 25 M24 51 50 64 76 51" opacity=".65"/></g>
+ <text x="1102" y="1418" fill="#292B2F" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="600">C · Haz de luz</text>
+ <text x="1102" y="1448" fill="#68655F" font-family="Inter,Arial,sans-serif" font-size="13">Tres planos que convergen en un centro.</text>
+ <text x="1102" y="1478" fill="#356F9F" font-family="Inter,Arial,sans-serif" font-size="11" letter-spacing=".7">IDEA ABIERTA · NO ELEGIDA</text>
+<text x="56" y="1539" fill="#706C64" font-family="Inter,Arial,sans-serif" font-size="12">Todas las formas son ejemplos de exploración. El propietario decide las siluetas finales, proporciones y acabados. No usar esta lámina como paquete de producción.</text>
+</svg>
