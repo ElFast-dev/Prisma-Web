@@ -50,7 +50,7 @@ Cloudflare Pages queda **rechazado** como opción de alojamiento para Prisma por
 
 - Mantener pocos documentos activos y evitar duplicar la misma decisión en varios archivos.
 - Documentar una decisión cuando realmente desbloquee trabajo; no redactar planes detallados de funciones lejanas.
-- No crear scaffolding, capas, abstracciones, componentes vacíos ni infraestructura sin una necesidad inmediata demostrable.
+- No crear scaffolding, capas, abstracciones, componentes vacíos ni infraestructura sin una necesidad real; tampoco sacrificar calidad usando soluciones básicas sin demostrar que son la mejor opción para el caso.
 - No encadenar tareas internas que no acerquen a una capacidad utilizable.
 - Completar un recorrido de usuario de extremo a extremo antes de ampliar el alcance.
 - Las pruebas deben proteger ese recorrido y los datos; no convertirse en un proyecto separado.
@@ -62,7 +62,7 @@ Antes del primer código de producto deben quedar resueltos y aceptados:
 1. Qué problema resuelve Prisma y cuál será el primer recorrido realmente útil.
 2. Qué funciones entran en la primera entrega y cuáles quedan fuera.
 3. Qué diseño y comportamientos se mantienen después de revisarlos para web.
-4. Qué tecnología mínima resuelve el producto sin complejidad innecesaria.
+4. Qué tecnología de mayor calidad resuelve el producto; se comparan las opciones punteras y no se recurre a herramientas básicas por comodidad.
 5. Cómo se guardan, protegen, exportan y recuperan los datos locales.
 6. Qué límites reales tiene la PWA en Android y cómo se informan al usuario.
 7. Cómo se publica por 0 USD y cuál será el origen HTTPS estable.
@@ -80,4 +80,4 @@ Un commit, documento, build, prueba automatizada, pantalla estática o CI verde 
 
 ## 7. Identificación de entregas
 
-Se descarta el sistema anterior de SemVer, preversiones y mapas numéricos futuros. La nueva regla sencilla está en [Identificación de entregas](TECNICO/ENTREGAS.md): solo se asignará una edición pública cuando exista un conjunto coherente de funciones completas y aceptadas. Los cambios internos se identifican por commit, no por versiones de producto.
+Se adopta SemVer 2.0 en formato MAYOR.MENOR.PARCHE, según [Versionado semántico](TECNICO/VERSIONADO.md). No se asignan versiones por adelantado a fases ni funciones futuras. MAYOR indica cambios incompatibles, MENOR nuevas capacidades compatibles y PARCHE correcciones compatibles. Los cambios internos se identifican por commit.
