@@ -32,7 +32,7 @@ La guía que prevalece sobre documentos heredados es [Replanteamiento y reglas](
 
 - El propietario ha indicado expresamente que **no se creen imágenes de interfaz con IA**.
 - Los diseños conceptuales deben construirse directamente en la conversación mediante maquetas visuales estructuradas/componentes de interfaz, para que el propietario pueda verlos, compararlos y elegir.
-- Antes de proponer una dirección nueva, revisar `docs/DISENO/HISTORIAL_CONCEPTOS_ANTES_SVG.md` y `docs/DISENO/VISION_HEREDADA.md`; el diseño anterior a los SVG es una referencia preferida por el propietario.
+- Antes de proponer una dirección nueva, revisar `docs/DISENO/CONCEPTO_ANTERIOR_A_SVG.md`, `docs/DISENO/HISTORIAL_CONCEPTOS_ANTES_SVG.md` y `docs/DISENO/VISION_HEREDADA.md`; el diseño anterior a los SVG es una referencia preferida por el propietario.
 - Mostrar ambos temas Obsidiana y Cuarzo cuando se compare una pantalla o componente.
 - No generar SVG/imágenes nuevas como sustituto de la maqueta conversacional ni reemplazar el diseño anterior con una variante básica sin pedirlo.
 
