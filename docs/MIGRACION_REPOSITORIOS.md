@@ -20,12 +20,12 @@ El repositorio nuevo ya tiene commits documentales en `main`. No tiene código d
 - Mandato de agentes y contexto operativo reescritos para PWA.
 - Requisitos de producto y roadmap inicial PWA.
 - Arquitectura propuesta, modelo de datos, almacenamiento y seguridad.
-- Versionado funcional separado de commits y builds.
+- Identificación simplificada de entregas funcionales; el sistema SemVer anterior fue retirado.
 - Pruebas y calidad.
 - Alojamiento/origen como decisión bloqueante.
 - Registro de decisiones.
-- Diseño visual actualizado y adaptado a CSS responsive.
-- SVG aprobados de MVP, Historial, Pendientes, fichas y vectores de iconografía.
+- Inventario visual trasladado; no se considera una aprobación final de diseño PWA.
+- SVG y conceptos conservados como referencias visuales heredadas, pendientes de revalidación web.
 - Guías de iconografía corregidas para PWA.
 - Autorización particular de TMDB y licencia tipográfica de Inter.
 - Archivo histórico de documentación Android, actualizado desde la rama más completa.
@@ -77,14 +77,14 @@ La conexión GitHub disponible permite leer y modificar archivos, crear commits 
 5. Cambiar `Prisma-Web` a `Prisma` y pulsar **Rename**.
 6. Verificar que `https://github.com/ElFast-dev/Prisma` ahora muestra el repositorio PWA, su README y la rama `main`.
 7. Reabrir los enlaces de los documentos activos, SVG y archivo histórico para confirmar que no hay rutas rotas.
-8. Solo después del cambio definitivo de nombre, conectar el repositorio a un hosting PWA. Así no hay que reconfigurar la integración Git por renombrar el repo.
-9. Fijar el hostname HTTPS de producción antes de instalar Prisma con datos personales.
+8. Después del cambio de nombre, evaluar el alojamiento de 0 USD definido en `docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md`. No conectar ningún servicio por adelantado.
+9. Aprobar y fijar el hostname HTTPS de producción antes de instalar Prisma con datos personales.
 
 ## 5. Por qué se hace en este orden
 
 GitHub permite renombrar repositorios con permisos de administrador y redirige tráfico Git/web hacia el nuevo nombre, pero las URL de sitios de proyecto GitHub Pages son una excepción. La documentación también aconseja evitar reutilizar el nombre antiguo de un repositorio renombrado porque puede romper las redirecciones. En este caso, el nombre `Prisma` está ocupado por el repositorio Android: por eso se elimina primero ese repositorio y después se renombra `Prisma-Web` a `Prisma`.
 
-La PWA se alojará fuera de GitHub Pages, en un hostname dedicado de un hosting estático; el origen web será independiente del nombre del repositorio y se fijará una sola vez.
+El alojamiento aún no está aprobado. Cloudflare Pages fue rechazado por el propietario. GitHub Pages es un candidato de coste cero, pero su subdirectorio comparte origen con los demás sitios de proyecto del usuario; ese riesgo debe resolverse y aceptarse antes de habilitarlo. Véase `docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md`.
 
 Fuente oficial: https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository
 
