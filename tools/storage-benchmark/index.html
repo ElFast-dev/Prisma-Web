@@ -104,6 +104,13 @@ footer{margin-top:20px}
   <p>SQLite SAH pool funciona dentro de un Worker y no ofrece varias conexiones concurrentes normales a la misma base. El resultado de rendimiento no basta para elegirla: también debemos resolver el uso de varias pestañas. El benchmark elimina su propio VFS al terminar.</p>
   <p>El tamaño/uso informado por <code>navigator.storage.estimate()</code> no se usa como cuota garantizada. No se mide memoria física exacta porque Brave puede limitar esos datos.</p>
 </section>
+<section class="panel">
+  <h2>Limpiar restos de pruebas</h2>
+  <p>Si una ronda se interrumpe o el navegador cierra el Worker, puedes eliminar exclusivamente la carpeta OPFS y las bases IndexedDB con el prefijo propio de este benchmark.</p>
+  <button id="cleanup" class="secondary">Limpiar datos temporales del benchmark</button>
+  <div id="cleanupStatus" class="status" aria-live="polite" style="margin-top:8px"></div>
+</section>
+
 <footer><small>Prisma-Web · tools/storage-benchmark · Sin framework UI · Sin telemetría · Dependencias fijadas y locales.</small></footer>
 </main>
 <script type="module" src="./src/main.js"></script>
