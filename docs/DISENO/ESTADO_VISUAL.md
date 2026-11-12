@@ -44,3 +44,20 @@ Las composiciones SVG no son pantallas finales. No se traducen medidas Android a
 Los archivos en `CONCEPTOS_MVP/`, `CONCEPTOS_FASE2/` e `ICONOGRAFIA/` siguen disponibles como material histórico. La palabra «aprobado» en un nombre de carpeta o README describe la selección antigua, no la aprobación de su uso en la PWA.
 
 No eliminar ni sustituir los originales hasta que exista una revisión visual nueva y el propietario apruebe los cambios.
+
+
+## Descubrir — panel de Filtros
+
+**Estado:** dirección visual y organización aprobadas por el propietario el 12 de noviembre de 2026. No constituye implementación ni fija la tecnología del componente.
+
+- El embudo de la barra integrada abre un panel inferior expandido (*bottom sheet*) superpuesto a Descubrir; como referencia conceptual ocupa aproximadamente el 90 % de la altura disponible en móvil.
+- El Feed permanece detrás de una capa de atenuación; conserva su posición y no se reinicia al abrir o cerrar el panel.
+- La cabecera del panel permanece visible, el contenido de filtros tiene desplazamiento propio y la acción principal permanece fija en la parte inferior.
+- Los filtros se organizan en secciones desplegables separadas por divisores discretos, no en tarjetas independientes.
+- Criterios contemplados: Géneros (selección múltiple), Año de estreno (Desde/Hasta), País de producción (búsqueda y selección múltiple), Duración (mínimo/máximo), Idioma original (búsqueda y selección múltiple) y Puntuación TMDB (umbral mínimo).
+- Dentro de un criterio de selección múltiple se contempla OR; entre criterios diferentes se contempla AND. Los criterios vacíos no restringen resultados.
+- La edición permanece provisional hasta pulsar «Mostrar resultados». «Restablecer» limpia todos los criterios. Cerrar con X o Atrás descarta cambios no aplicados; si existen, se confirma el descarte.
+- El recuento de resultados solo se mostrará cuando pueda calcularse de forma fiable. No se inventarán coincidencias ni valores de metadatos ausentes.
+- La misma geometría y jerarquía se presenta en Obsidiana y Cuarzo, adaptando exclusivamente las superficies, textos, contornos y acentos a sus paletas confirmadas.
+
+No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni los filtros para ocultar Vista/Pendiente: se mantienen fuera de esta decisión hasta revisar su alcance por separado.
