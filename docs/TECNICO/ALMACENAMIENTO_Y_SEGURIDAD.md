@@ -16,9 +16,17 @@ Una caché nunca será la única copia de datos personales.
 
 ## Límites del almacenamiento web
 
-IndexedDB y Cache Storage son opciones que deben validarse para los casos reales. El navegador controla cuotas y persistencia; Prisma no puede prometer que el sistema operativo nunca eliminará datos.
+El almacenamiento web está sujeto a cuota y políticas del navegador. Por defecto, los datos de un origen se guardan como `best-effort`; el navegador puede eliminar el conjunto de datos del origen si aplica su política de desalojo. Se puede solicitar persistencia con `navigator.storage.persist()`; en Chrome y otros navegadores basados en Chromium la concesión o denegación se decide automáticamente según la interacción del usuario con el sitio. La aplicación debe consultar y mostrar el resultado real, nunca asumir que fue concedido. Fuente: [MDN — cuotas y desalojo](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
 
-La interfaz deberá explicar los límites, detectar errores de cuota y ofrecer una copia manual antes de operaciones de riesgo. Una limpieza automática solo puede afectar recursos reconstruibles, nunca el diario.
+La interfaz debe explicar los límites, detectar errores de cuota y ofrecer una copia manual recuperable. Una limpieza automática solo puede afectar recursos reconstruibles, nunca el diario.
+
+La elección concreta entre IndexedDB/Dexie y SQLite/OPFS está en [Arquitectura — comparativa de almacenamiento](ARQUITECTURA.md#comparativa-de-almacenamiento-resultado-de-investigacion). No crear dos bases autoritativas.
+
+### Durabilidad de escrituras
+
+Para las operaciones que crean o modifican datos personales se evaluará la opción de durabilidad `strict` de IndexedDB cuando la capa seleccionada y el navegador la soporten. Esta opción solicita mayor garantía de que los datos se han escrito en almacenamiento persistente antes de confirmar la transacción, con posible coste en latencia y batería. Se debe medir en Android y reservar para transacciones importantes cuando el beneficio justifique el coste.
+
+Las imágenes, respuestas remotas y cachés reconstruibles pueden emplear políticas de menor durabilidad. Ningún modo de transacción protege contra el usuario que borra los datos del sitio, la desinstalación del navegador ni daños del dispositivo; una exportación restaurable sigue siendo obligatoria.
 
 ## Copias y recuperación
 
