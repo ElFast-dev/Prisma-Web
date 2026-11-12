@@ -18,6 +18,7 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-008 | No se elegirán tecnologías básicas por comodidad: se evaluarán opciones de alta calidad y se escogerá la mejor solución demostrable dentro del coste de 0 USD. | Aprobada |
 | P-009 | El asistente puede preguntar dudas y sugerir mejoras para Prisma, siempre de una pregunta por turno y sin ciclos interminables; las decisiones de interfaz importantes se validan con el propietario. | Aprobada |
 | P-010 | Personal usa cuatro tarjetas cuadradas en cuadrícula 2×2 (Historial, Pendientes, Ocultos, Estadísticas) y una fila completa de Gestionar listas debajo; es el diseño anterior a SVG que más le gustaba al propietario. | Confirmado para Prisma Web |
+| P-011 | Descubrir conserva la barra integrada de búsqueda/Filtros/Ajustes y el Feed continuo de tres columnas con pósteres 2:3 sin títulos debajo; píldora inferior Personal/Descubrir y ambos temas. | Confirmado para Prisma Web |
 
 ## Material heredado
 
