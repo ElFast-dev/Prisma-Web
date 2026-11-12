@@ -69,3 +69,14 @@ Si Prisma requiere una credencial para consultar un catálogo, explicar al usuar
 - Explicar riesgos de código malicioso ejecutado en el mismo origen y de un dispositivo comprometido.
 
 La política concreta se define cuando se aprueben el almacenamiento y el primer recorrido que lo utilice. No diseñar criptografía especulativa antes de saber qué se necesita respaldar.
+
+
+## Consideraciones específicas del dispositivo de referencia
+
+El Samsung Galaxy A03 objetivo cuenta con 4 GB de RAM física y tenía unos 6,2 GB libres de almacenamiento interno al registrar el perfil. Esto obliga a limitar las copias temporales durante importación/restauración, evitar cargar el archivo entero varias veces en memoria y medir KDF/cifrado/descifrado en el teléfono real.
+
+OPFS es almacenamiento privado del origen, no una carpeta que el usuario pueda gestionar directamente ni un destino seleccionable en la tarjeta SD. Se somete a las cuotas del navegador; borrar los datos del sitio borra también OPFS. Por eso la copia de seguridad debe ser un archivo portátil separado del almacenamiento de trabajo. La SD puede ser un destino manual del archivo exportado a través del sistema Android si el usuario lo mueve allí; no se debe prometer escritura directa hasta probar la API disponible en Chrome.
+
+La importación debe evitar duplicar simultáneamente el archivo comprimido/cifrado, el texto descifrado y la base completa en RAM cuando haya una estrategia por streaming disponible. Cualquier límite de tamaño de archivo o memoria debe comunicarse antes de modificar la base.
+
+Fuentes: [MDN — OPFS y cuotas](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system), [OWASP — parámetros Argon2id](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
