@@ -24,6 +24,7 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-014 | La píldora Personal/Descubrir solo aparece en las pantallas raíz Personal y Descubrir; se oculta en subsecciones y vistas de detalle, como Historial, Pendientes, Ocultos, listas, Ajustes y fichas cinematográficas. | Confirmado para Prisma Web |
 | P-015 | La ficha cinematográfica presenta cabecera panorámica con título superpuesto; debajo, acciones principales, sinopsis, calificación personal y visionados, en ese orden. | Confirmado como dirección visual para Prisma Web |
 | P-016 | Registrar un visionado utiliza un panel inferior con cuatro opciones: Ahora, Día de estreno, Seleccionar fecha y Ajustar al inicio; fecha/hora se eligen dentro del mismo panel y el cálculo se presenta como estimación. | Confirmado como dirección de interacción para Prisma Web |
+| P-017 | La calificación personal usa una escala de diez estrellas y confirmación explícita; con varios visionados se elige el registro destino y, sin visionados, la nota queda provisional para asociarse al siguiente. | Confirmado como dirección de interacción para Prisma Web |
 
 ## Material heredado
 
