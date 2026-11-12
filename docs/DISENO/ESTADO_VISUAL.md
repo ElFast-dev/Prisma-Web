@@ -90,18 +90,20 @@ No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni lo
 
 ## Ficha cinematográfica
 
-**Estado:** dirección de composición aprobada por el propietario el 12 de noviembre de 2026. La ficha sigue siendo conceptual; no autoriza implementar ni da por aprobados todos sus controles secundarios.
+**Estado:** estructura visual aprobada por el propietario el 12 de noviembre de 2026 y posteriormente refinada para separar la información de la película de la información personal de Prisma.
 
-- Cabecera panorámica a todo el ancho, con imagen cinematográfica y degradado inferior; título en blanco superpuesto, con fecha/año y metadatos básicos disponibles.
-- Flecha de regreso dentro de un control circular semitransparente arriba a la izquierda y menú de opciones arriba a la derecha.
-- Orden del contenido bajo la cabecera: **acciones principales (Historial/Pendientes) → sinopsis → calificación personal → visionados**.
-- Las secciones se separan mediante espacio y divisores discretos; se evitan tarjetas pesadas innecesarias.
-- Acciones y datos se adaptarán al estado real de la película: sin registrar, en Historial, Pendiente u Oculta. No se mostrarán acciones contradictorias ni controles sin función.
-- La calificación personal debe respetar los registros individuales de visionado. Una repetición crea un nuevo registro y no sobrescribe visionados ni calificaciones anteriores.
-- La píldora inferior Personal/Descubrir no aparece en la ficha. La navegación contextual utiliza el regreso a la pantalla que abrió la ficha.
+- La ficha principal prioriza la información cinematográfica: cabecera panorámica a todo el ancho, con imagen, degradado inferior, título superpuesto y metadatos básicos disponibles.
+- Incluye flecha de regreso en un control circular semitransparente arriba a la izquierda y menú de opciones arriba a la derecha.
+- Bajo la cabecera se presenta la información de la película, incluida su sinopsis y los metadatos disponibles, con una composición limpia y sin acumular paneles personales.
+- La ficha principal no despliega calificación personal ni filas/registros individuales de visionado.
+- Un único acceso compacto «Mi Prisma» conduce a una vista secundaria donde se agrupa la información personal de esa película.
+- La vista «Mi Prisma» contiene el estado personal (por ejemplo, Historial o Pendientes), la calificación personal y una entrada «Visionados» con el número de registros cuando corresponda. La organización debe seguir siendo discreta, mediante filas y divisores, sin llenar la ficha cinematográfica.
+- Al pulsar «Visionados» se abre una vista secundaria dedicada que muestra los registros individuales en orden cronológico descendente, con fecha, hora si se conoce y calificación propia. No se despliegan los registros hasta entrar en esa opción.
+- Desde «Mi Prisma» se pueden iniciar las acciones personales pertinentes, como registrar visionado, calificar o cambiar el estado; la ficha principal mantiene el foco en la película.
+- La calificación y cada visionado conservan las reglas independientes ya documentadas en sus secciones específicas.
+- La píldora inferior Personal/Descubrir no aparece en ninguna de estas vistas. La navegación secundaria utiliza regreso contextual.
 - La misma estructura se presenta en Obsidiana y Cuarzo, con sus paletas confirmadas.
-- Títulos, imágenes, fechas, metadatos y estados de esta maqueta son datos de ejemplo; en la aplicación solo se presentarán valores reales disponibles.
-
+- Títulos, imágenes, fechas, metadatos, contadores y estados de estas maquetas son datos de ejemplo; en la aplicación solo se presentarán valores reales disponibles.
 
 
 ## Ficha cinematográfica — Registrar visionado
@@ -135,4 +137,18 @@ No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni lo
 - La puntuación personal más reciente es la que se presenta como resumen en la ficha; si todavía no hay visionados, se presenta la calificación provisional.
 - La escala y jerarquía se mantienen equivalentes en Obsidiana y Cuarzo. Los colores de estrella y superficies respetan las paletas aprobadas.
 - Las calificaciones personales son datos locales y no se envían a TMDB.
+
+
+
+## Mi Prisma — información personal de una película
+
+**Estado:** dirección de organización aprobada por el propietario el 12 de noviembre de 2026.
+
+- «Mi Prisma» es una vista secundaria accesible desde un único control compacto en la ficha cinematográfica.
+- Reúne el estado personal de la película, la calificación personal y accesos a datos/acciones de Prisma.
+- «Visionados» es una entrada seleccionable; su contador, cuando exista, informa de cuántos registros hay sin listarlos en esta pantalla.
+- Al seleccionar «Visionados» se abre la vista dedicada a los registros individuales. Ahí aparecen fechas, horas conocidas y calificaciones, del más reciente al más antiguo.
+- Ninguna lista detallada de visionados ni historial personal se despliega directamente en la ficha cinematográfica.
+- Las pantallas «Mi Prisma» y «Visionados» usan navegación contextual y no muestran la píldora inferior.
+- La misma jerarquía se mantiene en Obsidiana y Cuarzo.
 
