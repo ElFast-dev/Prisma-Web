@@ -41,6 +41,10 @@ small{font-size:12px;color:var(--muted)}.hidden{display:none!important}
 <div class="metric"><span>Motor informado</span><b id="engine">—</b></div>
 <div class="metric"><span>Contexto seguro</span><b id="secure">—</b></div>
 <div class="metric"><span>Memoria informada</span><b id="memory">—</b></div>
+<div class="metric"><span>SharedWorker</span><b id="sharedWorker">—</b></div>
+<div class="metric"><span>Web Locks</span><b id="webLocks">—</b></div>
+<div class="metric"><span>BroadcastChannel</span><b id="broadcastChannel">—</b></div>
+<div class="metric"><span>Atomics.waitAsync</span><b id="waitAsync">—</b></div>
 </div>
 <small>Brave puede modificar valores de identificación y hardware por privacidad; no se usarán como mediciones fiables del teléfono.</small>
 </section>
@@ -274,6 +278,10 @@ function detect(){
  else $("browser").textContent=navigator.userAgent.includes("Brave")?"Brave (UA)":"No confirmado como Brave";
  $("openPicker").textContent=typeof showOpenFilePicker==="function"?"Disponible":"No expuesto";
  $("savePicker").textContent=typeof showSaveFilePicker==="function"?"Disponible":"No expuesto";
+ $("sharedWorker").textContent=typeof SharedWorker==="function"?"Disponible":"No expuesto";
+ $("webLocks").textContent=navigator.locks?"Disponible":"No expuesto";
+ $("broadcastChannel").textContent=typeof BroadcastChannel==="function"?"Disponible":"No expuesto";
+ $("waitAsync").textContent=typeof Atomics?.waitAsync==="function"?"Disponible":"No expuesto";
  $("swSupport").textContent="serviceWorker" in navigator?"Sí":"No";
  $("swControl").textContent=navigator.serviceWorker?.controller?"Sí":"No";
  navigator.serviceWorker?.addEventListener("controllerchange",()=>$("swControl").textContent="Sí");
@@ -303,6 +311,12 @@ $("report").onclick=()=>downloadJSON("prisma-browser-probe-report.json",{
  deviceMemoryReported:navigator.deviceMemory||null,hardwareConcurrencyReported:navigator.hardwareConcurrency||null,
  storage:{usage:$("usage").textContent,quota:$("quota").textContent,persisted:$("persisted").textContent,persistResult:$("persistResult").textContent},
  filePickers:{open:$("openPicker").textContent,save:$("savePicker").textContent},
+ coordinationAPIs:{
+   sharedWorker:$("sharedWorker").textContent,
+   webLocks:$("webLocks").textContent,
+   broadcastChannel:$("broadcastChannel").textContent,
+   atomicsWaitAsync:$("waitAsync").textContent
+ },
  serviceWorker:{supported:"serviceWorker" in navigator,controlled:!!navigator.serviceWorker?.controller},
  offlineTest:{userConfirmed:offlineUserConfirmed,onlineFlag:navigator.onLine},
  fileRoundTrip:fileRoundTrip,tests:results
