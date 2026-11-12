@@ -28,6 +28,14 @@ La guía que prevalece sobre documentos heredados es [Replanteamiento y reglas](
 - Las decisiones de interfaz deben buscar que Prisma se vea y se comporte como el propietario desea. Antes de implementar una composición importante, mostrar una propuesta visual concreta y solicitar su opinión con una pregunta cada vez. Convertirla en diseño definitivo solo tras su aprobación; luego desarrollar y ajustar mediante iteraciones acotadas, no infinitas.
 - No empezar una nueva ronda de diseño solo por gusto del agente. Cada revisión debe responder a una observación concreta del propietario o a un problema de usabilidad, accesibilidad o calidad verificable.
 
+## Conceptos visuales: no generar imágenes con IA
+
+- El propietario ha indicado expresamente que **no se creen imágenes de interfaz con IA**.
+- Los diseños conceptuales deben construirse directamente en la conversación mediante maquetas visuales estructuradas/componentes de interfaz, para que el propietario pueda verlos, compararlos y elegir.
+- Antes de proponer una dirección nueva, revisar `docs/DISENO/HISTORIAL_CONCEPTOS_ANTES_SVG.md` y `docs/DISENO/VISION_HEREDADA.md`; el diseño anterior a los SVG es una referencia preferida por el propietario.
+- Mostrar ambos temas Obsidiana y Cuarzo cuando se compare una pantalla o componente.
+- No generar SVG/imágenes nuevas como sustituto de la maqueta conversacional ni reemplazar el diseño anterior con una variante básica sin pedirlo.
+
 ## Identidad visual reconfirmada
 
 - El propietario quiere conservar los temas **Obsidiana** (oscuro) y **Cuarzo** (claro). Sus paletas recuperadas y confirmadas están en `docs/DISENO/TEMAS_OBSIDIANA_Y_CUARZO.md`.
