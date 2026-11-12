@@ -341,3 +341,30 @@ Se creó `tools/storage-benchmark/` para ejecutar en el Galaxy A03 la misma carg
 
 Instrucciones: [tools/storage-benchmark/README.md](../../tools/storage-benchmark/README.md).
 
+
+
+### Resultados reales en el Galaxy A03 — 12 de noviembre de 2026
+
+Los tres datasets se ejecutaron con tres rondas por motor, en Brave Android 1.99.56 / Chromium 157.0.8103.50:
+
+| Dataset | Dexie: inserción | SQLite SAH pool: inserción | SQLite más rápido |
+|---|---:|---:|---:|
+| 1.000 películas / 3.000 visionados | 993,1 ms | 359,5 ms | 2,76× |
+| 5.000 películas / 15.000 visionados | 5.320,9 ms | 1.293,0 ms | 4,12× |
+| 10.000 películas / 30.000 visionados | 10.578,7 ms | 2.441,5 ms | 4,33× |
+
+En la carga de 30.000 visionados: consulta por año 4,0 ms SQLite vs 17,8 ms Dexie; búsqueda por título 1,6 vs 2,0 ms; visionados por película 2,2 vs 3,0 ms; actualización de nota 12,7 vs 10,4 ms; rollback 12,8 vs 4,6 ms; reapertura y conteo 6,7 vs 207,5 ms.
+
+Los tres informes indicaron integrityPassed = true: ambos motores conservaron todos los visionados, devolvieron los recuentos correctos al reabrir, actualizaron solo la nota destino y revirtieron sin dejar datos parciales.
+
+**No usar el tiempo total para comparar motores:** SQLite incluye inicialización Worker/WASM/VFS (aprox. 174–179 ms de módulo+VFS) mientras Dexie se importó antes del cronómetro. La inserción y las consultas son comparaciones más representativas de las operaciones medidas.
+
+### Implicación arquitectónica
+
+SQLite WASM con SAH pool pasa a ser la candidata de mejor rendimiento, no una decisión definitiva. Su desventaja es que no permite varias instancias transparentes en el mismo origen: el VFS preasigna SyncAccessHandles y bloquea esos archivos. La documentación de SQLite recomienda SAH pool cuando prima rendimiento sobre concurrencia y OPFS u OPFS-WL cuando se necesita concurrencia entre pestañas.
+
+Antes de decidir, probar en Brave Android:
+- Atomics.waitAsync(), Web Locks, SharedWorker y BroadcastChannel.
+- SQLite OPFS-WL (requiere Atomics.waitAsync()) como alternativa de concurrencia.
+- Posible actor único compartido para SAH pool, si SharedWorker es compatible y estable.
+- Limpieza efectiva de VFS: los informes antiguos no incluían el retorno de removeVfs(); la herramienta nueva lo registra y verifica que el directorio de prueba no quede.
