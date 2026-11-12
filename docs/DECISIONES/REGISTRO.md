@@ -39,7 +39,7 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | ID | Propuesta | Estado |
 |---|---|---|
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
-| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | La compatibilidad básica de IndexedDB y OPFS/Worker ya está probada en Brave Android. Se creó `tools/storage-benchmark/` con Dexie 4.4.7 vs paquete SQLite WASM 3.54.1-build1 + OPFS SAH pool; falta ejecutarlo y valorar la concurrencia entre pestañas, migraciones, recuperación y cuota |
+| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | Benchmark en Brave Android completado hasta 10.000 películas/30.000 visionados: SQLite SAH pool gana en inserción y algunas consultas; integridad correcta. Aún falta resolver concurrencia multi-pestaña, verificar limpieza OPFS, comparar OPFS-WL y probar recuperación/migraciones antes de seleccionar |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
 | T-005 | Firebase Hosting clásico en Spark como alojamiento estático con hostname web.app dedicado. | Candidato recomendado de 0 USD; falta aprobar proyecto/site ID y verificar configuración sin facturación. GitHub Pages queda desaconsejado por origen compartido |
@@ -112,3 +112,28 @@ La herramienta usa películas y visionados sintéticos, tres rondas alternando e
 **Estado:** herramienta creada y comprobada sintácticamente. No se ha ejecutado todavía en el Galaxy A03. La versión del núcleo SQLite que informe el módulo en tiempo de ejecución se conservará por separado de la versión del paquete npm.
 
 Fuentes técnicas: [paquete oficial SQLite WASM](https://github.com/sqlite/sqlite-wasm), [OPFS SAH pool — documentación oficial](https://sqlite.org/wasm/doc/tip/persistence.md), [SQLite OO1 API](https://sqlite.org/wasm/doc/tip/api-oo1.md), [Dexie 4.4.7](https://github.com/dexie/Dexie.js/releases).
+
+
+## Resultados del benchmark de almacenamiento — 12 de noviembre de 2026
+
+**Dispositivo:** Samsung Galaxy A03 SM-A035M, Android 13, Brave 1.99.56 / Chromium 157.0.8103.50.  
+**Motores:** Dexie 4.4.7 / IndexedDB strict frente a @sqlite.org/sqlite-wasm 3.54.1-build1 / OPFS SAH pool. Tres rondas por motor y dataset; medianas informadas.
+
+| Dataset | Inserción Dexie | Inserción SQLite | Ventaja SQLite |
+|---|---:|---:|---:|
+| 1.000 películas / 3.000 visionados | 993,1 ms | 359,5 ms | 2,76× |
+| 5.000 películas / 15.000 visionados | 5.320,9 ms | 1.293,0 ms | 4,12× |
+| 10.000 películas / 30.000 visionados | 10.578,7 ms | 2.441,5 ms | 4,33× |
+
+En 10.000 películas, las medianas de consultas fueron: por año 17,8 ms Dexie vs 4,0 ms SQLite; título 2,0 vs 1,6 ms; visionados por película 3,0 vs 2,2 ms. Actualización de nota: 10,4 ms Dexie vs 12,7 ms SQLite. Rollback: 4,6 ms Dexie vs 12,8 ms SQLite. Reapertura: 207,5 ms Dexie vs 6,7 ms SQLite.
+
+**Integridad:** integrityPassed = true en los tres informes y en ambos motores: conteos esperados, nota actualizada, rollback sin registro parcial y recuento tras reapertura correctos.
+
+**Interpretación:** SQLite/SAH pool demuestra una ventaja marcada en lotes e inserciones, y una ventaja en consultas por año y reapertura. Las búsquedas simples y cambios unitarios presentan diferencias pequeñas o variables. El tiempo total no es una comparación simétrica: incluye inicialización del Worker/WASM/VFS para SQLite, pero Dexie ya estaba importado. El arranque frío de SQLite agrega aproximadamente 174–179 ms de inicialización WASM+VFS por ronda, antes de la apertura de la DB.
+
+**Pendientes que impiden una decisión definitiva:**
+1. SAH pool reserva SyncAccessHandles y no ofrece concurrencia multi-pestaña transparente; evaluar OPFS-WL/OPFS o un único actor coordinado.
+2. Los informes muestran crecimiento de estimate().usage (0 → 1,52 MB → 4,70 MB → 9,45 MB). Es una estimación del navegador y no demuestra por sí sola una fuga. La herramienta se actualizó para registrar removeVfs() y comprobar si queda el directorio OPFS propio; repetir una ronda pequeña y revisar esos campos antes de volver a ejecutar datasets grandes.
+3. Medir tamaño descargado del WASM, memoria/impacto en interfaz, migraciones y exportación/restauración cifrada.
+
+**Estado de decisión:** SQLite/WASM es ahora la candidata de mejor rendimiento para el diario, pero SAH pool no es aún la variante de producción aprobada. Dexie sigue como alternativa de menor complejidad y mejor concurrencia nativa multi-pestaña.
