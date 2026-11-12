@@ -312,6 +312,9 @@ async function runAll() {
     const summary = showResults(dexieRuns, sqliteRuns, config);
     await new Promise((resolve) => setTimeout(resolve, 300));
     const storageAfter = await storageEstimate();
+    const storageDeltaBytes = Number.isFinite(storageBefore?.usage) && Number.isFinite(storageAfter?.usage)
+      ? storageAfter.usage - storageBefore.usage
+      : null;
     const opfsCleanup = await inspectBenchmarkOpfsDirectory();
     summary.opfsCleanupPassed = opfsCleanup.exists === false;
     summary.integrityPassed = summary.integrityPassed && summary.opfsCleanupPassed;
@@ -345,7 +348,12 @@ async function runAll() {
       hardwareConcurrencyReported: navigator.hardwareConcurrency || null,
       storageBefore,
       storageAfter,
+      storageDeltaBytes,
       opfsCleanup,
+      cleanupVerification: {
+        sqliteRemoveVfsAllTrue: summary.sqliteCleanupPassed,
+        opfsBenchmarkDirectoryAbsent: opfsCleanup.exists === false
+      },
       dataset: config,
       rounds: totalRounds,
       dexie: {
