@@ -10,6 +10,26 @@ Fuentes oficiales consultadas para el diseño de la PWA. Las decisiones concreta
 - MDN — IndexedDB: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
 - MDN — OPFS: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
 
+## Interfaz y arquitectura de aplicación
+
+- SvelteKit 3: https://svelte.dev/blog/sveltekit-3-is-here
+- SvelteKit releases: https://github.com/sveltejs/kit/releases
+- SvelteKit Service Workers: https://svelte.dev/docs/kit/service-workers
+- SvelteKit adapter-static: https://svelte.dev/docs/kit/adapter-static
+- Svelte packages, Bits UI y adapters: https://svelte.dev/packages
+- Bits UI: https://www.bits-ui.com/docs/introduction
+- React 19.3: https://react.dev/blog/2026/09/09/react-19-3
+- React Router SPA: https://reactrouter.com/how-to/spa
+- React Router View Transitions: https://reactrouter.com/how-to/view-transitions
+- React Compiler: https://react.dev/learn/react-compiler/introduction
+- Vue performance: https://vuejs.org/guide/best-practices/performance
+- Vue state management / Pinia: https://vuejs.org/guide/scaling-up/state-management
+- Solid fine-grained reactivity: https://docs.solidjs.com/advanced-concepts/fine-grained-reactivity
+- Solid releases: https://github.com/solidjs/solid/releases
+- Angular release/support: https://angular.dev/reference/releases
+- Angular zoneless: https://angular.dev/guide/zoneless
+- JS Framework Benchmark (Chrome 156): https://krausest.github.io/js-framework-benchmark/index.html
+
 ## Almacenamiento local — investigación actualizada
 
 - Dexie — versiones publicadas: https://github.com/dexie/Dexie.js/releases
