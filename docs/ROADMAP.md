@@ -10,7 +10,7 @@ Este plan no usa IDs de fase/hito ni asigna números a funciones futuras. El ord
 - [ ] Definir el primer recorrido útil que Prisma debe resolver de principio a fin.
 - [ ] Revisar el alcance inicial y retirar funciones que no sean necesarias para esa primera experiencia.
 - [ ] Revisar el diseño heredado en contexto PWA; aprobar solo lo que funcione bien en pantalla y navegación web.
-- [ ] Elegir el stack más simple que cubra el producto, comparando alternativas y evitando dependencias innecesarias.
+- [ ] Evaluar las mejores arquitecturas y tecnologías disponibles para cada necesidad; elegir con evidencia la combinación de mayor calidad, no la opción básica por comodidad.
 - [ ] Definir el almacenamiento local, las reglas de integridad y cómo recuperar los datos si el navegador los elimina.
 - [ ] Definir una copia de seguridad cifrada viable para el teléfono, sin fijar algoritmos ni parámetros antes de medirlos y revisarlos.
 - [ ] Elegir un alojamiento que cueste 0 USD, no requiera plan de pago ni facturación automática, y fijar el origen HTTPS antes de guardar datos reales.
@@ -33,7 +33,7 @@ La primera entrega no se declarará lista por tener un shell, un conjunto de pan
 
 ## Completar el alcance acordado
 
-Una vez que la primera experiencia sea estable, añadir capacidades por prioridad y valor para el usuario. No se fija hoy una secuencia rígida de versiones para características que todavía no se han revalidado.
+Una vez que la primera experiencia sea estable, añadir capacidades por prioridad y valor para el usuario. Las versiones públicas se asignarán con SemVer según el impacto real de cada entrega. No se reserva por adelantado ningún número para funciones o etapas futuras.
 
 Historial, Pendientes, listas, TMDB, estadísticas, Espectro y Descubrir avanzado son capacidades candidatas a revisar, no obligaciones automáticas del nuevo desarrollo.
 
