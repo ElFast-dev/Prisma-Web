@@ -16,11 +16,11 @@ Una caché nunca será la única copia de datos personales.
 
 ## Límites del almacenamiento web
 
-El almacenamiento web está sujeto a cuota y políticas del navegador. Por defecto, los datos de un origen se guardan como `best-effort`; el navegador puede eliminar el conjunto de datos del origen si aplica su política de desalojo. Se puede solicitar persistencia con `navigator.storage.persist()`; en Chrome y otros navegadores basados en Chromium la concesión o denegación se decide automáticamente según la interacción del usuario con el sitio. La aplicación debe consultar y mostrar el resultado real, nunca asumir que fue concedido. Fuente: [MDN — cuotas y desalojo](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
+El almacenamiento web está sujeto a cuota y políticas del navegador. Por defecto, los datos de un origen se guardan como `best-effort`; el navegador puede eliminar el conjunto de datos del origen si aplica su política de desalojo. Se puede solicitar persistencia con `navigator.storage.persist()`; el navegador decide si la concede. En la primera prueba sobre localhost en Brave Android, `persist()` y `persisted()` devolvieron `true`. Esto solo vale para ese origen de prueba: la aplicación debe repetir la solicitud y consultar el resultado en su hostname HTTPS definitivo; nunca asumir que la concesión se transfiere entre orígenes. Fuente: [MDN — cuotas y desalojo](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
 
 La interfaz debe explicar los límites, detectar errores de cuota y ofrecer una copia manual recuperable. Una limpieza automática solo puede afectar recursos reconstruibles, nunca el diario.
 
-La elección concreta entre IndexedDB/Dexie y SQLite/OPFS está en [Arquitectura — comparativa de almacenamiento](ARQUITECTURA.md#comparativa-de-almacenamiento-resultado-de-investigacion). No crear dos bases autoritativas.
+La elección concreta entre IndexedDB/Dexie y SQLite/OPFS está en [Arquitectura — comparativa de almacenamiento](ARQUITECTURA.md#comparativa-de-almacenamiento-resultado-de-investigacion). La sonda del Galaxy A03 confirmó ambas rutas base (IndexedDB y OPFS/Worker) en Brave; falta comparar Dexie real frente a SQLite/WASM con la misma carga. No crear dos bases autoritativas.
 
 ### Durabilidad de escrituras
 
@@ -75,7 +75,9 @@ La política concreta se define cuando se aprueben el almacenamiento y el primer
 
 El Samsung Galaxy A03 objetivo cuenta con 4 GB de RAM física y tenía unos 6,2 GB libres de almacenamiento interno al registrar el perfil. Esto obliga a limitar las copias temporales durante importación/restauración, evitar cargar el archivo entero varias veces en memoria y medir KDF/cifrado/descifrado en el teléfono real.
 
-OPFS es almacenamiento privado del origen, no una carpeta que el usuario pueda gestionar directamente ni un destino seleccionable en la tarjeta SD. Se somete a las cuotas del navegador; borrar los datos del sitio borra también OPFS. Por eso la copia de seguridad debe ser un archivo portátil separado del almacenamiento de trabajo. La SD puede ser un destino manual del archivo exportado a través del sistema Android si el usuario lo mueve allí; no se debe prometer escritura directa hasta probar la API disponible en Chrome.
+OPFS es almacenamiento privado del origen, no una carpeta que el usuario pueda gestionar directamente ni un destino seleccionable en la tarjeta SD. Se somete a las cuotas del navegador; borrar los datos del sitio borra también OPFS. La sonda confirmó su disponibilidad en Brave Android 1.99.56 y la operación de SyncAccessHandle en Worker; falta repetir la prueba en el origen HTTPS final. Por eso la copia de seguridad debe ser un archivo portátil separado del almacenamiento de trabajo. La SD puede ser un destino manual del archivo exportado a través del sistema Android si el usuario lo mueve allí; no se debe prometer escritura directa hasta probar la API disponible en Chrome.
+
+Los selectores avanzados `showOpenFilePicker` y `showSaveFilePicker` no estuvieron expuestos en Brave. La ruta de copias usará mecanismos compatibles como selector HTML estándar y descarga de archivo; falta completar su prueba de ida y vuelta en el teléfono.
 
 La importación debe evitar duplicar simultáneamente el archivo comprimido/cifrado, el texto descifrado y la base completa en RAM cuando haya una estrategia por streaming disponible. Cualquier límite de tamaño de archivo o memoria debe comunicarse antes de modificar la base.
 
