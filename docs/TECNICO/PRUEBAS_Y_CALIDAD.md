@@ -18,7 +18,7 @@ No ejecutar todas las capas para cualquier cambio menor. Elegir pruebas según e
 
 ## Rendimiento y selección de calidad
 
-Cuando la decisión técnica pueda afectar la experiencia, se comparan alternativas y se mide su efecto en el teléfono Android real: fluidez, latencia, memoria, consumo, tamaño de descarga, carga inicial y comportamiento offline. No se acepta una elección por costumbre ni se sustituye una evaluación por popularidad.
+Cuando la decisión técnica pueda afectar la experiencia, se comparan alternativas y se mide su efecto en el teléfono Android real: fluidez, latencia, memoria, consumo, tamaño de descarga, carga inicial y comportamiento offline. No se acepta una elección por costumbre ni se sustituye una evaluación por popularidad. Tampoco se selecciona la opción más básica solo para reducir tiempo inicial: la elegida debe demostrar que ofrece la mejor calidad global disponible dentro de la condición de coste cero.
 
 La calidad no se demuestra acumulando herramientas o pruebas genéricas. Se demuestra con resultados medidos, recorridos reales y ausencia de regresiones en privacidad, accesibilidad y datos.
 
