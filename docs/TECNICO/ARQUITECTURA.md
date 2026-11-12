@@ -47,6 +47,16 @@ La evaluación debe considerar:
 
 Separar datos personales no reconstruibles, metadatos externos que puedan descargarse otra vez e imágenes/recursos temporales. Una caché nunca será la única copia de información personal. La solución final debe elegirse por superioridad demostrable para el caso real, no por prejuicio a favor de lo básico o de lo complejo.
 
+## Revalidación de versiones — 12 de noviembre de 2026
+
+Las versiones deben verificarse de nuevo justo antes de crear el proyecto y fijarse entonces en el lockfile; no se reservan versiones por escrito.
+
+- **Svelte:** Svelte 5.57.1; SvelteKit 3.2.0, publicada el 10 de noviembre de 2026. SvelteKit 3 se lanzó como versión mayor estable el 1 de octubre de 2026. Su integración de rutas, generación estática y Service Worker es atractiva para la PWA, pero la versión mayor lleva pocas semanas en producción, por lo que se debe comprobar su estabilidad y el soporte de las bibliotecas necesarias.
+- **React:** React 19.3.0, estable desde el 9 de septiembre de 2026; React Router 8.5.1, publicada el 27 de octubre de 2026. React ofrece un ecosistema más amplio y View Transitions estables; en modo SPA puede generar archivos para hosting estático, aunque el Service Worker y la capa PWA requieren una integración adicional.
+- **Alcance:** no se ha demostrado todavía un ganador. La comparación final debe utilizar el mismo flujo, contenido, diseño, pruebas de accesibilidad y dispositivo Android, midiendo carga, fluidez, memoria y mantenimiento.
+
+Fuentes oficiales: [SvelteKit 3](https://svelte.dev/blog/sveltekit-3-is-here), [releases de SvelteKit](https://github.com/sveltejs/kit/releases), [React 19.3](https://react.dev/blog/2026/09/09/react-19-3), [versiones de React](https://react.dev/versions), [React Router changelog](https://reactrouter.com/changelog), [React Router SPA mode](https://reactrouter.com/how-to/spa).
+
 ## Comparativa de arquitectura de interfaz
 
 **Revisión documental:** 12 de noviembre de 2026.  
@@ -137,7 +147,7 @@ La fila de Service Worker se refiere a integración oficial del marco, no a una 
 
 ### Recomendación provisional
 
-**Svelte 5 + SvelteKit 3 + adapter-static es la primera candidata para un prototipo de validación de Prisma. React 19.3 + React Router 8.5 es la alternativa de comparación obligatoria.**
+**No elegir aún.** SvelteKit 3.2 es una candidata fuerte por su integración de rutas, estáticos y Service Worker; React 19.3 + Router 8.5.1 es una alternativa igual de seria por la madurez y amplitud de su ecosistema. La comparación debe decidirlo con la misma muestra y el teléfono Android objetivo.
 
 Esta recomendación se basa en la integración de rutas, construcción estática y Service Worker, en las actualizaciones compiladas de Svelte y en la disponibilidad de primitives headless para una interfaz muy personalizada. No es una aprobación definitiva del propietario y no autoriza aún crear la aplicación.
 
@@ -159,7 +169,7 @@ La elección definitiva se documentará cuando el prototipo demuestre una difere
 ## Comparativa de almacenamiento: resultado de investigación
 
 **Revisión documental:** 12 de noviembre de 2026.  
-**Estado:** recomendación técnica provisional; requiere benchmark en el Android objetivo antes de aprobarse. Las versiones que se citan describen el estado consultado, no una fijación de dependencias para el futuro proyecto.
+**Estado:** recomendación técnica provisional; requiere benchmark en el Android objetivo antes de aprobarse. Dexie 4.4.7 es la versión estable publicada el 19 de octubre de 2026. SQLite core 3.54.1 es la versión estable publicada el 16 de octubre de 2026; el proyecto SQLite/WASM mantiene además su propio ciclo de versiones, que debe verificarse antes de fijar el paquete.
 
 ### Candidata A — Dexie 4.4.7 sobre IndexedDB
 
@@ -211,7 +221,7 @@ Fuentes: [guía oficial de persistencia OPFS](https://sqlite.org/wasm/doc/tip/pe
 
 ### Recomendación provisional
 
-Para el primer diario local, **Dexie 4.x sobre IndexedDB es la candidata preferente**, con transacciones y durabilidad estricta en las operaciones críticas donde Android/Chrome lo soporte y las mediciones justifiquen el coste.
+Para el primer diario local, **Dexie 4.4.7 sobre IndexedDB es la candidata preferente**, con transacciones y durabilidad estricta en las operaciones críticas donde Android/Chrome lo soporte y las mediciones justifiquen el coste. Esta recomendación no sustituye el benchmark con el modelo de datos real.
 
 No se elige porque sea la alternativa más básica. Se elige provisionalmente porque combina una biblioteca madura, migraciones y transacciones, almacenamiento nativo del navegador y menos restricciones de despliegue/concurrencia que SQLite OPFS. No añade sincronización ni requiere servicios externos.
 
@@ -256,3 +266,12 @@ El hosting debe ser estático, HTTPS y costar 0 USD. Cloudflare Pages está rech
 ## Criterio para congelar la arquitectura
 
 La arquitectura se aprueba cuando la solución seleccionada ha sido comparada con alternativas de primer nivel, demuestra calidad y rendimiento para el primer recorrido, protege los datos, ofrece un camino claro para recuperación/offline y no necesita servicios pagados. No hace falta congelar hoy la arquitectura de funciones que todavía no se han aprobado; se seleccionará la mejor solución cuando exista el requisito que la necesita.
+
+
+## Fuentes de revalidación técnica — 12 de noviembre de 2026
+
+- [Dexie 4.4.7 releases](https://github.com/dexie/Dexie.js/releases).
+- [SQLite release chronology](https://sqlite.org/chronology.html) y [SQLite/WASM project news](https://sqlite.org/wasm/doc/trunk/news.md).
+- [SQLite WASM: persistencia OPFS, VFS y concurrencia](https://sqlite.org/wasm/doc/tip/persistence.md).
+- [MDN: cuotas y desalojo del almacenamiento web](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
+
