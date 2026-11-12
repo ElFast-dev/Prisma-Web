@@ -32,6 +32,47 @@ Una prueba de escritorio no sustituye comprobar en el teléfono Android:
 - modo avión cuando aplique;
 - comportamiento con red lenta o interrumpida.
 
+
+
+## Dispositivo objetivo de referencia
+
+El propietario ha facilitado el siguiente perfil para pruebas reales:
+
+- **Modelo:** Samsung Galaxy A03, SM-A035M (a03ub).
+- **Sistema:** Android 13 (API 33), One UI 5.1 Core.
+- **CPU:** Unisoc T606, 2× Cortex-A75 + 6× Cortex-A55.
+- **RAM:** 4 GB físicos; el espacio libre observado rondaba 1 GB y es variable.
+- **Arquitectura:** arm64-v8a.
+- **Almacenamiento:** 109 GB internos; se observaron unos 6,2 GB libres al facilitar el perfil (dato temporal, no cuota del navegador).
+- **Medio extraíble:** tarjeta microSD cercana a 7 GB, FAT32.
+- **Pantalla:** densidad informada de 300 dpi; el perfil no incluye aún la resolución exacta.
+- **Navegador:** Chrome Android; versión exacta pendiente de registrar.
+- **Herramientas:** depuración ADB activada y Termux con Node.js 24 LTS. Termux:API no está instalado/configurado; no se dependerá de él para medir la PWA.
+
+No es necesario registrar información de SIM, operador, identificadores de cuenta ni datos sensibles del dispositivo en el repositorio. El perfil se limita a las características técnicas relevantes para rendimiento, almacenamiento y compatibilidad.
+
+## Protocolo de prueba en el Galaxy A03
+
+1. Registrar la versión exacta de Chrome (abrir chrome://version en el navegador), espacio libre disponible, estado de batería y si se prueba desde pestaña normal o PWA instalada.
+2. Probar arranque en frío, navegación y uso repetido con el teléfono en estado normal; repetir después de reiniciar para separar efectos de memoria acumulada.
+3. Repetir las pruebas de almacenamiento con datasets sintéticos de 1.000 y 10.000 películas y proporciones de 1, 3 y 10 visionados por película. No importar datos personales del usuario.
+4. Comparar búsqueda, historial, inserción de visionados, actualización de calificación, orden cronológico y operaciones transaccionales.
+5. Registrar memoria y respuesta de la interfaz mientras el navegador conserva otras aplicaciones en segundo plano; comprobar que no haya cierres/reinicios de pestaña, congelaciones ni pérdida de cambios.
+6. Consultar navigator.storage.estimate() y navigator.storage.persist(); mostrar los valores reales y probar persistencia concedida/denegada sin asumir que la concesión es automática.
+7. Probar OPFS en contexto HTTPS y dentro de Worker, incluyendo cuota, reinicio, limpieza del sitio y manejo de errores. No colocar datos de producción en OPFS durante la comparativa.
+8. Medir derivación Argon2id, cifrado y descifrado de una copia sintética de tamaño acotado; medir tiempo y memoria máxima. Nunca reducir parámetros por debajo de una configuración mínima aceptada para acelerar la prueba.
+9. Probar descarga de un archivo de backup y su restauración. No asumir que IndexedDB/OPFS puede trasladarse a la SD; verificar aparte si Chrome permite al usuario elegir un archivo visible para importar/exportar.
+10. Comprobar instalación, modo avión, recuperación tras cerrar/reabrir y actualización del Service Worker sin perder transacciones.
+
+### Condiciones de seguridad de las pruebas
+
+- No llenar de forma deliberada el almacenamiento interno ni la microSD.
+- No borrar datos de Chrome, datos del sitio ni archivos del usuario como parte de la limpieza.
+- Toda prueba de borrado se limita al origen y dataset sintético creado específicamente para ella.
+- Una cuota o error de escritura debe detener la operación limpiamente; nunca se permite una escritura parcial que parezca exitosa.
+- El estado «persistente» se verifica mediante el resultado real de la API, no se deduce del modelo del teléfono.
+- No se declarará validación Android hasta observar las pruebas en el navegador real del Galaxy A03.
+
 ## Automatización
 
 Se puede usar CI gratuita del repositorio público para formato, lint, comprobación de tipos, pruebas focalizadas y build. El workflow debe ser fiable, rápido y proporcional al riesgo; no se reduce calidad para ahorrar unos pasos si estos evitan errores reales.
