@@ -6,6 +6,8 @@
 
 ## 1. Qué es Prisma
 
+> La composición visual concreta anterior a la simplificación SVG está reconstruida en [CONCEPTO_ANTERIOR_A_SVG.md](CONCEPTO_ANTERIOR_A_SVG.md). Ese documento recupera las decisiones históricas con enlaces a sus commits originales.
+
 Prisma se concibió como un **espacio cinematográfico personal y privado**, no como una red social ni como un catálogo genérico.
 
 Su núcleo es conservar la experiencia del usuario como espectador:
