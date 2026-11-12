@@ -1,45 +1,74 @@
 # Migración de repositorios — Prisma
 
-**Objetivo:** convertir `ElFast-dev/Prisma-Web` en el repositorio canónico llamado `ElFast-dev/Prisma`, dejando de utilizar el antiguo repositorio Android.
+**Objetivo:** convertir `ElFast-dev/Prisma-Web` en el repositorio canónico llamado `ElFast-dev/Prisma`, dejando de utilizar y eliminando el repositorio Android anterior.
 
-## 1. Estado verificado el 12 de noviembre de 2026
+## 1. Estado verificado — 12 de noviembre de 2026
 
 | Elemento | `ElFast-dev/Prisma-Web` | `ElFast-dev/Prisma` |
 |---|---|---|
 | Existe | Sí | Sí |
+| ID | `1454984252` | `1446676085` |
 | Rama predeterminada | `main` | `main` |
-| Contenido al inicio | Vacío (Git repository empty) | Documentación y decisiones de Android |
-| Permisos disponibles | Admin, Maintain, Push | Admin, Maintain, Push |
-| Uso previsto | Nuevo repositorio principal PWA | Fuente histórica temporal; eliminar después de verificar migración |
+| Contenido al inicio | Repositorio Git vacío | Código Android, documentación y activos |
+| Permisos de la conexión | Admin, Maintain, Push | Admin, Maintain, Push |
+| Función futura | Repositorio canónico PWA, nombre final Prisma | Eliminar después de verificar transferencia |
 
-IDs de repositorio observados: Prisma-Web `1454984252`; Prisma `1446676085`.
+El repositorio nuevo ya tiene commits documentales en `main`. No tiene código de la aplicación web.
 
-## 2. Reglas de migración
+## 2. Trabajo realizado en Prisma-Web
 
-- No desarrollar la PWA en el repositorio Android.
-- Trasladar a Prisma-Web los requisitos, decisiones visuales, autorización TMDB, reglas de colaboración y referencias que sigan siendo útiles.
-- Conservar una copia histórica marcada como no autoritativa de los documentos Android que contienen detalles técnicos obsoletos.
-- Corregir las fuentes activas para que no indiquen Kotlin, Compose, Room, DataStore, APK o Android Keystore como arquitectura vigente.
-- Verificar enlaces internos, archivos, ramas, commits y contenido después de la migración.
-- No borrar el antiguo repositorio antes de comprobar que la copia de documentación está completa.
+- Mandato de agentes y contexto operativo reescritos para PWA.
+- Requisitos de producto y roadmap inicial PWA.
+- Arquitectura propuesta, modelo de datos, almacenamiento y seguridad.
+- Versionado funcional separado de commits y builds.
+- Pruebas y calidad.
+- Alojamiento/origen como decisión bloqueante.
+- Registro de decisiones.
+- Diseño visual actualizado y adaptado a CSS responsive.
+- SVG aprobados de MVP, Historial, Pendientes, fichas y vectores de iconografía.
+- Guías de iconografía corregidas para PWA.
+- Autorización particular de TMDB y licencia tipográfica de Inter.
+- Archivo histórico de documentación Android, actualizado desde la rama más completa.
 
-## 3. Secuencia final deseada
+## 3. Ramas antiguas revisadas
 
-1. Completar la transferencia documental a Prisma-Web.
-2. Revisar los archivos esenciales y confirmar que el nuevo `main` tiene un commit inicial válido.
-3. Verificar que README, AGENTS, contexto, requisitos, roadmap, arquitectura, seguridad, versionado, diseño visual y licencia TMDB están presentes.
-4. Confirmar que no se ha creado código de producto antes de cerrar Fase 0.
-5. Eliminar el repositorio antiguo `ElFast-dev/Prisma`, conforme a la instrucción expresa del propietario y solo tras verificar la migración.
-6. Renombrar `ElFast-dev/Prisma-Web` a `ElFast-dev/Prisma`.
-7. Comprobar el nuevo nombre, URL canónica, rama `main`, permisos y enlaces.
-8. Elegir y fijar el hostname de producción HTTPS antes de desplegar una PWA que almacene datos personales.
+Se inspeccionaron `main` y:
+- `fase-1/fundamentos-android`
+- `feature/ci121-insets-diagnostic`
+- `feature/ci-fast-feedback`
+- `feature/fase1-android-foundation`
+- `feature/fase1-theme-datastore-tests`
 
-## 4. Límite operativo de esta sesión
+Se eligió `feature/fase1-android-foundation` como la fuente más completa de documentos/activos aprobados al momento de la migración. Se trasladaron los últimos requisitos, roadmap, contexto, diseño técnico, referencias, operación de GitHub, versión Android histórica, validación física y recursos visuales.
 
-La conexión GitHub disponible permite leer repositorios y modificar archivos, crear commits y ramas, pero no expone las operaciones de administración para renombrar o eliminar repositorios. Por tanto, esta sesión puede preparar y verificar los contenidos, pero no ejecutar esos dos cambios de configuración. Se facilitarán instrucciones concretas para completarlos en GitHub Settings.
+No se trasladaron Kotlin, Gradle, APK, workflows de Android, keystores de prueba ni certificados TLS de instrumentación. No se ha intentado migrar el historial Git entero ni conservar una app Android ejecutable porque el propietario cambió expresamente la plataforma.
 
-## 5. Precaución con GitHub Pages
+## 4. Secuencia final para el cambio de nombre
 
-GitHub redirige tráfico y operaciones Git tras un renombrado, pero la URL de un sitio de proyecto GitHub Pages cambia. La documentación oficial recomienda un dominio personalizado si se renombra un repositorio que ya publica GitHub Pages. Prisma no debe desplegarse bajo la URL provisional de Prisma-Web antes del cambio de nombre y de elegir su origen estable.
+La conexión GitHub disponible permite leer y modificar archivos, crear commits y ramas, pero no expone acciones de administración para eliminar o renombrar repositorios. Los dos cambios finales deben realizarse desde la interfaz de GitHub por el propietario.
 
-Fuente: https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository
+1. Verificar que los documentos activos e históricos están presentes en `Prisma-Web/main`.
+2. Abrir [ElFast-dev/Prisma](https://github.com/ElFast-dev/Prisma) → **Settings → General → Danger Zone → Delete this repository**.
+3. GitHub solicitará escribir el nombre completo `ElFast-dev/Prisma` y confirmar. Esta acción elimina el repositorio Android y sus ramas, PR, Issues y contenido alojado en ese repositorio. No continuar si se necesita rescatar algo más.
+4. Abrir [ElFast-dev/Prisma-Web](https://github.com/ElFast-dev/Prisma-Web) → **Settings → General → Repository name**.
+5. Cambiar `Prisma-Web` a `Prisma` y pulsar **Rename**.
+6. Verificar que `https://github.com/ElFast-dev/Prisma` ahora muestra el repositorio PWA, su README y la rama `main`.
+7. Reabrir los enlaces de los documentos activos, SVG y archivo histórico para confirmar que no hay rutas rotas.
+8. Solo después del cambio definitivo de nombre, conectar el repositorio a un hosting PWA. Así no hay que reconfigurar la integración Git por renombrar el repo.
+9. Fijar el hostname HTTPS de producción antes de instalar Prisma con datos personales.
+
+## 5. Por qué se hace en este orden
+
+GitHub permite renombrar repositorios con permisos de administrador y redirige tráfico Git/web hacia el nuevo nombre, pero las URL de sitios de proyecto GitHub Pages son una excepción. La documentación también aconseja evitar reutilizar el nombre antiguo de un repositorio renombrado porque puede romper las redirecciones. En este caso, el nombre `Prisma` está ocupado por el repositorio Android: por eso se elimina primero ese repositorio y después se renombra `Prisma-Web` a `Prisma`.
+
+La PWA se alojará fuera de GitHub Pages, en un hostname dedicado de un hosting estático; el origen web será independiente del nombre del repositorio y se fijará una sola vez.
+
+Fuente oficial: https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository
+
+## 6. Seguridad y recuperación
+
+- No se copió ningún keystore de prueba, certificado TLS ni archivo de firma al nuevo repositorio.
+- Los documentos históricos señalan cuando contienen instrucciones Android obsoletas.
+- Los SVG y documentos de producto se conservaron en el nuevo repositorio.
+- El cambio de nombre no se ha ejecutado desde esta sesión: no se dispone de la acción administrativa GitHub necesaria.
+- No desplegar la PWA ni guardar datos personales en un origen provisional antes de fijar el hostname definitivo.
