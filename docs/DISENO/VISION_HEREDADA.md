@@ -60,65 +60,69 @@ La navegación inferior se diseñó como una píldora flotante, centrada y separ
 
 La forma exacta, dimensiones y animaciones deben comprobarse en una PWA: navegador standalone, barras de sistema, áreas seguras, zoom y pantallas de distinto tamaño. La idea de la píldora flotante se conserva como concepto visual importante, no como instrucción de copiar medidas Android sin probarlas.
 
-## 5. Personal: dos composiciones diferentes que no deben confundirse
+## 5. Personal: el concepto anterior a los SVG y la simplificación posterior
 
-El repositorio distinguía expresamente dos etapas:
+La rama histórica conserva dos composiciones distintas. La que aparece antes de los SVG, en el estado visual del 6 de noviembre, era más completa y es la referencia que el propietario recuerda como la que más le gustaba.
 
-### Primera experiencia / MVP anterior
+### Diseño anterior (6 de noviembre): cinco accesos
 
-La pantalla Personal tenía cuatro filas horizontales en una columna:
-1. **Historial** — «Películas que ya has visto».
-2. **Pendientes** — «Películas que quieres ver después».
-3. **Ocultos** — «Películas que has decidido ocultar».
-4. **Gestionar listas** — «Crea y organiza tus listas».
+- Historial, Pendientes, Ocultos y Estadísticas en cuatro tarjetas cuadradas dentro de una cuadrícula 2×2.
+- Gestionar listas en una fila horizontal de ancho completo debajo de las cuatro tarjetas.
+- Las tarjetas principales utilizaban iconos lineales grandes arriba a la izquierda, contador discreto arriba a la derecha y nombre abajo, alineado a la izquierda.
+- No mostraba un título redundante como «PRISMA» o «Personal».
+- La composición usaba un ritmo compacto, superficies diferenciadas, contornos sutiles y una jerarquía visual orientada a iconos.
 
-Cada fila incluía icono a la izquierda, nombre y descripción en el centro y chevron a la derecha. La composición se diseñó con cuatro filas uniformes, sin título redundante ni acceso deshabilitado.
+Este concepto está registrado en [HISTORIAL_CONCEPTOS_ANTES_SVG.md](HISTORIAL_CONCEPTOS_ANTES_SVG.md) y en el commit [5f58be0 — dirección visual minimalista](https://github.com/ElFast-dev/Prisma/commit/5f58be0d3104da78c174e81bdc7476f10562a02c).
 
-### Experiencia completa prevista
+### Simplificación posterior (9 de noviembre): MVP de cuatro filas
 
-Para una evolución posterior se había propuesto:
-- Historial, Pendientes, Ocultos y Estadísticas en una cuadrícula de dos columnas;
-- Gestionar listas como fila horizontal de ancho completo debajo.
+Inmediatamente antes de vincular los SVG, el documento de diseño se había simplificado para el MVP:
+1. Historial — «Películas que ya has visto».
+2. Pendientes — «Películas que quieres ver después».
+3. Ocultos — «Películas que has decidido ocultar».
+4. Gestionar listas — «Crea y organiza tus listas».
 
-**No son dos diseños contradictorios:** el documento anterior los asignaba a etapas distintas. No se debe trasladar la cuadrícula de cinco accesos a una primera entrega sin revisar el alcance y validar el diseño web.
+Cada acceso era una fila horizontal con icono a la izquierda, nombre y descripción en el centro y chevron a la derecha. Estadísticas quedaba fuera de esta primera composición.
 
-## 6. Descubrir: búsqueda primero, Feed después
+Esta variante está registrada en el commit [2240f98 — aprobación visual MVP](https://github.com/ElFast-dev/Prisma/commit/2240f982a28972207bc90a6b4daed161d7879bc3). Las fuentes SVG se vincularon después, en el commit [21c877d](https://github.com/ElFast-dev/Prisma/commit/21c877d78644de4f2d5e82476eb216053b168574).
 
-### Descubrir inicial
+**No confundir las dos composiciones:** la cuadrícula 2×2 más Gestionar listas es el diseño anterior al SVG; las cuatro filas con descripciones son la simplificación posterior del MVP. El propietario ha indicado que prefiere el diseño anterior al SVG como referencia visual. Debe recrearse para la PWA en la conversación y quedar sujeto a su elección final.
 
-La propuesta para la primera experiencia era una búsqueda única en la parte superior:
-- lupa a la izquierda;
-- campo «Buscar...»;
-- engranaje de Ajustes a la derecha;
-- una sola superficie continua, no tres tarjetas;
-- lista única y continua de resultados;
-- miniatura de póster, título y año;
-- etiqueta discreta «En tu Prisma» solo para películas guardadas localmente;
-- sin filtros ni Feed avanzado en esa primera experiencia.
+## 6. Descubrir: concepto anterior y simplificación posterior
 
-La búsqueda local debía funcionar sin conexión. Si TMDB estaba disponible, sus resultados se mezclaban con los locales sin ocultarlos durante la consulta. Los estados de token, error remoto y falta de conexión se distinguían entre sí; nunca se debía presentar un error como «cero resultados».
+### Diseño anterior (6 de noviembre): búsqueda y Feed integrados
 
-Los SVG originales del concepto se conservan en:
-- [Descubrir — Obsidiana](CONCEPTOS_MVP/prisma-mvp-descubrir-obsidiana.svg)
-- [Descubrir — Cuarzo](CONCEPTOS_MVP/prisma-mvp-descubrir-cuarzo.svg)
+La composición anterior situaba una única barra continua en la parte superior con:
+- campo de búsqueda y lupa a la izquierda;
+- Filtros integrado en la misma superficie;
+- Ajustes a la derecha.
 
-### Feed completo posterior
-
-La experiencia futura de Descubrir se había planteado como un Feed visual:
-- cuadrícula de tres columnas;
+Debajo aparecía un Feed cinematográfico de tres columnas:
 - pósteres verticales en proporción 2:3;
-- sin texto bajo los pósteres;
-- paginación infinita;
-- marcadores de estado en las portadas;
-- filtros por género, año, país, duración, idioma y puntuación de TMDB.
+- márgenes exteriores de 16 px y separaciones de 12 px;
+- sin títulos ni rótulos debajo de los pósteres;
+- desplazamiento infinito;
+- marcadores visuales de estado Vista/Pendiente;
+- filtros por género, año, país, duración, idioma y puntuación cuando los datos estuvieran disponibles.
 
-Había tres modos de contenido:
-- **Equilibrado:** modo predeterminado.
+Se contemplaban tres modos de contenido:
+- **Equilibrado:** modo general.
 - **Afinidad:** prioriza películas cercanas a los gustos del usuario.
 - **Exploración:** introduce películas menos parecidas a sus patrones habituales.
 
-Los tres modos se conectan con Espectro. El Feed completo es una visión posterior y no debe confundirse con la búsqueda inicial.
+Los modos se conectaban con Espectro. Esta composición es parte de la dirección visual anterior a los SVG, no una invención posterior.
 
+### Simplificación posterior (9 de noviembre): búsqueda como primera experiencia
+
+En la revisión inmediatamente anterior a los SVG, Descubrir se redujo para el MVP a:
+- barra continua con búsqueda y Ajustes;
+- filtros retirados de la primera experiencia;
+- lista unificada y continua de resultados locales y TMDB;
+- miniatura, título y año;
+- indicación «En tu Prisma» para películas guardadas;
+- sin Feed, cuadrícula, recomendaciones ni filtros avanzados en la primera experiencia.
+
+La visión anterior y la simplificación están fechadas y enlazadas en [HISTORIAL_CONCEPTOS_ANTES_SVG.md](HISTORIAL_CONCEPTOS_ANTES_SVG.md). La composición anterior debe volver a presentarse como concepto en la conversación; el propietario decidirá cómo adaptarla a la PWA.
 ## 7. Ficha cinematográfica y diario
 
 La ficha se diseñó como una vista cinematográfica, no como una ficha técnica llena de tarjetas:
