@@ -10,6 +10,22 @@ Fuentes oficiales consultadas para el diseño de la PWA. Las decisiones concreta
 - MDN — IndexedDB: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
 - MDN — OPFS: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
 
+## Almacenamiento local — investigación actualizada
+
+- Dexie — versiones publicadas: https://github.com/dexie/Dexie.js/releases
+- Dexie — esquema y migraciones: https://dexie.org/docs/Version/Version
+- Dexie — transacciones: https://dexie.org/docs/Dexie/Dexie.transaction()
+- Dexie — opciones de constructor y durabilidad Chrome: https://dexie.org/docs/Dexie/Dexie
+- idb — wrapper de IndexedDB: https://github.com/jakearchibald/idb
+- SQLite Wasm — novedades y versiones: https://www.sqlite.org/wasm/doc/trunk/news.md
+- SQLite Wasm — persistencia OPFS y VFS: https://sqlite.org/wasm/doc/tip/persistence.md
+- SQLite — dominio público: https://www.sqlite.org/copyright.html
+- MDN — IndexedDB transacciones y durabilidad: https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/transaction
+- MDN — IDBTransaction.durability: https://developer.mozilla.org/en-US/docs/Web/API/IDBTransaction/durability
+- MDN — Storage API, cuotas y eviction: https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria
+- MDN — crossOriginIsolated: https://developer.mozilla.org/en-US/docs/Web/API/Window/crossOriginIsolated
+- MDN — Atomics.waitAsync: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics/waitAsync
+
 ## Seguridad
 
 - MDN — Web Crypto API: https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API
