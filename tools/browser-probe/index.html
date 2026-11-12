@@ -45,6 +45,8 @@ small{font-size:12px;color:var(--muted)}.hidden{display:none!important}
 <div class="metric"><span>Web Locks</span><b id="webLocks">—</b></div>
 <div class="metric"><span>BroadcastChannel</span><b id="broadcastChannel">—</b></div>
 <div class="metric"><span>Atomics.waitAsync</span><b id="waitAsync">—</b></div>
+<div class="metric"><span>SharedArrayBuffer</span><b id="sharedArrayBuffer">—</b></div>
+<div class="metric"><span>crossOriginIsolated</span><b id="crossOriginIsolated">—</b></div>
 </div>
 <small>Brave puede modificar valores de identificación y hardware por privacidad; no se usarán como mediciones fiables del teléfono.</small>
 </section>
@@ -282,6 +284,8 @@ function detect(){
  $("webLocks").textContent=navigator.locks?"Disponible":"No expuesto";
  $("broadcastChannel").textContent=typeof BroadcastChannel==="function"?"Disponible":"No expuesto";
  $("waitAsync").textContent=typeof Atomics?.waitAsync==="function"?"Disponible":"No expuesto";
+ $("sharedArrayBuffer").textContent=typeof SharedArrayBuffer==="function"?"Disponible":"No expuesto";
+ $("crossOriginIsolated").textContent=String(window.crossOriginIsolated===true);
  $("swSupport").textContent="serviceWorker" in navigator?"Sí":"No";
  $("swControl").textContent=navigator.serviceWorker?.controller?"Sí":"No";
  navigator.serviceWorker?.addEventListener("controllerchange",()=>$("swControl").textContent="Sí");
@@ -315,7 +319,9 @@ $("report").onclick=()=>downloadJSON("prisma-browser-probe-report.json",{
    sharedWorker:$("sharedWorker").textContent,
    webLocks:$("webLocks").textContent,
    broadcastChannel:$("broadcastChannel").textContent,
-   atomicsWaitAsync:$("waitAsync").textContent
+   atomicsWaitAsync:$("waitAsync").textContent,
+   sharedArrayBuffer:$("sharedArrayBuffer").textContent,
+   crossOriginIsolated:$("crossOriginIsolated").textContent
  },
  serviceWorker:{supported:"serviceWorker" in navigator,controlled:!!navigator.serviceWorker?.controller},
  offlineTest:{userConfirmed:offlineUserConfirmed,onlineFlag:navigator.onLine},
