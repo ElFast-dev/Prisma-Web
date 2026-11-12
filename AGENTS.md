@@ -35,7 +35,7 @@ No introducir planes de pago, dominios comprados, suscripciones, servicios con c
 No crear aplicación, pantallas, componentes de producto, Service Worker productivo ni bases de datos físicas hasta que el propietario apruebe:
 - primer recorrido útil y alcance inicial;
 - diseño web revisado;
-- tecnología mínima;
+- tecnología y arquitectura de alta calidad, justificadas por comparación y pruebas;
 - persistencia, seguridad, exportación y recuperación;
 - hosting de 0 USD y origen HTTPS estable;
 - actualización de la PWA;
@@ -48,7 +48,7 @@ No convertir esta preparación en una fase documental infinita. Resolver únicam
 - Priorizar recorridos verticales completos: interfaz → regla de negocio → persistencia → resultado visible al reabrir.
 - Terminar y verificar una capacidad antes de empezar otra de tamaño comparable.
 - No crear pantallas con controles inactivos ni datos ficticios presentados como reales.
-- No añadir capas, patrones, dependencias, workers o abstracciones por anticipado.
+- No añadir capas, patrones, dependencias, workers o abstracciones por anticipado; pero tampoco escoger soluciones básicas por comodidad: comparar opciones modernas y maduras y adoptar la mejor que cumpla calidad y coste cero.
 - No generar múltiples rondas de CI idénticas ni tests que no protejan un comportamiento concreto.
 - Comprobar el comportamiento real en Android, en los temas aprobados y offline cuando corresponda.
 - Si una API del navegador no está disponible, ofrecer una alternativa clara; no fingir capacidades nativas.
@@ -63,7 +63,7 @@ No convertir esta preparación en una fase documental infinita. Resolver únicam
 
 ## Entregas y versiones
 
-Usar [Identificación de entregas](docs/TECNICO/ENTREGAS.md). No usar SemVer, alpha/beta/rc, IDs de fase-hito ni números por commits, CI, documentación, refactors o builds. Una edición pública solo existe cuando sus funciones están completas y aceptadas.
+Usar [Versionado semántico](docs/TECNICO/VERSIONADO.md) conforme a SemVer 2.0. Incrementar MAYOR/MENOR/PARCHE según compatibilidad, funcionalidad compatible y correcciones. No reservar números para fases ni incrementarlos por commits, CI, documentación, refactors o builds. Publicar solo entregas completas, verificadas y aceptadas.
 
 ## Trabajo en GitHub
 
