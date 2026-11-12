@@ -102,3 +102,20 @@ No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni lo
 - La misma estructura se presenta en Obsidiana y Cuarzo, con sus paletas confirmadas.
 - Títulos, imágenes, fechas, metadatos y estados de esta maqueta son datos de ejemplo; en la aplicación solo se presentarán valores reales disponibles.
 
+
+
+## Ficha cinematográfica — Registrar visionado
+
+**Estado:** dirección de interacción confirmada por el propietario el 12 de noviembre de 2026.
+
+- «Registrar visionado» abre un panel inferior compacto sobre la ficha, sin navegar a otra pantalla.
+- Ofrece cuatro opciones de selección única: **Ahora**, **Día de estreno**, **Seleccionar fecha** y **Ajustar al inicio**.
+- La selección de fecha y hora se integra dentro del mismo panel; no abre una segunda ventana.
+- «Ahora» utiliza la fecha y hora local del dispositivo.
+- «Día de estreno» utiliza solo una fecha de calendario; no inventa una hora.
+- «Seleccionar fecha» permite indicar fecha y hora de inicio.
+- «Ajustar al inicio» resta la duración conocida a la hora actual y muestra el resultado como estimación antes de guardar. Si se desconoce la duración, no ofrece un cálculo ficticio.
+- La acción final es explícita: «Registrar visionado».
+- Cada registro creado es independiente. Una repetición nunca sobrescribe fechas, horas ni calificaciones anteriores.
+- La estructura y estados se presentan en Obsidiana y Cuarzo, sin píldora inferior.
+
