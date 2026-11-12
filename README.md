@@ -39,6 +39,9 @@ No se considera progreso suficiente acumular documentación, scaffolding, abstra
 7. [Alojamiento y origen — decisión pendiente](docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md)
 8. [Registro de decisiones](docs/DECISIONES/REGISTRO.md)
 9. [Estado visual — referencias por revalidar](docs/DISENO/ESTADO_VISUAL.md)
+10. [Concepto visual anterior a los SVG — Personal y Descubrir confirmados](docs/DISENO/CONCEPTO_ANTERIOR_A_SVG.md)
+11. [Visión heredada de Prisma](docs/DISENO/VISION_HEREDADA.md)
+12. [Temas Obsidiana y Cuarzo](docs/DISENO/TEMAS_OBSIDIANA_Y_CUARZO.md)
 10. [Migración de repositorios](docs/MIGRACION_REPOSITORIOS.md)
 
 Los demás documentos técnicos apoyan estas fuentes, pero sus propuestas no están aprobadas por el mero hecho de existir. `docs/ARCHIVO/ANDROID/` es solo histórico.
