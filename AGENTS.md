@@ -28,6 +28,14 @@ La guía que prevalece sobre documentos heredados es [Replanteamiento y reglas](
 - Las decisiones de interfaz deben buscar que Prisma se vea y se comporte como el propietario desea. Antes de implementar una composición importante, mostrar una propuesta visual concreta y solicitar su opinión con una pregunta cada vez. Convertirla en diseño definitivo solo tras su aprobación; luego desarrollar y ajustar mediante iteraciones acotadas, no infinitas.
 - No empezar una nueva ronda de diseño solo por gusto del agente. Cada revisión debe responder a una observación concreta del propietario o a un problema de usabilidad, accesibilidad o calidad verificable.
 
+## Identidad visual reconfirmada
+
+- El propietario quiere conservar los temas **Obsidiana** (oscuro) y **Cuarzo** (claro). Sus paletas recuperadas y confirmadas están en `docs/DISENO/TEMAS_OBSIDIANA_Y_CUARZO.md`.
+- La visión de producto y diseño de la IA anterior está reconstruida en `docs/DISENO/VISION_HEREDADA.md`. Consultarla antes de proponer una dirección visual nueva.
+- Distinguir las composiciones que el registro histórico marca como aprobadas, las ideas futuras y las decisiones pendientes. No presentarlas como si todas tuvieran el mismo estado.
+- Para la PWA, conservar el carácter de los dos temas y la jerarquía útil; adaptar dimensiones, safe areas, interacciones y componentes a web responsive. No copiar dp/sp ni Compose directamente.
+- Antes de rediseñar Obsidiana o Cuarzo, el propietario debe pedirlo expresamente. Las composiciones nuevas se presentan en ambos temas en paralelo.
+
 ## No heredar sin revisar
 
 El repositorio Android y sus documentos son material histórico. No copiar automáticamente su arquitectura, herramientas, procesos, versionado, modelo de datos, pantallas ni criterios de aceptación.
