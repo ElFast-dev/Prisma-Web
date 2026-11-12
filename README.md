@@ -6,12 +6,12 @@ Prisma se está reconstruyendo como una **Progressive Web App (PWA) instalable e
 
 ## Estado del proyecto
 
-**Estado:** Fundación documental — en preparación.
+**Estado:** Fase 0 — cimientos documentales en preparación.
 
-- Repositorio de trabajo: `ElFast-dev/Prisma-Web` (pendiente de renombrar a `ElFast-dev/Prisma`).
-- El repositorio nuevo estaba vacío al iniciar esta migración.
+- Repositorio de trabajo actual: `ElFast-dev/Prisma-Web`; pendiente de renombrar a `ElFast-dev/Prisma`.
+- Repositorio Android anterior: migración documental completada en este repo; su eliminación queda pendiente del paso administrativo manual descrito en [Migración](docs/MIGRACION_REPOSITORIOS.md).
 - Todavía no hay aplicación web ni código de producto. **No comenzar la implementación hasta cerrar y aprobar los cimientos de Fase 0.**
-- El repositorio Android anterior se conserva temporalmente como fuente histórica durante la migración; no es el repositorio de desarrollo futuro.
+- No se ha desplegado Prisma en un origen web ni se deben guardar datos personales en previews/proyectos provisionales.
 
 ## Propósito
 
@@ -33,18 +33,21 @@ Prisma no pretende ser otra red social ni un catálogo genérico. Es un espacio 
 1. [Mandato para agentes](AGENTS.md)
 2. [Contexto operativo](docs/CONTEXTO_IA.md)
 3. [Requisitos de producto](docs/PRODUCTO/REQUISITOS.md)
-4. [Arquitectura PWA](docs/TECNICO/ARQUITECTURA.md)
-5. [Almacenamiento y seguridad](docs/TECNICO/ALMACENAMIENTO_Y_SEGURIDAD.md)
-6. [Política de versionado](docs/TECNICO/VERSIONADO.md)
-7. [Roadmap](docs/ROADMAP.md)
-8. [Estado visual](docs/DISENO/ESTADO_VISUAL.md)
-9. [Licencia y autorización particular de TMDB](docs/LICENCIAS/TMDB_PRISMA.md)
-10. [Migración de repositorios](docs/MIGRACION_REPOSITORIOS.md)
-12. [Registro de decisiones](docs/DECISIONES/REGISTRO.md)
-13. [Modelo conceptual de datos](docs/TECNICO/MODELO_DE_DATOS.md)
-14. [Pruebas y calidad](docs/TECNICO/PRUEBAS_Y_CALIDAD.md)
-15. [Alojamiento y origen](docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md)
-11. [Archivo de la etapa Android](docs/ARCHIVO/ANDROID/)
+4. [Roadmap](docs/ROADMAP.md)
+5. [Arquitectura PWA](docs/TECNICO/ARQUITECTURA.md)
+6. [Modelo de datos](docs/TECNICO/MODELO_DE_DATOS.md)
+7. [Almacenamiento y seguridad](docs/TECNICO/ALMACENAMIENTO_Y_SEGURIDAD.md)
+8. [Política de versionado](docs/TECNICO/VERSIONADO.md)
+9. [Pruebas y calidad](docs/TECNICO/PRUEBAS_Y_CALIDAD.md)
+10. [Alojamiento y origen](docs/TECNICO/ALOJAMIENTO_Y_ORIGEN.md)
+11. [Estado visual](docs/DISENO/ESTADO_VISUAL.md)
+12. [Activos visuales e iconografía](docs/DISENO/README.md)
+13. [Licencia Inter](docs/LICENCIAS/FUENTE_INTER.md)
+14. [Autorización particular de TMDB](docs/LICENCIAS/TMDB_PRISMA.md)
+15. [Registro de decisiones](docs/DECISIONES/REGISTRO.md)
+16. [Referencias técnicas](docs/REFERENCIAS_TECNICAS.md)
+17. [Migración de repositorios](docs/MIGRACION_REPOSITORIOS.md)
+18. [Archivo histórico Android](docs/ARCHIVO/ANDROID/README.md)
 
 ## Versionado
 
@@ -52,4 +55,4 @@ No se publica una versión de producto durante la preparación documental. La pr
 
 ## Desarrollo
 
-La primera tarea de esta etapa es cerrar los fundamentos: producto, arquitectura, almacenamiento, seguridad, copias, dominio de publicación, proceso de actualización, versionado y criterios de aceptación. Solo después se iniciará el código de la PWA.
+La tarea actual es cerrar los cimientos: producto, arquitectura, almacenamiento, seguridad, copias, origen de publicación, proceso de actualización, versionado y criterios de aceptación. Solo después se iniciará el código de la PWA.
