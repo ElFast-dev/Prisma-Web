@@ -102,7 +102,19 @@ En el commit [2240f98](https://github.com/ElFast-dev/Prisma/commit/2240f982a2897
 
 Cuatro minutos después de esa aprobación se vinculaban las fuentes SVG. Por tanto, el diseño de cuatro filas y búsqueda simplificada está asociado a la etapa de SVG; no debe confundirse con la composición anterior del 6 de noviembre.
 
-## 5. Qué conservar y qué revisar en Prisma Web
+## 5. Confirmación expresa del propietario — Personal
+
+El 12 de noviembre de 2026 el propietario confirmó que **esta es exactamente la composición de Personal anterior a los SVG que más le gustaba**. Queda elegida como dirección visual de Personal para la nueva Prisma Web:
+
+- Historial, Pendientes, Ocultos y Estadísticas en cuadrícula 2×2 de tarjetas cuadradas.
+- «Gestionar listas» como fila horizontal de ancho completo debajo.
+- Sin convertir las cuatro tarjetas en filas con descripciones.
+- Mantener la navegación inferior flotante Personal/Descubrir.
+- Mostrar y adaptar esta composición a Obsidiana y Cuarzo.
+
+Esta confirmación se refiere a la composición de Personal. No implica que todos los detalles de Descubrir, Feed, filtros, animaciones o medidas se hayan aprobado para la PWA; esos conceptos se presentarán para revisión.
+
+## 6. Qué conservar y qué revisar en Prisma Web
 
 **Conservar como dirección visual preferida por el propietario:**
 - los temas Obsidiana y Cuarzo;
