@@ -11,6 +11,12 @@ Este directorio conserva referencias visuales de la etapa anterior. Su contenido
 - [Visión anterior de Prisma y estado de sus decisiones](VISION_HEREDADA.md).
 - [Temas Obsidiana y Cuarzo](TEMAS_OBSIDIANA_Y_CUARZO.md): paletas y reglas cromáticas que el propietario quiere conservar.
 
+## Conceptos confirmados por el propietario
+
+- **Personal:** cuadrícula 2×2 de Historial, Pendientes, Ocultos y Estadísticas, con Gestionar listas debajo.
+- **Descubrir:** búsqueda/Filtros/Ajustes integrados y Feed continuo de tres columnas con pósteres 2:3 sin títulos inferiores.
+- Ambos se presentan en Obsidiana y Cuarzo y mantienen la píldora flotante Personal/Descubrir.
+
 ## Diseño anterior a los SVG
 
 - [Historial de conceptos anteriores a los SVG](HISTORIAL_CONCEPTOS_ANTES_SVG.md): recupera el diseño de Personal con cuadrícula 2×2, Gestionar listas en fila y Descubrir con barra integrada y Feed de tres columnas. Distingue esa propuesta de la simplificación posterior que terminó en los SVG.
