@@ -26,6 +26,7 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-016 | Registrar un visionado utiliza un panel inferior con cuatro opciones: Ahora, Día de estreno, Seleccionar fecha y Ajustar al inicio; fecha/hora se eligen dentro del mismo panel y el cálculo se presenta como estimación. | Confirmado como dirección de interacción para Prisma Web |
 | P-017 | El selector de calificación usa diez estrellas solo dentro del panel de edición y requiere confirmación; con varios visionados se elige el registro destino y, sin visionados, la nota queda provisional para asociarse al siguiente. En la ficha no se muestran estrellas: el botón «Calificar» pasa a mostrar la nota (por ejemplo, «7/10») y permite editarla al tocarlo. | Confirmado como dirección de interacción para Prisma Web |
 | P-018 | Sin alterar la composición de la ficha aprobada, el control de calificación es un botón que muestra «Calificar» o, tras guardar, la nota (por ejemplo, «7/10»), sin estrellas visibles. La lista detallada de visionados no se despliega en la ficha: se abre al pulsar «Visionados». | Confirmado por el propietario para Prisma Web |
+| P-019 | El primer recorrido funcional será añadir manualmente una película al diario, llevarla a Historial, registrar uno o varios visionados independientes, calificarlos, consultar los registros y comprobar persistencia tras cierre/reapertura y sin conexión. Antes de guardar datos personales reales, la copia cifrada debe poder exportarse y restaurarse correctamente. | Alcance inicial confirmado para preparación técnica |
 
 ## Material heredado
 
@@ -38,14 +39,15 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | ID | Propuesta | Estado |
 |---|---|---|
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
-| T-002 | IndexedDB, bibliotecas de datos, OPFS y opciones SQLite/WASM para datos locales. | Comparar por integridad, rendimiento, migraciones, cuota, seguridad y coste; no elegir por ser la opción básica |
+| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM 3.54.1/OPFS para el diario inicial. | Dexie es la candidata preferente; falta benchmark real en Android y prueba de concurrencia, durabilidad, recuperación y cuota |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
-| T-005 | GitHub Pages desde el repositorio público. | Candidato de 0 USD; pendiente evaluar límites y origen compartido |
+| T-005 | Firebase Hosting clásico en Spark como alojamiento estático con hostname web.app dedicado. | Candidato recomendado de 0 USD; falta aprobar proyecto/site ID y verificar configuración sin facturación. GitHub Pages queda desaconsejado por origen compartido |
 | T-006 | Actualización PWA controlada. | Candidata; especificar lo necesario para proteger datos y operaciones |
 | T-007 | Definir con precisión el contrato público y la compatibilidad de los datos antes de la primera publicación. | Pendiente; SemVer 2.0 ya está aprobado |
 | T-008 | Cifrado de copias con KDF y AES-GCM. | Requiere comparación, benchmark y revisión antes de elegir algoritmo y parámetros |
-| T-009 | Svelte 5 + SvelteKit 3 + adapter-static (con React 19.3 + React Router 8.5 como comparación obligatoria). | Candidata preferente para prototipo; no aprobada hasta comparar en Android real |
+| T-009 | Svelte 5.57.1 + SvelteKit 3.2.0 frente a React 19.3.0 + React Router 8.5.1. | Comparación obligatoria en Android; SvelteKit integra PWA/SSG, React aporta ecosistema mayor. Ninguna está aprobada |
+| T-010 | Formato de copia portable cifrada, con KDF resistente a fuerza bruta y cifrado autenticado. | Argon2id + AES-256-GCM es la dirección candidata; parámetros, biblioteca y formato se deben medir y revisar antes de fijarlos |
 
 ## Decisiones retiradas
 
@@ -57,11 +59,14 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 
 ## Pendientes que bloquean el inicio del código
 
-1. Aprobar el primer recorrido útil y su alcance.
-2. Comparar las mejores opciones tecnológicas y resolver los límites reales del navegador.
-3. Aprobar persistencia local, recuperación y formato de copia.
-4. Seleccionar un origen HTTPS de 0 USD, sin obligación de pagar.
-5. Revalidar el diseño visual de ese recorrido.
-6. Aprobar el plan de validación adecuado al riesgo y aceptar el inicio del desarrollo.
+1. **[Resuelto] Primer recorrido:** añadir película manualmente → Historial → uno o varios visionados → calificación individual → consultar Visionados → comprobar reapertura y uso offline.
+2. **Diseño:** la composición de las pantallas de ese recorrido ya está revisada y aprobada; no reabrirla salvo observación concreta del propietario.
+3. **Framework:** comparar una muestra equivalente en SvelteKit 3 y React Router 8, con build estático, rutas, navegación, accesibilidad, Service Worker y tamaño/rendimiento en Android.
+4. **Almacenamiento:** benchmark Dexie/IndexedDB frente a SQLite/WASM/OPFS con datos sintéticos representativos y pruebas de transacciones, migraciones, cierre inesperado, dos pestañas y cuota.
+5. **Seguridad y recuperación:** cerrar el formato versionado de copia cifrada, medir KDF en Android y probar restauración, contraseña incorrecta, archivo alterado y fallo sin sobrescribir datos.
+6. **Origen:** aprobar un hosting estático y el hostname HTTPS definitivo, verificar su aislamiento de origen y mantener la cuenta en el nivel gratuito sin método de pago ni facturación.
+7. **PWA y actualización:** definir caché del shell, actualización controlada y protección de operaciones en curso.
+8. **Aceptación:** completar el plan de pruebas en el dispositivo Android objetivo.
+9. **Puerta final:** el propietario aprueba expresamente el comienzo del código de producto.
 
-Las decisiones menores pueden tomarse cuando el recorrido que las necesita esté en desarrollo, siempre que no cambien el alcance, el coste, la privacidad ni la integridad de los datos.
+Las decisiones que no afecten al alcance, al coste, a la privacidad ni a la integridad de datos se pueden tomar durante la implementación de la función que las necesite.
