@@ -1,6 +1,6 @@
-# Vectores aprobados — Prisma
+# Vectores aprobados — Prisma Web
 
-Maestros vectoriales finales del set seleccionado y refinado el 11 de noviembre de 2026. Cada archivo es independiente, tintable y no contiene colores de tema ni recursos rasterizados.
+Maestros vectoriales del set seleccionado y refinado el 11 de noviembre de 2026. Se trasladan sin cambiar sus siluetas para su futura implementación en la PWA.
 
 ## Selección
 
@@ -18,15 +18,15 @@ Maestros vectoriales finales del set seleccionado y refinado el 11 de noviembre 
 | Volver | A |
 | Prisma vacío | B — diamante facetado |
 
-## Reglas y correspondencia
+## Reglas
 
 Los diez glifos de interfaz usan `viewBox="0 0 24 24"`; Prisma vacío usa `viewBox="0 0 96 96"`. Todos usan `currentColor`, trazo limpio y terminaciones redondeadas.
 
-- Los glifos se implementan en `PrismaIcon.kt`.
-- La ilustración de estado vacío se implementa en `PrismaEmptyPrism.kt`.
-- Los colores de Obsidiana y Cuarzo se aplican desde Compose; no hay SVG duplicados por tema.
-- Ajustes tiene seis dientes tanto en el maestro SVG como en Compose.
-- El icono lanzador de Android no forma parte de esta selección y permanece pendiente.
+- Los SVG son activos de diseño, no una interfaz ya implementada.
+- Los colores Obsidiana/Cuarzo se aplicarán desde CSS/los tokens de tema de Prisma.
+- No crear duplicados cromáticos del mismo símbolo.
+- Ajustes conserva seis dientes.
+- El icono de instalación PWA es un activo independiente y todavía requiere diseño/aprobación.
 
 ## Archivos
 
