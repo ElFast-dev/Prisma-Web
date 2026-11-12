@@ -56,6 +56,8 @@ Bienvenido al mundo del desarrollo de software. Asegúrate de leer la documentac
 Saludos,  
 Equipo de TMDB
 
+> **Regla de coste cero:** esta autorización particular no permite asumir que cualquier función, modalidad de uso o servicio externo futuro sea gratuito. Antes de integrar TMDB en la PWA se verificará que el uso previsto siga siendo gratuito, que no exija contratar servicios ni habilitar facturación y que las cuotas no obliguen a pagar. Si una capacidad necesitara un coste, se excluirá o rediseñará.
+
 ## Alcance informado
 
 La respuesta oficial transcrita anteriormente confirma para Prisma los siguientes términos:
