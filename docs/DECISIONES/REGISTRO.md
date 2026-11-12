@@ -39,7 +39,7 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | ID | Propuesta | Estado |
 |---|---|---|
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
-| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | IndexedDB estricto y OPFS con SyncAccessHandle en Worker han sido probados en Brave Android; falta benchmark real de Dexie frente a SQLite, concurrencia, durabilidad, recuperación y cuota. OPFS ya no se considera incompatible |
+| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | La compatibilidad básica de IndexedDB y OPFS/Worker ya está probada en Brave Android. Se creó `tools/storage-benchmark/` con Dexie 4.4.7 vs paquete SQLite WASM 3.54.1-build1 + OPFS SAH pool; falta ejecutarlo y valorar la concurrencia entre pestañas, migraciones, recuperación y cuota |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
 | T-005 | Firebase Hosting clásico en Spark como alojamiento estático con hostname web.app dedicado. | Candidato recomendado de 0 USD; falta aprobar proyecto/site ID y verificar configuración sin facturación. GitHub Pages queda desaconsejado por origen compartido |
@@ -99,3 +99,16 @@ Las decisiones que no afecten al alcance, al coste, a la privacidad ni a la inte
 - El User-Agent expone `Android 10; K`; Chromium aplica reducción de User-Agent en Android M110+ y usa esos valores estáticos, por lo que no contradice Android 13. `deviceMemory = 4` y `hardwareConcurrency = 6` son valores informados por el navegador, no mediciones exactas de RAM libre ni recuento físico de núcleos.
 
 Este resultado abre la comparación Dexie/IndexedDB vs SQLite/OPFS, pero no la resuelve. No declara el almacenamiento canónico ni el hosting.
+
+
+## Benchmark de almacenamiento preparado — 12 de noviembre de 2026
+
+Se añadió `tools/storage-benchmark/`, herramienta técnica independiente de la aplicación. Compara:
+- Dexie 4.4.7 sobre IndexedDB, con transacción de durabilidad `strict`.
+- `@sqlite.org/sqlite-wasm@3.54.1-build1`, usando OPFS SAH pool dentro de un Worker.
+
+La herramienta usa películas y visionados sintéticos, tres rondas alternando el orden de los motores, comprobaciones de recuentos, consulta por índices, actualización de una calificación, rollback y cierre/reapertura. Elimina sus bases y carpeta temporales propias; ofrece limpieza limitada a sus prefijos si se interrumpe.
+
+**Estado:** herramienta creada y comprobada sintácticamente. No se ha ejecutado todavía en el Galaxy A03. La versión del núcleo SQLite que informe el módulo en tiempo de ejecución se conservará por separado de la versión del paquete npm.
+
+Fuentes técnicas: [paquete oficial SQLite WASM](https://github.com/sqlite/sqlite-wasm), [OPFS SAH pool — documentación oficial](https://sqlite.org/wasm/doc/tip/persistence.md), [SQLite OO1 API](https://sqlite.org/wasm/doc/tip/api-oo1.md), [Dexie 4.4.7](https://github.com/dexie/Dexie.js/releases).
