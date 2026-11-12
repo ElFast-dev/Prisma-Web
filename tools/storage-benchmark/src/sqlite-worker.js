@@ -45,6 +45,7 @@ async function executeBenchmark(movieCount, viewsPerMovie, round) {
   let pool = null;
   let db = null;
   let result = null;
+  let vfsRemoved = null;
 
   try {
     // Include worker-side WASM module initialization in totalMs.
@@ -212,13 +213,15 @@ async function executeBenchmark(movieCount, viewsPerMovie, round) {
       db?.close();
     } finally {
       if (pool) {
-        // removeVfs() removes the dedicated test directory, so call it only
-        // after this round's database is closed and never on product storage.
-        await pool.removeVfs();
+        // removeVfs() removes only this benchmark's dedicated OPFS directory.
+        // Capture the return value so the report can verify temporary-data cleanup.
+        vfsRemoved = await pool.removeVfs();
+        pool = null;
       }
     }
   }
 
+  if (result) result.vfsRemoved = vfsRemoved;
   return result;
 }
 
