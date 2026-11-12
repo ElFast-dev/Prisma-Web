@@ -39,7 +39,7 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | ID | Propuesta | Estado |
 |---|---|---|
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
-| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | Dexie es la candidata preferente; falta benchmark real en Android y prueba de concurrencia, durabilidad, recuperación y cuota. OPFS queda condicionado a su disponibilidad real en Brave |
+| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | IndexedDB estricto y OPFS con SyncAccessHandle en Worker han sido probados en Brave Android; falta benchmark real de Dexie frente a SQLite, concurrencia, durabilidad, recuperación y cuota. OPFS ya no se considera incompatible |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
 | T-005 | Firebase Hosting clásico en Spark como alojamiento estático con hostname web.app dedicado. | Candidato recomendado de 0 USD; falta aprobar proyecto/site ID y verificar configuración sin facturación. GitHub Pages queda desaconsejado por origen compartido |
@@ -77,4 +77,25 @@ Las decisiones que no afecten al alcance, al coste, a la privacidad ni a la inte
 - **Dispositivo:** Samsung Galaxy A03 SM-A035M, Android 13, Unisoc T606, 4 GB de RAM.
 - **Navegador de aceptación:** Brave Android 1.99.56, Chromium 157.0.8103.50, versión facilitada por el propietario.
 - **Almacenamiento:** la observación inicial de 6,2 GB libres no es un límite permanente; el propietario puede liberar espacio antes de ejecutar benchmarks. Registrar espacio y cuota web por sesión.
-- **Compatibilidad:** Brave declara desactivar la File System API. OPFS pertenece a esa API; no se debe asumir disponible sin detección funcional en Brave. La importación/exportación no dependerá de selectores File System Access específicos.
+- **Evidencia del 12-11-2026:** en Brave 1.99.56 / Chromium 157.0.8103.50 sobre Galaxy A03, la sonda en `http://127.0.0.1:18765/` informó IndexedDB OK con durabilidad estricta, rollback correcto, AES-256-GCM OK, OPFS OK, SyncAccessHandle en Worker OK, `persist() = true`, Service Worker registrado/controlando y selectores avanzados de archivos no expuestos. Los 2 GB de cuota son solo el valor reportado por `estimate()`, no una cuota garantizada. Pendiente recargar para comprobar el marcador, probar input/descarga estándar y modo avión. La persistencia debe volver a solicitarse y verificarse en el origen HTTPS definitivo.
+
+
+## Evidencia de navegador — primera sonda
+
+**Fecha del informe:** 12 de noviembre de 2026, 22:33:25 UTC.  
+**Origen probado:** `http://127.0.0.1:18765/` (loopback local; no es el origen de producción).
+
+- Brave confirmado; Chromium informado por el reporte: 157.0.0.0. El propietario ya había identificado la compilación completa como 157.0.8103.50.
+- Contexto seguro: `true`.
+- IndexedDB: escritura, lectura, borrado y `durability: "strict"` correctos.
+- Rollback de transacción: correcto; no dejó registro parcial.
+- Web Crypto: AES-256-GCM cifró y descifró el texto sintético.
+- OPFS: crear, escribir, leer y limpiar correctos.
+- OPFS Worker: `SyncAccessHandle` de escritura/lectura correcto.
+- Storage: `persist() = true` y `persisted() = true` en ese origen. El marcador se guardó, pero el informe aún no acredita que sobrevivió a una recarga posterior.
+- Service Worker: registrado y controlador activo. Esto acredita control de la página, no todavía una prueba de modo avión.
+- File System Access API: `showOpenFilePicker` y `showSaveFilePicker` no expuestos. La ruta HTML `<input type="file">` + descarga estándar aún debe completar su prueba de ida y vuelta.
+- `estimate()`: reportó 0,05 MB de uso y 2.048 MB de cuota; se conservará como dato informativo, no como garantía de cuota del origen.
+- El User-Agent expone `Android 10; K`; Chromium aplica reducción de User-Agent en Android M110+ y usa esos valores estáticos, por lo que no contradice Android 13. `deviceMemory = 4` y `hardwareConcurrency = 6` son valores informados por el navegador, no mediciones exactas de RAM libre ni recuento físico de núcleos.
+
+Este resultado abre la comparación Dexie/IndexedDB vs SQLite/OPFS, pero no la resuelve. No declara el almacenamiento canónico ni el hosting.
