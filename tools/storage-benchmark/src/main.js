@@ -238,7 +238,6 @@ function showResults(dexieRuns, sqliteRuns, config) {
     $("resultRows").append(tr);
   }
 
-  const reference = dexieRuns[0];
   const valid = [...dexieRuns, ...sqliteRuns].every((item) =>
     item.totalViews === config.expectedViews &&
     item.reopenedCount === config.expectedViews &&
