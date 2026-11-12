@@ -47,6 +47,83 @@ La evaluación debe considerar:
 
 Separar datos personales no reconstruibles, metadatos externos que puedan descargarse otra vez e imágenes/recursos temporales. Una caché nunca será la única copia de información personal. La solución final debe elegirse por superioridad demostrable para el caso real, no por prejuicio a favor de lo básico o de lo complejo.
 
+## Comparativa de almacenamiento: resultado de investigación
+
+**Revisión documental:** 12 de noviembre de 2026.  
+**Estado:** recomendación técnica provisional; requiere benchmark en el Android objetivo antes de aprobarse. Las versiones que se citan describen el estado consultado, no una fijación de dependencias para el futuro proyecto.
+
+### Candidata A — Dexie 4.4.7 sobre IndexedDB
+
+Dexie es una capa de base de datos madura sobre IndexedDB, no una base de datos distinta ni una sincronización en la nube. Aporta consultas por índices, transacciones, observación reactiva y migraciones de esquema. La versión estable más reciente verificada en esta revisión es **4.4.7**, publicada el 19 de octubre de 2026. El paquete principal `dexie` declara licencia Apache-2.0. Para mantener coste cero y privacidad local se usaría únicamente el paquete principal; no se integraría Dexie Cloud ni su complemento de sincronización. Fuentes: [releases](https://github.com/dexie/Dexie.js/releases), [paquete y licencia](https://github.com/dexie/Dexie.js/blob/master/package.json), [migraciones](https://dexie.org/docs/Version/Version), [transacciones](https://dexie.org/docs/Dexie/Dexie.transaction()).
+
+Un punto relevante para el diario es `chromeTransactionDurability: "strict"`, opción de Dexie que permite solicitar en Chrome una mayor garantía de escritura para transacciones. La modalidad `strict` pide confirmar que los cambios se han escrito en almacenamiento persistente antes de considerar completada la transacción; tiene un coste potencial en velocidad y energía. Debe reservarse para las operaciones de datos personales donde la reducción del riesgo justifique ese coste, y medirse en el teléfono. No convierte el almacenamiento del navegador en una copia de seguridad ni protege contra el borrado de datos del sitio. Fuentes: [opción de Dexie](https://dexie.org/docs/Dexie/Dexie), [durabilidad de IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/transaction).
+
+**Ventajas para Prisma**
+- Se integra directamente con el almacenamiento web del navegador y el modelo PWA.
+- Dispone de índices, transacciones y migraciones sin montar una capa SQL/WebAssembly.
+- Permite solicitar durabilidad estricta en las escrituras críticas de Chrome.
+- Tiene una biblioteca mantenida, TypeScript y licencia gratuita.
+- No requiere cabeceras COOP/COEP ni acceso a OPFS.
+
+**Límites**
+- No es SQL: las consultas complejas, agregaciones y relaciones avanzadas deben modelarse y ejecutarse con criterio.
+- IndexedDB tiene reglas de duración de transacciones que exigen diseñar cuidadosamente el código asíncrono.
+- La duración `strict` puede aumentar latencia y consumo; no conviene aplicarla indiscriminadamente.
+- Continúa sujeto a cuota, persistencia y políticas de almacenamiento del navegador.
+
+### Candidata B — SQLite 3.55.0 en WebAssembly con OPFS
+
+SQLite ofrece un motor SQL relacional completo, restricciones, índices, consultas y transacciones ACID. La documentación oficial del proyecto SQLite Wasm registra la versión **3.55.0** el 1 de noviembre de 2026. El núcleo de SQLite está en dominio público. Fuentes: [noticias oficiales SQLite Wasm](https://www.sqlite.org/wasm/doc/trunk/news.md), [licencia del núcleo SQLite](https://www.sqlite.org/copyright.html).
+
+Para persistir desde una PWA se utiliza OPFS, que solo está disponible desde un Worker. No existe una única variante OPFS; cada VFS tiene compromisos diferentes:
+
+- **`opfs`:** permite concurrencia moderada, pero requiere `SharedArrayBuffer` y cabeceras COOP/COEP para aislamiento de origen. La documentación de SQLite advierte de bloqueos y de que hay que gestionar `SQLITE_BUSY` y mantener transacciones breves.
+- **`opfs-wl`:** incorporada en SQLite 3.53.0; usa Web Locks para coordinar accesos y ofrece cola FIFO. Requiere `Atomics.waitAsync()`, que trabaja sobre `SharedArrayBuffer`; por tanto, no debe asumirse que evita el requisito de aislamiento del documento.
+- **`opfs-sahpool`:** no requiere COOP/COEP y ofrece el mayor rendimiento en operaciones por lotes de las variantes descritas por SQLite. Su desventaja es que no permite varias conexiones simultáneas normales a la misma base; la segunda pestaña/instancia puede no poder abrirla sin coordinación explícita a nivel de aplicación.
+
+Fuentes: [guía oficial de persistencia OPFS](https://sqlite.org/wasm/doc/tip/persistence.md), [aislamiento de origen](https://developer.mozilla.org/en-US/docs/Web/API/Window/crossOriginIsolated), [SharedArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer).
+
+**Ventajas para Prisma**
+- SQL completo y modelo relacional natural para películas, visionados, listas y relaciones.
+- Potente para consultas, agregaciones, búsquedas y análisis de grandes conjuntos de datos.
+- Motor ampliamente probado, formato de base de datos estable y núcleo de dominio público.
+- Puede ser una base potente para futuras estadísticas y cálculos de Espectro.
+
+**Límites**
+- Añade WebAssembly, un Worker, puente JS/SQL y una ruta de persistencia OPFS que hay que mantener.
+- Cada VFS trae restricciones concretas de cabeceras, concurrencia o instancias simultáneas.
+- `opfs-sahpool` necesita una política explícita para evitar dos instancias de Prisma intentando abrir la misma base.
+- La inicialización, el tamaño descargado, consumo de memoria, exportación y recuperación deben medirse en Android real.
+- Los errores de cuota OPFS se pueden manifestar como errores de E/S de SQLite; el motor no gestiona por sí mismo la interfaz de cuota ni los avisos al usuario.
+
+### Candidata C — idb sobre IndexedDB
+
+`idb` es un envoltorio pequeño que convierte la API de IndexedDB en promesas, conservando prácticamente su modelo nativo. Su tamaño publicado por el proyecto es cercano a 1,19 kB comprimido Brotli. Es útil como capa delgada, pero deja más responsabilidad de esquema, consultas, migraciones y ergonomía al código de Prisma. Para la complejidad del diario no ofrece por sí solo la misma capa de producto que Dexie. Fuente: [proyecto idb](https://github.com/jakearchibald/idb).
+
+### Recomendación provisional
+
+Para el primer diario local, **Dexie 4.x sobre IndexedDB es la candidata preferente**, con transacciones y durabilidad estricta en las operaciones críticas donde Android/Chrome lo soporte y las mediciones justifiquen el coste.
+
+No se elige porque sea la alternativa más básica. Se elige provisionalmente porque combina una biblioteca madura, migraciones y transacciones, almacenamiento nativo del navegador y menos restricciones de despliegue/concurrencia que SQLite OPFS. No añade sincronización ni requiere servicios externos.
+
+**SQLite 3.55.0 + OPFS no queda descartado.** Se mantiene como alternativa avanzada prioritaria si el benchmark demuestra una ventaja relevante en consultas, estadísticas o grandes volúmenes sin perjudicar la carga inicial, la memoria, el uso en Android ni la apertura de varias instancias.
+
+No se deben mantener dos bases autoritativas ni sincronizarlas entre sí. La decisión final elegirá un único almacenamiento canónico.
+
+### Pruebas obligatorias antes de congelar la elección
+
+Comparar ambas alternativas con los mismos datos sintéticos representativos y en el teléfono Android objetivo:
+
+1. Arranque en frío, bytes descargados, memoria máxima y tiempo de apertura de la base.
+2. Búsqueda local por título, consulta de historial, filtro de listas y agregaciones; medir latencia mediana y P95.
+3. Alta/actualización de una película, registro de visionado y cambios relacionados en una única transacción.
+4. Importación/exportación completa, restauración, cierre inesperado y recuperación ante fallo.
+5. Migración de esquema con datos existentes y rollback seguro.
+6. Dos pestañas/instancias simultáneas, pérdida de foco, suspensión/reanudación y cierre de Worker.
+7. Cuota limitada, persistencia concedida/denegada, almacenamiento lleno y modo avión.
+
+Los datos personales deben usar la mayor durabilidad compatible con una experiencia razonable; los metadatos reconstruibles y las cachés pueden utilizar políticas menos costosas. Ningún resultado de benchmark sustituye la prueba de integridad ni la copia de seguridad restaurable.
+
 ## Capacidades PWA
 
 Evaluar y probar HTTPS, manifest, instalación, Service Worker, alcance correcto, apertura offline, cuota de almacenamiento, persistencia concedida o denegada, actualización segura y compatibilidad con Chrome Android.
