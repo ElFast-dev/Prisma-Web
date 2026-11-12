@@ -16,6 +16,7 @@ Este registro contiene decisiones expresas del propietario y propuestas claramen
 | P-006 | Cloudflare Pages no se utilizará como alojamiento de Prisma. | Rechazada expresamente |
 | P-007 | Prisma utilizará Semantic Versioning 2.0 en formato MAYOR.MENOR.PARCHE. | Aprobada |
 | P-008 | No se elegirán tecnologías básicas por comodidad: se evaluarán opciones de alta calidad y se escogerá la mejor solución demostrable dentro del coste de 0 USD. | Aprobada |
+| P-009 | El asistente puede preguntar dudas y sugerir mejoras para Prisma, siempre de una pregunta por turno y sin ciclos interminables; las decisiones de interfaz importantes se validan con el propietario. | Aprobada |
 
 ## Material heredado
 
