@@ -41,7 +41,7 @@ Al terminar, usa «Limpiar datos de la sonda» para borrar únicamente la base, 
 
 ## Limitaciones
 
-- Brave puede modificar los valores de `StorageManager.estimate()`; no se consideran cuota exacta.
+- La documentación de Brave menciona valores fijos de `StorageManager.estimate()` en escritorio; el resultado Android se debe leer de la prueba y no se considera cuota exacta.
 - OPFS y su acceso síncrono en Worker se prueban separadamente.
 - `showOpenFilePicker` y `showSaveFilePicker` son opcionales; se prueba también el selector HTML estándar y la descarga Blob.
 - La sonda prueba AES-GCM de Web Crypto, pero todavía no implementa ni mide Argon2id.
