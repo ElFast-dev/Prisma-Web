@@ -1,8 +1,10 @@
+> **Archivo histórico de la etapa Android.** Fuente sincronizada desde `feature/fase1-android-foundation` para preservar la última especificación/decisión disponible antes de retirar el repositorio anterior. No utilizar instrucciones técnicas Android como arquitectura vigente de Prisma Web.
+
 # Requisitos del producto — Prisma
 
 **Estado:** borrador vivo de descubrimiento.  
-**Revisión:** 0.3.8.  
-**Última actualización:** 9 de noviembre de 2026.
+**Revisión:** política de producto sincronizada con hitos de desarrollo y SemVer.  
+**Última actualización:** 11 de noviembre de 2026.
 **Propietario y aprobador del producto:** ElFast-dev.  
 **Alcance:** decisiones expresadas y confirmadas en la conversación; no equivale a aprobar una fase de implementación.
 
@@ -96,7 +98,7 @@ La navegación principal es una píldora flotante, separada de los bordes inferi
 
 #### MVP (estructura funcional aprobada)
 
-Al pulsar Personal, se abre una pantalla principal (centro de navegación) con los accesos disponibles en la versión instalada. No entra directamente a Historial. La pantalla principal del MVP muestra exactamente cuatro accesos en una columna vertical: Historial, Pendientes, Ocultos y Gestionar listas. Cada acceso es una fila horizontal uniforme con un icono a la izquierda, nombre y descripción breve en el centro y chevron a la derecha. No aparece Estadísticas, un acceso deshabilitado ni un espacio vacío artificial. Esta aprobación fija la cantidad, el orden y la estructura de los accesos; las descripciones concretas, dimensiones, acabado visual y estados se concretarán en la especificación de la Fase 1.
+Al pulsar Personal, se abre una pantalla principal (centro de navegación) con los accesos disponibles en la versión instalada. No entra directamente a Historial. La pantalla principal del MVP muestra exactamente cuatro accesos en una columna vertical: Historial, Pendientes, Ocultos y Gestionar listas. Cada acceso es una fila horizontal uniforme con un icono a la izquierda, nombre y descripción breve en el centro y chevron a la derecha. No aparece Estadísticas, un acceso deshabilitado ni un espacio vacío artificial. La composición visual y los detalles de estas cuatro filas fueron aprobados el 9 de noviembre de 2026 y están registrados en `ESTADO_VISUAL.md`. Esta aprobación corresponde a las primeras versiones del MVP y no reemplaza la experiencia completa de cinco accesos posterior.
 
 #### Experiencia completa (posterior al MVP)
 
@@ -138,7 +140,7 @@ La experiencia completa de Prisma conservará cinco accesos al incorporar Estad�
 
 ### 4.2 Descubrir
 
-**Composición de Descubrir para el MVP (aprobada, concepto A):** una sola barra de búsqueda en la parte superior, con icono de lupa a la izquierda, el texto indicativo «Buscar película...» y un engranaje de Ajustes a la derecha. No se muestra el icono de Filtros. Debajo aparece **una única lista continua de resultados**, sin encabezados, pestañas, bloques ni separación visual por origen. Los resultados locales aparecen inmediatamente; los resultados remotos de TMDB se incorporan dinámicamente a esa misma lista cuando la conexión y un token verificado lo permiten. Cada fila utiliza póster, título y año. Solo las películas ya guardadas muestran la indicación secundaria «En tu Prisma» junto al año; los resultados remotos nuevos no llevan una etiqueta de sección ni una etiqueta de fuente. La lista combinada se ordena por relevancia de la consulta; en caso de empate, se prioriza la película ya guardada. Si una película local ya está vinculada al mismo identificador TMDB que un resultado remoto, se conserva una sola fila local y no aparece duplicada. Mientras TMDB busca, se muestra un indicador discreto integrado dentro de la propia barra de búsqueda, sin abrir un panel ni separar los resultados. Si la consulta cambia, una respuesta remota de la consulta anterior no debe mezclarse con la nueva. El engranaje abre Ajustes para configurar TMDB y otras preferencias disponibles. No hay Feed, paginación infinita ni filtros avanzados en el MVP.
+**Composición de Descubrir para el MVP (aprobada, concepto A):** una sola barra de búsqueda en la parte superior, con icono de lupa a la izquierda, el texto indicativo «Buscar...» y un engranaje de Ajustes a la derecha. No se muestra el icono de Filtros. Debajo aparece **una única lista continua de resultados**, sin encabezados, pestañas, bloques ni separación visual por origen. Las filas de películas ya guardadas en Prisma son interactivas y al pulsarlas abren la ficha local correspondiente. Los resultados locales aparecen inmediatamente; los resultados remotos de TMDB se incorporan dinámicamente a esa misma lista cuando la conexión y un token verificado lo permiten. Cada fila utiliza póster, título y año. Solo las películas ya guardadas muestran la indicación secundaria «En tu Prisma» junto al año; los resultados remotos nuevos no llevan una etiqueta de sección ni una etiqueta de fuente. La lista combinada se ordena por relevancia de la consulta; en caso de empate, se prioriza la película ya guardada. Si una película local ya está vinculada al mismo identificador TMDB que un resultado remoto, se conserva una sola fila local y no aparece duplicada. Mientras TMDB busca, se muestra un indicador discreto integrado dentro de la propia barra de búsqueda, sin abrir un panel ni separar los resultados. Si la consulta cambia, una respuesta remota de la consulta anterior no debe mezclarse con la nueva. El engranaje abre Ajustes para configurar TMDB y otras preferencias disponibles. El texto del campo es deliberadamente genérico («Buscar...»): en el MVP solo devuelve películas, pero no debe quedar ligado visualmente a ese tipo de contenido porque se prevé añadir series cuando la experiencia de películas esté consolidada. No hay Feed, paginación infinita ni filtros avanzados en el MVP.
 
 Cuando se abre Descubrir sin consulta, se muestra un estado inicial con una ilustración sencilla, el mensaje «Busca una película» y la acción «AÑADIR PELÍCULA MANUALMENTE». Esta acción reutiliza el alta manual existente y funciona sin conexión.
 
@@ -319,6 +321,8 @@ Este filtro solo cambia lo que aparece en Descubrir. No modifica las listas ni e
 
 **Alcance:** esta sección describe la ficha completa prevista para Prisma. En el MVP se implementa la ficha básica necesaria para identificar la película y gestionar el diario: cabecera, datos básicos disponibles, acciones Historial/Pendientes, registrar visionado, visionados repetidos y calificación personal. La sinopsis básica puede mostrarse cuando TMDB la proporcione. Las puntuaciones externas, disponibilidad de streaming, tráileres, enlaces rápidos, reparto/equipo, colecciones y películas relacionadas son posteriores al MVP y no deben aparecer como controles sin función.
 
+**Implementación por etapas:** en F2-H2 se entrega primero la ficha local mínima: título y año cuando existan en Prisma, estado de Historial/Pendientes y visionados locales con fecha/hora disponible. No muestra metadatos remotos ni póster real. En F2-H2 el registro permite «Ahora» y «Seleccionar fecha»; «Día de estreno» requiere fecha de estreno verificada y «Ajustar al inicio» requiere una duración válida, por lo que ambas opciones se habilitan cuando el enriquecimiento de TMDB de F3-H2 proporcione esos datos. La ficha ampliada no reemplaza ni bloquea la ficha local offline.
+
 La ficha se organiza de arriba hacia abajo y evita tarjetas pesadas salvo donde se hayan pedido expresamente.
 
 ### 7.1 Cabecera
@@ -343,7 +347,7 @@ Para una película no oculta:
 
 - Botón ancho de contorno fino «AGREGAR A HISTORIAL».
 - A su derecha, acción de texto gris «AGREGAR A PENDIENTES».
-- El menú de tres puntos ofrece la acción «OCULTAR» en el MVP. «GESTIONAR LISTAS», que abre un selector desde la ficha para marcar/desmarcar varias listas personalizadas, es posterior al MVP; durante el MVP las películas se añaden y retiran desde la sección de contenido de cada lista.
+- El menú de tres puntos ofrece la acción «OCULTAR» en F2-H3, cuando se active ese incremento. En F2-H2 no se muestra un menú sin acciones habilitadas. «GESTIONAR LISTAS», que abre un selector desde la ficha para marcar/desmarcar varias listas personalizadas, es posterior al MVP; durante el MVP las películas se añaden y retiran desde la sección de contenido de cada lista.
 **Posterior al MVP — «GESTIONAR LISTAS»:** se refiere exclusivamente a las listas personalizadas definidas en Personal; no agrega ni quita la película de Historial o Pendientes.
 - Al pulsar «GESTIONAR LISTAS» se abre una ventana con todas las listas personalizadas y una casilla por lista. Las casillas reflejan las listas a las que ya pertenece la película; el usuario puede marcar o desmarcar varias para agregarla o quitarla de esas listas en una sola acción.
 - Esta acción queda fuera del MVP. Durante el MVP, la pertenencia se gestiona desde «Gestionar listas».
@@ -352,16 +356,19 @@ Para una película no oculta:
 Estados del botón:
 
 - **Pendiente:** botón casi a todo el ancho, marcapáginas y texto «AÑADIDO A PENDIENTES», con check a la derecha.
+- Cuando la película está en Pendientes, la ficha permite «RETIRAR DE PENDIENTES» con confirmación. Cancelar conserva la relación; confirmar elimina solo la entrada de Pendientes. No elimina la película local ni sus registros de Historial. No se ofrece retirada directa desde las filas.
 - **En Historial:** contorno y texto azul, marcapáginas relleno y, debajo, la fecha y hora del visionado más reciente en azul pequeño.
 - **Oculta:** desaparecen «AGREGAR A HISTORIAL» y «AGREGAR A PENDIENTES»; aparece un único botón «MOSTRAR DE NUEVO».
 
+**Presentación de la ficha local F2-H2:** cuando la película no tiene visionados, la acción principal es «AGREGAR A HISTORIAL»; cuando ya existen uno o más registros, cambia a «REGISTRAR OTRO VISIONADO». Ambas acciones crean un registro independiente y nunca sobrescriben los anteriores. «AGREGAR A PENDIENTES» se mantiene como acción secundaria mientras la película no pertenezca a Pendientes. La ficha local no muestra un menú de tres puntos sin acciones habilitadas ni controles de funciones posteriores.
+
 ### 7.4 Registrar un visionado
 
-Al pulsar «AGREGAR A HISTORIAL» aparece una ventana con cuatro opciones:
+Al pulsar «AGREGAR A HISTORIAL» o «REGISTRAR OTRO VISIONADO» aparece la ventana de registro. En la ficha local F2-H2 solo se muestran las opciones disponibles para datos locales:
 
 1. **Ahora:** registra el momento actual del teléfono.
 2. **Día de estreno:** registra la fecha oficial de estreno de la película.
-3. **Seleccionar fecha:** abre un calendario y permite elegir fecha y hora de inicio.
+3. **Seleccionar fecha:** abre un calendario y permite elegir la fecha de inicio y, cuando se conoce, la hora. Si el usuario desconoce la hora, puede guardar únicamente la fecha; el registro conserva `startedAtEpochMillis = null` y la ficha indica «Hora no registrada».
 4. **Ajustar al inicio:** pensado para registrar la película después de verla. Calcula una hora estimada de inicio restando la duración conocida a la hora actual de registro y muestra el resultado antes de confirmarlo. No abre otro calendario. Si la duración es desconocida, no inventa un resultado ni presenta un cálculo falso.
 
 La fecha del visionado corresponde al comienzo de la película, nunca al momento en que termina. Por ejemplo, si comienza el 5 de noviembre a las 11:00 p. m. y termina el 6 de noviembre a la 1:00 a. m., el registro pertenece al 5 de noviembre.
@@ -370,12 +377,15 @@ Se conserva la hora local del teléfono. Para «Ajustar al inicio», el texto de
 
 «Día de estreno» utiliza una fecha de calendario; no se debe inventar una hora de visionado para esa opción.
 
+**Disponibilidad por hito:** F2-H2 ofrece «Ahora» y «Seleccionar fecha» con datos locales. «Día de estreno» solo aparece si existe una fecha de estreno verificada en los metadatos guardados; «Ajustar al inicio» solo aparece si existe una duración válida. Hasta que esos datos estén disponibles mediante F3-H2, no se muestran opciones inoperantes ni cálculos estimados.
+
 ### 7.5 Visionados repetidos
 
 - Cada visionado es un registro independiente.
-- Cada uno conserva su propia fecha, hora (si se conoce) y calificación.
+- Cada uno conserva su propia fecha y hora (si se conoce); desde F2-H3 conserva además su calificación individual.
+- En F2-H2 la ficha consulta los registros separados y muestra solo la fecha y la hora almacenadas; la calificación personal pertenece a F2-H3.
 - En Historial aparece una sola portada por película, con contador de visionados.
-- Al entrar en la película se puede consultar la lista completa de visionados y puntuaciones.
+- Al entrar en la película se puede consultar la lista completa de visionados y, desde F2-H3, sus puntuaciones.
 - Una repetición no sobrescribe fechas ni puntuaciones anteriores.
 
 ### 7.6 Calificar
@@ -658,7 +668,7 @@ La única copia de seguridad portable gestionada por el usuario es el archivo ve
 
 ## 17. Primera versión funcional — MVP
 
-**Propósito:** entregar primero un diario cinematográfico personal, fiable y utilizable, con el menor conjunto de capacidades que permita registrar películas, mantener un historial, organizar lo pendiente y proteger los datos. El MVP no equivale a un prototipo desechable ni a la versión completa **1.0.0**; se publica como una versión **0.x.y** cuando sus criterios estén cumplidos.
+**Propósito:** entregar un diario cinematográfico personal, fiable y utilizable, con el menor conjunto de capacidades aprobado que permita registrar películas, mantener un historial, organizar el contenido y proteger los datos. El MVP no equivale a un prototipo desechable ni a la versión completa **1.0.0**; solo se publica como una versión estable **0.x.y** cuando se cumplen todos los criterios de esta sección. La primera alpha tiene una puerta mínima separada y no convierte los hitos de desarrollo en versiones de producto. La política completa está en docs/TECNICO/VERSIONADO_Y_COMPILACIONES.md.
 
 ### Incluido en el MVP
 
@@ -750,7 +760,7 @@ Las reglas descritas en las secciones anteriores han sido aprobadas por el propi
 - Identidad Android aprobada: `applicationId` y `namespace` serán ambos `dev.elfast.prisma`. Deben mantenerse estables para conservar la identidad de las instalaciones y sus actualizaciones.
 - Nivel mínimo de Android aprobado: `minSdk = 26` (Android 8.0 Oreo). Esta decisión define la versión mínima compatible y es independiente del `targetSdk`.
 - SDK objetivo inicial aprobado: `targetSdk = 37` (Android 17). Se mantiene independiente del nivel mínimo (`minSdk`) y deberá revisarse ante cambios de compatibilidad o requisitos de distribución antes de cada publicación.
-- Estrategia de `versionCode` aprobada: contador secuencial único para las versiones distribuidas. El primer APK público tendrá código `1`; cada nueva Release distribuida incrementará el valor en una unidad, incluidas las correcciones. El contador nunca se reutiliza ni se reinicia entre fases o al llegar a `1.0.0`. `versionName` conserva la secuencia SemVer y es independiente. Se adopta `2.100.000.000` como límite máximo operativo de seguridad. Las compilaciones internas usarán una variante de aplicación separada y no consumirán ni reutilizarán la secuencia de producción.
+- Estrategia de `versionCode` aprobada: contador secuencial independiente de SemVer. El primer producto publicado (incluidas alpha/beta/RC) utiliza `1`; cada nueva Release de producto publicada incrementa exactamente en una unidad. El contador no se reutiliza ni se reinicia y conserva el límite máximo operativo de `2.100.000.000`. Las compilaciones internas utilizan variantes e identificadores separados y no consumen la secuencia de producción. La regla detallada y la situación actual se documentan en `docs/TECNICO/VERSIONADO_Y_COMPILACIONES.md`.
 - Estrategia de firma de producción aprobada: almacén JKS con clave privada RSA de 4096 bits, firma SHA-256 con RSA y vigencia de 30 años. La clave y sus contraseñas se mantendrán fuera del repositorio y de los APK; se conservarán dos copias cifradas en ubicaciones físicas independientes, con las contraseñas custodiadas por separado en un gestor de contraseñas. La publicación se firmará mediante un trabajo protegido de GitHub Actions, en el entorno `production`, con aprobación manual y secretos limitados a ese trabajo. Se verificará el APK con `apksigner` y se comparará la huella SHA-256 del certificado con la registrada para Prisma. Las compilaciones internas tendrán identidad y firma separadas. La clave no se rotará como operación rutinaria.
 
 ### Decisiones abiertas — backlog P2/P3
@@ -764,8 +774,6 @@ Estos puntos no bloquean Fase 0 ni se incorporan automáticamente al MVP. Se res
 | P2 | Puntuación exacta y desempates del conjunto de resultados locales y remotos. | Fase 3, antes de cerrar el orden de la búsqueda combinada. |
 | P2 | Presentación mínima de Gestionar listas y del contenido de una lista en el MVP. | Fase 2, antes de implementar esas pantallas; no habilita gestión avanzada. |
 | P2 | Regla para elegir entre fechas de estreno de TMDB por país y presentación de visionados cuando se desconoce la hora. | Fase 2 para los registros de visionado; Fase 3 para la selección de fecha de estreno de TMDB. |
-| P2 | Composición visual y estados de la navegación principal Personal/Descubrir, conservando las propiedades ya aprobadas de la píldora. | Fase 1, antes de implementar la navegación. |
-| P2 | Dimensiones, acabado visual y estados de la pantalla raíz de Personal, conservando exactamente los cuatro accesos aprobados. | Fase 1, antes de implementar esa pantalla. |
 | P2 | KDF, sal, parámetros de AES-256-GCM, encabezado y formato versionado del archivo de copias. | Fase 4, antes de implementar exportación/restauración. |
 | P2 | Fuentes y condiciones autorizadas para tráileres, enlaces rápidos y puntuaciones externas. | Fase 6, antes de integrar cada fuente; la autorización de TMDB no sustituye permisos de terceros. |
 | P2 | Presentación y navegación de Colecciones desde la ficha. | Fase 6, antes de implementar esa experiencia. |
