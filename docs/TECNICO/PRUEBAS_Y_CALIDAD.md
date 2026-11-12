@@ -140,6 +140,19 @@ La comparación automatizada se encuentra en `tools/storage-benchmark/`. Es una 
 - Se deben comprobar los indicadores de integridad antes de considerar los tiempos.
 - SQLite SAH pool no proporciona concurrencia multi-pestaña transparente. Un benchmark rápido no demuestra que sea la mejor arquitectura de Prisma.
 - Si se interrumpe una ronda, la herramienta permite limpiar únicamente la carpeta OPFS y las bases IndexedDB con prefijos propios.
-- El benchmark aún no se ha ejecutado en el Galaxy A03. No declarar elección de almacenamiento hasta recibir y revisar sus informes.
+- El benchmark ya se ejecutó en el Galaxy A03 con 1.000, 5.000 y 10.000 películas (3.000, 15.000 y 30.000 visionados) y tres rondas por motor. Todos los informes indicaron integridad correcta. Los resultados medidos y sus límites están documentados en Arquitectura; no declarar elección de almacenamiento hasta resolver concurrencia, limpieza OPFS, migraciones, memoria y recuperación.
 
 Instrucciones de ejecución en Termux: [tools/storage-benchmark/README.md](../../tools/storage-benchmark/README.md).
+
+
+### Resultados observados del benchmark (12-11-2026)
+
+| Dataset | Inserción Dexie | Inserción SQLite SAH pool | Integridad |
+|---|---:|---:|---|
+| 1k películas / 3k visionados | 993,1 ms | 359,5 ms | Correcta |
+| 5k películas / 15k visionados | 5.320,9 ms | 1.293,0 ms | Correcta |
+| 10k películas / 30k visionados | 10.578,7 ms | 2.441,5 ms | Correcta |
+
+No interpretar el total del benchmark como comparación simétrica: SQLite incluye inicialización de Worker/WASM/VFS, Dexie ya está cargado antes de iniciar el cronómetro. Los informes antiguos tampoco registraron el retorno de removeVfs(); la versión actual de la herramienta lo comprueba.
+
+Próximas pruebas: OPFS-WL o actor único/SharedWorker, limpieza OPFS observada, funcionamiento con dos pestañas, tamaño del paquete y prueba de restauración de backup.
