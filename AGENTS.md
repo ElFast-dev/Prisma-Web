@@ -1,74 +1,70 @@
-# Mandato obligatorio para agentes de IA — Prisma
+# Mandato de trabajo — Prisma
 
-## Autoridad del propietario
+## Autoridad
 
-El propietario humano es la única autoridad del producto. La IA analiza, diseña, desarrolla, prueba y documenta; no aprueba por cuenta propia cambios de alcance. Una recomendación no es autorización. Las instrucciones más recientes y explícitas del propietario prevalecen sobre documentos antiguos.
+El propietario es la única autoridad para aprobar el producto, el alcance, el diseño, el alojamiento y las entregas. Las instrucciones recientes y explícitas prevalecen sobre documentos anteriores.
 
-«Continúa» permite seguir con el trabajo ya autorizado, pero no aprueba funciones nuevas ni saltarse una puerta de fase. No volver a preguntar decisiones que ya consten como aprobadas. No reintroducir funciones rechazadas.
+Una propuesta técnica no queda aprobada por estar documentada. No volver a preguntar decisiones que ya estén aprobadas, pero tampoco convertir decisiones antiguas en requisitos vigentes si el propietario ha pedido replantearlas.
 
-## Plataforma y dirección aprobadas
+## Directrices confirmadas
 
-- Prisma se desarrollará primero como PWA instalable en Android.
-- `Prisma-Web` es el repositorio de migración y será el repositorio canónico cuando se complete el cambio de nombre.
-- El antiguo repositorio Android no es la base de desarrollo futura. Sus documentos y decisiones útiles deben conservarse en el archivo histórico del repositorio nuevo.
-- El teléfono es la fuente de verdad: los datos personales y el aprendizaje de Espectro permanecen localmente.
-- No hay cuenta, backend propio, sincronización de nube, anuncios ni telemetría del comportamiento personal.
-- El alcance inicial son películas; series y episodios siguen excluidos.
-- Obsidiana y Cuarzo mantienen paridad funcional.
+- Prisma se está reconstruyendo como PWA para uso principal en Android.
+- Antes de programar se cierran los fundamentos imprescindibles.
+- El coste total para el propietario debe ser 0 USD.
+- El repositorio nuevo será el principal y cambiará de nombre a `Prisma`.
+- El avance debe medirse por funciones completas que el usuario pueda utilizar.
 
-## Regla fundamental: primero los cimientos
+La guía que prevalece sobre documentos heredados es [Replanteamiento y reglas](docs/REPLANTEAMIENTO_Y_REGLAS.md).
 
-**No crear código de la aplicación, pantallas, componentes de producto ni una PWA parcial antes de cerrar Fase 0.**
+## No heredar sin revisar
 
-Fase 0 debe definir y sincronizar como mínimo:
-1. Propósito, alcance, MVP, exclusiones y recorridos funcionales.
-2. Arquitectura PWA y límites de las APIs del navegador.
-3. Modelo de datos, persistencia, migraciones, cuota y almacenamiento.
-4. Seguridad, credenciales, exportación/restauración y recuperación.
-5. Origen HTTPS definitivo, alojamiento y estrategia de actualización.
-6. Sistema de versiones, hitos, cambios y Releases.
-7. Estructura del repositorio, proceso de trabajo, pruebas y criterios de aceptación.
-8. Diseño visual heredado adaptado a unidades web sin cambiar decisiones aprobadas.
-9. Roadmap coherente y puertas de aprobación.
+El repositorio Android y sus documentos son material histórico. No copiar automáticamente su arquitectura, herramientas, procesos, versionado, modelo de datos, pantallas ni criterios de aceptación.
 
-Se puede investigar, auditar y documentar durante Fase 0. No se debe presentar un prototipo vacío como avance funcional.
+Las propuestas elaboradas para la PWA también deben justificarse. No tratar React, Vite, IndexedDB, Workers, OPFS, Argon2id ni una estructura concreta de carpetas como decisiones aprobadas hasta que se demuestre que hacen falta.
 
-## Entrega funcional obligatoria
+Los diseños y SVG existentes son referencias candidatas. Hay que comprobarlos en contexto web y móvil antes de convertirlos en especificaciones obligatorias.
 
-- Desarrollar recorridos verticales completos: interfaz → estado → dominio → persistencia → actualización visible.
-- Una función solo está implementada cuando el usuario puede completarla en el navegador instalado y comprobar el resultado después de cerrar y volver a abrir Prisma.
-- Las pruebas y la CI son evidencia, no sustitutos del producto.
-- Cada incremento debe entregar una capacidad utilizable; no encadenar scaffolding, abstracciones o rondas de tests sin una función terminada.
-- Comprobar Obsidiana y Cuarzo en cada recorrido.
-- No declarar que algo funciona offline sin probar modo avión, reinicio del navegador y reapertura de la PWA.
-- No afirmar persistencia garantizada: verificar el resultado de `navigator.storage.persist()` y comunicar sus límites.
-- No permitir que una limpieza automática elimine historial, visionados, calificaciones o listas.
+## Regla de coste cero
 
-## Calidad y seguridad
+No introducir planes de pago, dominios comprados, suscripciones, servicios con cobro variable, renovaciones ni facturación automática. Una cuota gratuita no sirve si una capacidad esencial obliga a pagar para seguir funcionando. Documentar límites, consecuencias y requisitos de tarjeta de cualquier servicio considerado.
 
-Revisar arquitectura, duplicación, estado, accesibilidad, compatibilidad móvil, rendimiento, dependencias, almacenamiento, seguridad, migraciones, funcionamiento offline y recuperación. Clasificar hallazgos: P0 (seguridad/pérdida de datos), P1 (bloqueo funcional), P2 (mantenibilidad importante), P3 (pulido). No cerrar un hito con P0/P1 abiertos.
+**Cloudflare Pages está rechazado.** No conectarlo ni volver a proponerlo como opción aprobable.
 
-No exponer tokens, credenciales, datos del diario ni copias descifradas en logs, artefactos públicos, errores o telemetría. No incluir scripts externos innecesarios. Aplicar CSP estricta y dependencias fijadas.
+## Fundamentos antes del código
 
-## Versionado: no incrementar por actividad interna
+No crear aplicación, pantallas, componentes de producto, Service Worker productivo ni bases de datos físicas hasta que el propietario apruebe:
+- primer recorrido útil y alcance inicial;
+- diseño web revisado;
+- tecnología mínima;
+- persistencia, seguridad, exportación y recuperación;
+- hosting de 0 USD y origen HTTPS estable;
+- actualización de la PWA;
+- pruebas y criterios de aceptación.
 
-La política completa está en `docs/TECNICO/VERSIONADO.md`. Reglas esenciales:
-- La versión pública solo cambia al completar y aceptar un hito funcional o al publicar una corrección real.
-- Documentación, refactors, pruebas, cambios de CI y builds internos no incrementan la versión de producto.
-- No crear números de versión para aparentar progreso.
-- Cada Release necesita changelog en español, lista de funciones realmente utilizables, pruebas/evidencias, riesgos conocidos y notas de datos/migración.
-- `1.0.0` requiere completar el alcance aprobado de la versión completa.
+No convertir esta preparación en una fase documental infinita. Resolver únicamente lo necesario para empezar sin decisiones peligrosas o bloqueantes.
 
-## Reglas del repositorio
+## Forma de desarrollar
 
-Antes de editar, recuperar el contenido actual y el SHA del archivo. No sobrescribir cambios concurrentes. Mantener ramas y commits recuperables. No borrar el repositorio Android anterior hasta verificar en el nuevo la presencia e integridad de los requisitos, diseños, licencias y decisiones que deben conservarse.
+- Priorizar recorridos verticales completos: interfaz → regla de negocio → persistencia → resultado visible al reabrir.
+- Terminar y verificar una capacidad antes de empezar otra de tamaño comparable.
+- No crear pantallas con controles inactivos ni datos ficticios presentados como reales.
+- No añadir capas, patrones, dependencias, workers o abstracciones por anticipado.
+- No generar múltiples rondas de CI idénticas ni tests que no protejan un comportamiento concreto.
+- Comprobar el comportamiento real en Android, en los temas aprobados y offline cuando corresponda.
+- Si una API del navegador no está disponible, ofrecer una alternativa clara; no fingir capacidades nativas.
 
-## Procedimiento al iniciar una tarea
+## Calidad y protección de datos
 
-1. Leer este archivo y `docs/CONTEXTO_IA.md`.
-2. Comprobar repositorio, rama, commit y estado real.
-3. Consultar requisitos, roadmap y diseño técnico aplicables.
-4. Identificar qué está aprobado, qué está autorizado, qué es propuesta y qué está pendiente.
-5. Trabajar dentro de la fase aprobada sin pedir autorización para cada paso técnico rutinario.
-6. Registrar decisiones y actualizar las fuentes de verdad afectadas.
-7. Entregar resultados verificables y describir lo que el usuario ya puede hacer.
+- Nunca exponer diario, credenciales, copias descifradas o tokens en logs, artefactos públicos o telemetría.
+- Nunca borrar datos personales para recuperar espacio.
+- No prometer persistencia garantizada: mostrar los límites reales del navegador y probarlos.
+- Validar una restauración por completo antes de modificar datos existentes.
+- Un defecto que pueda perder datos, filtrar información o dejar inaccesible el diario bloquea la entrega afectada.
+
+## Entregas y versiones
+
+Usar [Identificación de entregas](docs/TECNICO/VERSIONADO.md). No usar SemVer, alpha/beta/rc, IDs de fase-hito ni números por commits, CI, documentación, refactors o builds. Una edición pública solo existe cuando sus funciones están completas y aceptadas.
+
+## Trabajo en GitHub
+
+Antes de modificar un archivo, recuperar su contenido actual y SHA. No sobrescribir cambios concurrentes. Mantener los cambios pequeños, claros y recuperables. No eliminar el repositorio Android ni renombrar el nuevo hasta que el propietario haya verificado el contenido migrado y realice las acciones administrativas necesarias.
