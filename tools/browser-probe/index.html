@@ -83,11 +83,12 @@ small{font-size:12px;color:var(--muted)}.hidden{display:none!important}
 
 <section class="panel">
 <h2>Modo sin conexión</h2>
-<p>Registra el Service Worker y recarga esta página. Cuando aparezca como controlador, activa modo avión y vuelve a cargar <code>http://127.0.0.1:18765/</code>. El servidor local de Termux debe seguir ejecutándose.</p>
+<p>Registra el Service Worker y recarga esta página. Después detén el servidor en Termux con Ctrl+C, activa modo avión y recarga esta dirección. Si la página vuelve a abrirse, pulsa el botón de confirmación. Así comprobamos la caché del Service Worker sin que el servidor local responda.</p>
 <div class="grid">
 <div class="metric"><span>Service Worker</span><b id="swSupport">—</b></div>
 <div class="metric"><span>Controla esta página</span><b id="swControl">—</b></div>
 </div>
+<button id="offlineConfirm" class="secondary" style="margin-top:10px">Confirmar que cargó con servidor detenido y modo avión</button>
 </section>
 
 <section class="panel">
@@ -111,6 +112,8 @@ small{font-size:12px;color:var(--muted)}.hidden{display:none!important}
 const DB_NAME="prisma-browser-probe-v1", STORE="checks";
 const OPFS_DIR="prisma-browser-probe-v1", CACHE_PREFIX="prisma-browser-probe-";
 const results=[];
+let fileRoundTrip = {downloadStarted:false, importVerified:false, detail:"No probado"};
+let offlineUserConfirmed = false;
 const $=id=>document.getElementById(id);
 const prettyStatus=s=>s==="ok"?"CORRECTO":s==="warn"?"CONDICIONAL":s==="bad"?"FALLÓ":"PENDIENTE";
 function addResult(name,status,detail){
@@ -235,15 +238,19 @@ function downloadJSON(name,data){
  const a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
 function exportFile(){
+ fileRoundTrip={downloadStarted:true,importVerified:false,detail:"Descarga iniciada; falta seleccionar y validar el archivo."};
  downloadJSON("prisma-browser-probe.json",{format:"prisma-browser-probe-file-v1",createdAt:new Date().toISOString(),note:"Archivo sintético; no es backup de Prisma.",marker:"prisma-probe-file-roundtrip",sample:[{id:"synthetic-1",title:"Película de prueba"}]});
  $("fileResult").innerHTML="";addFileResult("Descarga iniciada. Busca el archivo en Descargas.");
+ addResult("Exportación de archivo","pending","Se inició la descarga; falta verificar que el archivo llegó a Descargas y volver a seleccionarlo.");
 }
 async function importFile(file){
  $("fileResult").innerHTML="";
  try{
   const data=JSON.parse(await file.text()),ok=data.format==="prisma-browser-probe-file-v1"&&data.marker==="prisma-probe-file-roundtrip";
+  fileRoundTrip={downloadStarted:true,importVerified:ok,detail:ok?"El archivo descargado fue seleccionado y validado.":"El archivo no coincide con la muestra esperada."};
   addFileResult(ok?"CORRECTO: JSON sintético leído y validado.":"NO COINCIDE: no es el archivo generado por esta sonda.");
- }catch(e){addFileResult("FALLÓ: "+e.message);}
+  addResult("Ida y vuelta de archivo",ok?"ok":"bad",fileRoundTrip.detail);
+ }catch(e){fileRoundTrip={downloadStarted:true,importVerified:false,detail:e.message};addFileResult("FALLÓ: "+e.message);addResult("Ida y vuelta de archivo","bad",e.message);}
 }
 async function cleanup(){
  if(!confirm("¿Eliminar únicamente los datos creados por esta sonda en localhost?"))return;
@@ -283,6 +290,11 @@ $("run").onclick=async()=>{
  await storageInfo();$("run").disabled=false;
 };
 $("persist").onclick=requestPersist;$("sw").onclick=testSW;
+$("offlineConfirm").onclick=()=>{
+ if(!navigator.serviceWorker?.controller){addResult("Prueba offline","bad","La página no está controlada por el Service Worker.");return;}
+ offlineUserConfirmed=true;
+ addResult("Prueba offline","ok","Confirmado por el usuario: servidor local detenido, modo avión activado y página recargada desde caché.");
+};
 $("download").onclick=exportFile;$("file").onchange=e=>{if(e.target.files?.[0])importFile(e.target.files[0]);};
 $("cleanup").onclick=cleanup;
 $("report").onclick=()=>downloadJSON("prisma-browser-probe-report.json",{
@@ -291,7 +303,9 @@ $("report").onclick=()=>downloadJSON("prisma-browser-probe-report.json",{
  deviceMemoryReported:navigator.deviceMemory||null,hardwareConcurrencyReported:navigator.hardwareConcurrency||null,
  storage:{usage:$("usage").textContent,quota:$("quota").textContent,persisted:$("persisted").textContent,persistResult:$("persistResult").textContent},
  filePickers:{open:$("openPicker").textContent,save:$("savePicker").textContent},
- serviceWorker:{supported:"serviceWorker" in navigator,controlled:!!navigator.serviceWorker?.controller},tests:results
+ serviceWorker:{supported:"serviceWorker" in navigator,controlled:!!navigator.serviceWorker?.controller},
+ offlineTest:{userConfirmed:offlineUserConfirmed,onlineFlag:navigator.onLine},
+ fileRoundTrip:fileRoundTrip,tests:results
 });
 detect();
 })();
