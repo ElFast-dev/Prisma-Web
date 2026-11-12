@@ -82,3 +82,10 @@ Los selectores avanzados `showOpenFilePicker` y `showSaveFilePicker` no estuvier
 La importación debe evitar duplicar simultáneamente el archivo comprimido/cifrado, el texto descifrado y la base completa en RAM cuando haya una estrategia por streaming disponible. Cualquier límite de tamaño de archivo o memoria debe comunicarse antes de modificar la base.
 
 Fuentes: [MDN — OPFS y cuotas](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system), [OWASP — parámetros Argon2id](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+
+
+## Evidencia de rendimiento de almacenamiento
+
+El benchmark real del Galaxy A03 indicó que SQLite WASM/OPFS SAH pool inserta 3.000, 15.000 y 30.000 visionados entre 2,76× y 4,33× más rápido que Dexie 4.4.7 en los datasets sintéticos. Todos los resultados pasaron las comprobaciones de integridad. No es una selección final de motor: SAH pool no ofrece varias instancias multi-pestaña transparentes y aún falta comparar OPFS-WL/coordinación.
+
+El benchmark indicó aumento progresivo del uso reportado por StorageManager.estimate(). Como ese valor no es una cuota garantizada y los informes iniciales no capturaban removeVfs(), no se declara fuga ni limpieza confirmada. La versión corregida del benchmark registra el retorno de eliminación y comprueba la presencia del directorio temporal.
