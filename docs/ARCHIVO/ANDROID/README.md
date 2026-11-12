@@ -1,14 +1,16 @@
+> **Archivo histórico de la etapa Android.** Fuente sincronizada desde `feature/fase1-android-foundation` para preservar la última especificación/decisión disponible antes de retirar el repositorio anterior. No utilizar instrucciones técnicas Android como arquitectura vigente de Prisma Web.
+
 # Prisma
 
 **Diario cinematográfico personal para Android.** Prisma conserva la historia de cada espectador en el propio teléfono, ayuda a descubrir películas y aprende los gustos de forma local mediante su algoritmo **Espectro**.
 
-## Regla principal de autoridad y colaboración
+## Autoridad del propietario y calidad del desarrollo
 
-**El propietario humano es la única autoridad y quien toma las decisiones finales sobre Prisma. La IA es la colaboradora encargada de analizar, diseñar, crear y desarrollar la aplicación.** La IA debe aportar criterio, detectar necesidades y sugerir ideas o mejoras útiles, explicando sus razones, beneficios, costes y riesgos; el propietario decide qué se aprueba, se rechaza o se pospone. Una sugerencia de la IA nunca equivale a una aprobación ni autoriza su implementación. La IA trabaja con autonomía dentro del alcance ya aprobado, pero no añade, elimina, sustituye ni cambia funciones o fases sin autorización expresa del propietario. Esta regla prevalece sobre cualquier recomendación o documento que la contradiga.
+**El propietario humano es la única autoridad sobre Prisma. La IA es la colaboradora que analiza, diseña, crea y desarrolla la aplicación**, con iniciativa para detectar necesidades y sugerir mejoras justificadas. El propietario aprueba o rechaza cada propuesta. La IA no añade funciones por su cuenta y trabaja con autonomía dentro de lo ya aprobado.
 
-Antes de cualquier tarea, todo agente de IA debe leer el mandato obligatorio de la raíz (AGENTS.md) y la guía completa de contexto (docs/CONTEXTO_IA.md). Esta comprobación se hace antes de analizar, diseñar, programar o modificar cualquier cosa.
+La IA debe auditar periódicamente la arquitectura, el código, la seguridad, las dependencias y las pruebas. Si detecta problemas estructurales graves, debe aportar evidencia y comparar reparación, refactorización y reconstrucción limpia. No debe eliminar ni sustituir el trabajo existente sin autorización expresa del propietario. Una reconstrucción aprobada debe conservar los requisitos y datos, validar cada incremento y no afirmar que está «sin errores» sin evidencia.
 
-La IA también debe auditar de forma continua la arquitectura, la calidad del código, las dependencias, la seguridad y las pruebas. Si detecta problemas estructurales graves, debe demostrarlo, comparar reparación frente a reconstrucción y recomendar la mejor opción. Nunca eliminará ni sustituirá el trabajo existente sin autorización expresa del propietario. Una reconstrucción aprobada debe conservar los requisitos y datos, validar cada incremento y no declarar «sin errores» sin evidencia de pruebas.
+Antes de cualquier tarea, todo agente debe leer AGENTS.md y docs/CONTEXTO_IA.md. La regla completa está en dichos documentos.
 
 ## REGLA DE ENTREGA FUNCIONAL — LAS PRUEBAS NO SON EL PRODUCTO
 
@@ -26,8 +28,10 @@ El objetivo de cada incremento es entregar una parte de Prisma que el propietari
 ## Estado actual
 
 - Fase 0 (definición del producto) cerrada con aprobación del propietario el 9 de noviembre de 2026.
-- La especificación formal de Fase 1 y su inicio fueron aprobados expresamente el 9 de noviembre de 2026; la fase está en curso.
-- La programación ha comenzado; todavía no se ha generado una compilación.
+- Fase 1 (fundamentos Android y entrega continua) completada el 10 de noviembre de 2026 tras superar CI #129 y confirmar los 14 escenarios de validación física en el Galaxy A03. Fase 2 está autorizada y en desarrollo desde el 10 de noviembre de 2026; el primer incremento se centra en Room, alta manual y búsqueda local offline.
+- La rama de trabajo `feature/fase1-android-foundation` contiene la implementación Android inicial y sigue separada de `main`.
+- La CI de aceptación, [#129](https://github.com/ElFast-dev/Prisma/actions/runs/42948770174), terminó con `success` en 7 min 31 s: build/lint/JVM, matriz API 26/API 37, validación de `versionCode`, BackupManager y publicación del APK interno. El recorrido físico de aceptación en el Galaxy A03 también quedó completado y registrado.
+- CI publicó un APK interno actualizable de `dev.elfast.prisma.internalfix2`; los artefactos de Actions son temporales y no sustituyen una GitHub Release pública. `main` permanece sin integrar estos cambios.
 - Las decisiones confirmadas están en [Requisitos del producto](docs/PRODUCTO/REQUISITOS.md).
 - Las propuestas y las preguntas abiertas se identifican por separado; una sugerencia del asistente no se considera aprobada sin confirmación expresa.
 - Antes de programar una fase, se crea su especificación breve, se presenta al propietario y se espera su aprobación explícita.
@@ -38,25 +42,30 @@ El objetivo de cada incremento es entregar una parte de Prisma que el propietari
 - [Requisitos del producto](docs/PRODUCTO/REQUISITOS.md)
 - [Diseño técnico](docs/TECNICO/DISENO_TECNICO.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Operación y capacidades de GitHub](docs/TECNICO/OPERACION_GITHUB.md)
 - [Autorización particular de TMDB comunicada para Prisma](docs/LICENCIAS/TMDB_PRISMA.md)
 - [Estado y decisiones visuales](docs/DISENO/ESTADO_VISUAL.md)
+- [Conceptos visuales de Fase 2 — Historial y Pendientes](docs/DISENO/CONCEPTOS_FASE2/README.md)
 - [Referencias técnicas oficiales](docs/REFERENCIAS_TECNICAS.md)
 
 ## Reglas de trabajo
 
 1. Todo el código y la documentación viven en este repositorio.
-2. Antes de cualquier acción, leer AGENTS.md y docs/CONTEXTO_IA.md; comprobar la rama, el commit y el estado real del trabajo. Consultar las secciones pertinentes de los documentos fuente.
+2. Antes de cualquier acción, leer `AGENTS.md` y `docs/CONTEXTO_IA.md`; comprobar la rama, el commit y el estado real del trabajo. Auditar la calidad antes de ampliar capacidades importantes.
 3. Avanzar las fases estrictamente en el orden del roadmap.
 4. No preparar ni programar trabajo de fases posteriores mientras una fase anterior siga activa.
 5. Antes de cada fase, redactar una especificación con alcance, versiones, entregables, dependencias y criterios de aceptación. El propietario aprueba esa especificación.
 6. El cierre de una fase y el inicio de la siguiente son autorizaciones distintas. Cuando haga falta autorización, explicar qué se solicita, por qué corresponde ahora, qué habilita y qué ocurre si se aplaza; esperar la decisión antes de ejecutar. No pedir permiso para pasos rutinarios ya aprobados.
 7. No programar hasta tener aprobada la especificación de la fase y autorización explícita para iniciarla.
-8. Cada versión debe ser un incremento pequeño y comprobable. Registrar cada versión en GitHub con una explicación sencilla y, cuando sea viable, un APK instalable.
+8. Identificar el desarrollo mediante fases e hitos; identificar los APK internos con CI, SHA y variante. Solo crear una versión SemVer cuando exista una entrega de producto aprobada que supere su puerta de aceptación.
 9. Mantener requisitos y decisiones visuales sincronizados con lo acordado. Si algo cambia, actualizar los documentos y explicarlo.
 10. Mostrar conceptos visuales en la conversación; no usar imágenes generadas por IA para sustituir los diseños. No cerrar una pantalla sin aprobación.
 11. No añadir funciones sugeridas hasta que el propietario las apruebe.
 12. Los conceptos visuales deben tener calidad de presentación, contexto completo, jerarquía clara y alternativas realmente distinguibles. Cuando el propietario pida mejores conceptos, rehacerlos con una mejora visible y respetar las decisiones ya aprobadas. La regla detallada está en `docs/DISENO/ESTADO_VISUAL.md`.
-13. **Regla del Porqué:** toda función, decisión, elemento visual, interacción, dependencia, proceso o cambio debe tener una razón explícita y comprensible. Al proponerlo o incorporarlo, explicar qué problema resuelve, qué beneficio aporta y por qué se prefiere frente a alternativas relevantes. Si no existe una justificación útil, no se añade. El propietario puede preguntar «¿Por qué?» en cualquier momento y debe recibir una explicación concreta, incluidas sus ventajas, límites y consecuencias.
+13. **Regla del Porqué:** justificar decisiones relevantes de producto, arquitectura, seguridad y coste. Explicar el problema, el beneficio, los límites y la alternativa cuando cambien el comportamiento o el riesgo; los cambios rutinarios no requieren informes extensos.
+14. **Multitarea segura:** avanzar en paralelo investigación, implementación y pruebas independientes; aislar cambios y mantener un solo escritor por archivo, rama, emulador o recurso. Android CI conserva la ejecución activa y reemplaza una ejecución pendiente obsoleta por la actualización más reciente. La regla operativa completa está en `docs/CONTEXTO_IA.md`.
+15. **Progreso máximo:** acotar cada hipótesis a dos ciclos enfocados; una evidencia nueva puede justificar otra hipótesis, sin detener el proyecto. No esperar CI para avanzar en tareas independientes; cada ciclo deja un resultado tangible. No recortar funciones aprobadas ni controles obligatorios.
+16. **CI eficiente sin perder cobertura:** la ejecución completa debe apuntar a 10 minutos o menos; API 26 y API 37 se validan en paralelo con límites por etapa. El timeout nunca cuenta como prueba superada y el APK final solo se publica cuando todas las suites obligatorias pasan. Detalle en `docs/CONTEXTO_IA.md`.
 
 ## Principios no negociables
 
@@ -70,8 +79,12 @@ El objetivo de cada incremento es entregar una parte de Prisma que el propietari
 - Las copias de seguridad son exportaciones manuales cifradas; Prisma no sincroniza datos personales mediante una nube propia.
 - Las actualizaciones se distribuyen mediante GitHub Releases y pueden gestionarse desde la propia aplicación, respetando el instalador y las autorizaciones del sistema Android.
 
-## Versionado
+## Desarrollo, compilaciones y versiones de producto
 
-Todas las versiones distribuidas de Prisma se publicarán en GitHub Releases con un changelog obligatorio en español y un APK instalable. El mismo changelog de cada Release se podrá consultar dentro de Prisma, tanto al revisar una actualización como en el historial de versiones. El actualizador solo buscará versiones cuando el usuario pulse «Buscar actualizaciones» desde Ajustes; no realizará consultas automáticas al iniciar ni en segundo plano. La instalación respetará las autorizaciones y confirmaciones del sistema Android.
+El roadmap se identifica con fases e hitos (por ejemplo, F2-H2), no con números SemVer. Los antiguos 0.2.0–0.9.0 se conservan en el historial como alias de desarrollo; no fueron Releases de producto.
 
-Prisma usa Semantic Versioning (SemVer) con una única secuencia pública y global para toda la aplicación. La numeración es continua entre fases: cada fase puede contener varias versiones, pero al comenzar otra fase no se reinicia ni se repite la numeración. Antes de completar el producto, las versiones serán 0.x.y; cada entrega con funcionalidad nueva incrementará el número menor y cada corrección sin ampliar funcionalidad incrementará el número de parche. La versión 1.0.0 será la primera que cumpla todo el alcance aprobado. Después se continuará con 1.1.0, 1.2.0, etc. para mejoras, y 1.0.1, 1.0.2, etc. para correcciones. Cada versión entregada debe corresponder a un incremento pequeño, verificable y aprobado.
+Las compilaciones internas se identifican mediante GitHub Actions CI, SHA del commit y variante Android (por ejemplo, PRISMA-DEV · CI #219 · 6315ba6 · internalFix2Debug). Son artefactos de pruebas, no versiones del producto.
+
+SemVer se reserva para entregas instalables aprobadas. La primera alpha requiere el recorrido local básico completo; una versión estable 0.x.y requiere cumplir todo el MVP de la sección 17 de Requisitos; 1.0.0 requiere además el alcance completo de la sección 18. No se publican tags ni Releases por cerrar fases o superar CI.
+
+La política técnica completa, los criterios, la secuencia de versionCode y los valores Android comprobados están en [Versionado del producto y compilaciones internas](docs/TECNICO/VERSIONADO_Y_COMPILACIONES.md). La instalación del MVP se realiza mediante Android; el actualizador integrado se mantiene fuera del MVP.
