@@ -16,6 +16,12 @@ Las pruebas deben demostrar que una función real funciona y proteger los datos.
 
 No ejecutar todas las capas para cualquier cambio menor. Elegir pruebas según el riesgo real.
 
+## Rendimiento y selección de calidad
+
+Cuando la decisión técnica pueda afectar la experiencia, se comparan alternativas y se mide su efecto en el teléfono Android real: fluidez, latencia, memoria, consumo, tamaño de descarga, carga inicial y comportamiento offline. No se acepta una elección por costumbre ni se sustituye una evaluación por popularidad.
+
+La calidad no se demuestra acumulando herramientas o pruebas genéricas. Se demuestra con resultados medidos, recorridos reales y ausencia de regresiones en privacidad, accesibilidad y datos.
+
 ## Verificación en el teléfono
 
 Una prueba de escritorio no sustituye comprobar en el teléfono Android:
@@ -28,7 +34,7 @@ Una prueba de escritorio no sustituye comprobar en el teléfono Android:
 
 ## Automatización
 
-Se puede usar CI gratuita del repositorio público para formato, lint, comprobación de tipos, pruebas focalizadas y build. El workflow debe ser pequeño, útil y rápido.
+Se puede usar CI gratuita del repositorio público para formato, lint, comprobación de tipos, pruebas focalizadas y build. El workflow debe ser fiable, rápido y proporcional al riesgo; no se reduce calidad para ahorrar unos pasos si estos evitan errores reales.
 
 No crear workflows que repitan el mismo trabajo. No usar runners de pago, servicios externos de test de pago, artefactos innecesarios ni cuotas que puedan generar cargos.
 
