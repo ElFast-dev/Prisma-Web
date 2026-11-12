@@ -47,6 +47,115 @@ La evaluación debe considerar:
 
 Separar datos personales no reconstruibles, metadatos externos que puedan descargarse otra vez e imágenes/recursos temporales. Una caché nunca será la única copia de información personal. La solución final debe elegirse por superioridad demostrable para el caso real, no por prejuicio a favor de lo básico o de lo complejo.
 
+## Comparativa de arquitectura de interfaz
+
+**Revisión documental:** 12 de noviembre de 2026.  
+**Estado:** shortlist de tecnologías y recomendación provisional. No se ha seleccionado stack ni se ha iniciado una aplicación.
+
+Prisma necesita una interfaz móvil de alto cuidado visual, con navegación cinematográfica, transiciones cuidadas, listas y fichas ricas, estados complejos, accesibilidad, funcionamiento offline y una base que pueda mantenerse durante años. Por ello, no se decide por popularidad, por el framework que tenga el benchmark más llamativo ni por el que permita empezar con menos archivos.
+
+### Candidata principal — Svelte 5 + SvelteKit 3
+
+Estado verificado en esta revisión:
+- SvelteKit **3.2.0**, publicación del 10 de noviembre de 2026.
+- Svelte **5.57.1**, versión indicada por el informe oficial de octubre de 2026.
+- `@sveltejs/adapter-static` **4.0.1**, disponible en el catálogo oficial de paquetes.
+- Bits UI **2.20.2**, primitivas accesibles sin estilos que permiten construir componentes con el aspecto propio de Prisma.
+
+Fuentes oficiales: [SvelteKit 3](https://svelte.dev/blog/sveltekit-3-is-here), [releases SvelteKit](https://github.com/sveltejs/kit/releases), [estado de Svelte](https://svelte.dev/blog/whats-new-in-svelte-october-2026), [paquetes y adaptadores](https://svelte.dev/packages), [Bits UI](https://www.bits-ui.com/docs/introduction).
+
+**Ventajas para Prisma**
+- El compilador de Svelte transforma componentes en actualizaciones directas del DOM; su modelo de reactividad con runes está diseñado para cambios localizados.
+- SvelteKit integra en el mismo marco rutas, carga/navegación, generación estática y ciclo de vida de la aplicación.
+- El Service Worker se puede declarar en `src/service-worker/index.ts`; SvelteKit lo empaqueta y registra automáticamente y ofrece la versión y el manifiesto de assets para gestionar cachés por despliegue.
+- `adapter-static` genera archivos estáticos; no necesita servidor de aplicaciones ni funciones de pago en producción.
+- Bits UI ofrece controles headless accesibles y completamente personalizables. Prisma puede definir su propio lenguaje visual en CSS sin heredar un sistema de tarjetas o botones prefabricado.
+- Las transiciones, animaciones y estados visuales pueden componerse con las capacidades de Svelte y las APIs del navegador, sin imponer un kit visual.
+
+**Riesgos y puntos que verificar**
+- SvelteKit 3 acaba de pasar a versión mayor estable el 1 de octubre; aunque ya hay versiones 3.2.x, debe pasar un período de validación práctica y revisar que las bibliotecas críticas sean compatibles.
+- El ecosistema de Svelte es menor que el de React. Hay que confirmar que las funciones complejas necesarias (listas grandes, gestos, componentes accesibles, gráficos, animaciones y pruebas) tengan bibliotecas de calidad y mantenimiento adecuados.
+- El código compilado no elimina por sí solo el coste de una mala arquitectura, de grandes imágenes ni de animaciones que fuercen el layout.
+- El adaptador estático y el subdirectorio de GitHub Pages deben probarse con `base path`, rutas directas, refresh, fallback y Service Worker; no se debe asumir que cualquier hosting de archivos resuelve la navegación SPA.
+
+### Alternativa fuerte — React 19.3 + React Router 8.5
+
+React **19.3** está disponible desde el 9 de septiembre de 2026. Sus View Transitions ya son API estable y permiten animar apariciones, salidas, movimientos y elementos compartidos. React Router **8.5.0** documenta la integración con ese componente y dispone de modo SPA sin runtime SSR. El React Compiler añade optimización automática durante la compilación.
+
+Fuentes: [React 19.3](https://react.dev/blog/2026/09/09/react-19-3), [versiones de React](https://react.dev/versions), [React Router: SPA](https://reactrouter.com/how-to/spa), [View Transitions con React Router](https://reactrouter.com/how-to/view-transitions), [React Router changelog](https://reactrouter.com/changelog), [React Compiler](https://react.dev/learn/react-compiler/introduction).
+
+**Ventajas:** el ecosistema más amplio de las opciones evaluadas, gran oferta de bibliotecas, herramientas de depuración y componentes complejos; TypeScript muy extendido; API estable para View Transitions y amplia experiencia de producción.
+
+**Costes/riesgos:** hay que seleccionar y mantener React, React Router, la integración de Service Worker/PWA, la librería de componentes y el sistema de estado. React ofrece mucha libertad, pero esa libertad implica más decisiones y disciplina para evitar renders/estados mal coordinados. El React Compiler ayuda con optimizaciones, no reemplaza una arquitectura correcta.
+
+React es la alternativa de menor riesgo por amplitud de ecosistema y debe seguir en la comparación final. No se descarta por tamaño o popularidad.
+
+### Opción madura — Vue 3 + Vue Router + Pinia
+
+Vue 3 ofrece Composition API, reactividad y compilación de plantillas con tree-shaking. Vue Router y Pinia son librerías oficiales mantenidas por el equipo del ecosistema, con TypeScript y DevTools. Las guías oficiales describen optimización de carga, listas grandes y estructuras reactivas extensas.
+
+Fuentes: [FAQ de Vue](https://vuejs.org/about/faq), [rendimiento](https://vuejs.org/guide/best-practices/performance), [estado y Pinia](https://vuejs.org/guide/scaling-up/state-management).
+
+**Ventajas:** ecosistema maduro y equilibrado, reactividad granular en las dependencias y buen soporte para aplicaciones grandes. La separación de plantillas, lógica y CSS puede favorecer una interfaz ordenada.
+
+**Costes/riesgos:** para Prisma hay que combinar Vue con router, Pinia y la infraestructura PWA. Es una base viable y no una opción inferior, pero no muestra por ahora una ventaja clara frente a la integración PWA/estática de SvelteKit ni la amplitud de React.
+
+### Opción de alto rendimiento — Solid
+
+Solid usa reactividad granular; los cambios pueden actualizar directamente los nodos dependientes sin repetir el renderizado general de un componente, y el proyecto publica buenos resultados en benchmarks de interfaz.
+
+Sin embargo, a fecha de esta revisión **Solid 2.0 está en Release Candidate 2.0.0-rc.21**, no en versión estable. SolidStart se está retirando en favor del nuevo modo `start`, lo cual aumenta el riesgo de adoptar justo ahora una plataforma de aplicación que está cambiando.
+
+Fuentes: [reactividad granular](https://docs.solidjs.com/advanced-concepts/fine-grained-reactivity), [anuncio Solid 2 RC](https://www.solidjs.com/blog), [releases](https://github.com/solidjs/solid/releases).
+
+**Conclusión:** es una tecnología técnicamente importante y merece mantenerse vigilada, pero no se seleccionará una release candidate como cimiento del producto. Se puede reevaluar cuando Solid 2 y su stack de aplicación sean estables y tengan la madurez necesaria.
+
+### Opción integral — Angular 22
+
+Angular 22 ofrece un marco completo, CLI, router, formularios, inyección de dependencias, herramientas de pruebas, soporte empresarial y detección de cambios zoneless. El modo zoneless es predeterminado desde Angular 21 y reduce el coste asociado a ZoneJS.
+
+Fuentes: [releases y soporte](https://angular.dev/reference/releases), [zoneless](https://angular.dev/guide/zoneless), [roadmap](https://angular.dev/roadmap).
+
+**Ventajas:** convenciones fuertes, arquitectura integral, herramientas oficiales y soporte de largo plazo.
+
+**Costes/riesgos:** su estructura y ecosistema están optimizados para aplicaciones grandes/equipos y pueden añadir peso y ceremonia que no mejoran el primer recorrido de una PWA personal. Sigue siendo técnicamente capaz, pero hoy no es la candidata mejor equilibrada para Prisma.
+
+### Comparación resumida
+
+| Criterio | SvelteKit 3 | React 19.3 | Vue 3 | Solid 2 | Angular 22 |
+|---|---|---|---|---|---|
+| Actualizaciones de UI | Compiladas y granulares | Reactividad por componentes; compiler optimiza | Granulares por dependencias | Muy granulares | Signals + zoneless |
+| Rutas integradas | Sí | React Router independiente | Vue Router oficial | Router/stack externo | Sí |
+| Service Worker integrado al framework | Sí | Se añade por herramienta/infraestructura | Se añade por herramienta/infraestructura | Se añade por herramienta/infraestructura | Angular PWA package |
+| Generación estática | Adapter oficial | SPA/SSG según modo y herramientas | SSG mediante tooling | Según stack | SSR/SSG |
+| Componentes personalizables | Bits UI headless | Amplio ecosistema headless | Ecosistema amplio | Ecosistema menor | CDK/Material |
+| Madurez de versión evaluada | Kit 3 muy reciente | Alta | Alta | 2 aún RC | Alta |
+| Principal ventaja | Integración compacta para PWA | Ecosistema y flexibilidad | Equilibrio y madurez | Rendimiento fino | Plataforma integral |
+| Principal reserva | Nuevo major y ecosistema menor | Más piezas por ensamblar | Integración distribuida entre paquetes | Estabilidad del nuevo major | Sobrecarga para el alcance |
+
+La fila de Service Worker se refiere a integración oficial del marco, no a una afirmación de que otras opciones no puedan usar un Service Worker. Cualquiera de ellas puede producir una PWA.
+
+### Recomendación provisional
+
+**Svelte 5 + SvelteKit 3 + adapter-static es la primera candidata para un prototipo de validación de Prisma. React 19.3 + React Router 8.5 es la alternativa de comparación obligatoria.**
+
+Esta recomendación se basa en la integración de rutas, construcción estática y Service Worker, en las actualizaciones compiladas de Svelte y en la disponibilidad de primitives headless para una interfaz muy personalizada. No es una aprobación definitiva del propietario y no autoriza aún crear la aplicación.
+
+No se añadirá automáticamente Tailwind, shadcn, un kit de diseño, gestor de estado global ni biblioteca de animación. Primero se hará una prueba visual con los sistemas de componentes necesarios; se incorporarán paquetes adicionales solo si mejoran de forma demostrable el resultado.
+
+### Prototipo técnico de decisión — sin datos reales
+
+Antes de cerrar el stack, preparar la misma muestra de interfaz en SvelteKit y React, con idéntico diseño y comportamiento:
+1. navegación principal y transiciones entre pantallas;
+2. una lista larga de películas con búsqueda, orden y estado;
+3. ficha con imagen, acciones y un diálogo accesible;
+4. cambio de tema, tamaño de texto y movimiento reducido;
+5. Service Worker, instalación y apertura offline;
+6. carga inicial, bytes transferidos, memoria, fluidez, latencia de interacción y consumo en el teléfono Android.
+
+Usar el benchmark comunitario oficial solo como filtro inicial: mide operaciones sobre listas DOM, memoria y arranque, pero sus propios autores advierten que los resultados dependen del navegador y del método y que son solo una parte de la decisión. Los resultados publicados para Chrome 156 no sustituyen las mediciones sobre la interfaz y el teléfono real de Prisma. Fuente: [JS Framework Benchmark, Chrome 156](https://krausest.github.io/js-framework-benchmark/index.html).
+
+La elección definitiva se documentará cuando el prototipo demuestre una diferencia práctica. Si ambos cumplen, escoger el que proporcione mejor combinación de experiencia visual, mantenimiento y estabilidad a largo plazo.
 ## Comparativa de almacenamiento: resultado de investigación
 
 **Revisión documental:** 12 de noviembre de 2026.  
