@@ -88,7 +88,7 @@ Cada acceso era una fila horizontal con icono a la izquierda, nombre y descripci
 
 Esta variante está registrada en el commit [2240f98 — aprobación visual MVP](https://github.com/ElFast-dev/Prisma/commit/2240f982a28972207bc90a6b4daed161d7879bc3). Las fuentes SVG se vincularon después, en el commit [21c877d](https://github.com/ElFast-dev/Prisma/commit/21c877d78644de4f2d5e82476eb216053b168574).
 
-**No confundir las dos composiciones:** la cuadrícula 2×2 más Gestionar listas es el diseño anterior al SVG; las cuatro filas con descripciones son la simplificación posterior del MVP. El propietario ha indicado que prefiere el diseño anterior al SVG como referencia visual. Debe recrearse para la PWA en la conversación y quedar sujeto a su elección final.
+**No confundir las dos composiciones:** la cuadrícula 2×2 más Gestionar listas es el diseño anterior al SVG; las cuatro filas con descripciones son la simplificación posterior del MVP. El propietario confirmó el 12 de noviembre de 2026 que la composición de Personal con cuadrícula 2×2 de cuatro tarjetas y la fila completa «Gestionar listas» es exactamente la que más le gustaba. Esa composición queda elegida como dirección visual de Personal para Prisma Web. Descubrir y sus filtros/Feed todavía se revisan por separado.
 
 ## 6. Descubrir: concepto anterior y simplificación posterior
 
