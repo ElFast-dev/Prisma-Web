@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Prisma · Sonda de compatibilidad</title>
+<style>
+:root{color-scheme:dark;--bg:#171a20;--surface:#222831;--surface2:#29333e;--border:#3a4552;--text:#f0f0f0;--muted:#b5bec8;--accent:#70aee0;--ok:#8cc9a3;--warn:#f0c674;--bad:#f28b82}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
+main{width:min(760px,100%);margin:auto;padding:20px 15px 42px}
+header{margin:10px 0 20px}.kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(24px,6vw,34px);line-height:1.15;margin:8px 0}h2{font-size:17px;margin:0 0 10px}
+p{color:var(--muted);margin:8px 0}.note{background:#202933;border:1px solid var(--border);padding:12px 14px;border-radius:14px;color:var(--muted);margin:14px 0}.note strong{color:var(--text)}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px;margin:13px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px;min-width:0}
+.metric span{display:block;font-size:12px;color:var(--muted)}.metric b{display:block;overflow-wrap:anywhere;font-size:14px;margin-top:3px}
+button,.file-label{font:inherit;font-weight:650;border:0;border-radius:12px;padding:12px 14px;min-height:46px;background:var(--accent);color:#10202d;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+button.secondary,.file-label.secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text)}button:disabled{opacity:.55;cursor:wait}
+.actions{display:flex;flex-wrap:wrap;gap:8px}.row{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.rowtop{display:flex;align-items:center;justify-content:space-between;gap:10px}.status{font-size:12px;font-weight:750;white-space:nowrap}
+.status.ok{color:var(--ok)}.status.warn{color:var(--warn)}.status.bad{color:var(--bad)}.status.pending{color:var(--muted)}
+.detail{font-size:13px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}code{font:12px ui-monospace,monospace;overflow-wrap:anywhere}
+small{font-size:12px;color:var(--muted)}.hidden{display:none!important}
+@media(max-width:420px){main{padding:16px 12px 34px}.actions>*{flex:1 1 100%}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="kicker">Prisma · Herramienta técnica independiente</div>
+  <h1>Sonda de compatibilidad</h1>
+  <p>Comprueba las APIs reales de este navegador antes de elegir almacenamiento, copias y funcionamiento sin conexión.</p>
+</header>
+<div class="note"><strong>Importante:</strong> esta página no es Prisma. Solo crea datos temporales con nombres <code>prisma-browser-probe</code> en este origen localhost. No lee ni borra datos de otros sitios, no envía información a Internet y no modifica archivos personales.</div>
+
+<section class="panel">
+<h2>Entorno detectado</h2>
+<div class="grid">
+<div class="metric"><span>Navegador</span><b id="browser">Detectando…</b></div>
+<div class="metric"><span>Motor informado</span><b id="engine">—</b></div>
+<div class="metric"><span>Contexto seguro</span><b id="secure">—</b></div>
+<div class="metric"><span>Memoria informada</span><b id="memory">—</b></div>
+</div>
+<small>Brave puede modificar valores de identificación y hardware por privacidad; no se usarán como mediciones fiables del teléfono.</small>
+</section>
+
+<section class="panel">
+<h2>Pruebas</h2>
+<div class="actions">
+<button id="run">Ejecutar pruebas básicas</button>
+<button id="persist" class="secondary">Comprobar persistencia</button>
+<button id="sw" class="secondary">Probar Service Worker</button>
+</div>
+<div id="results" aria-live="polite" style="display:grid;gap:8px;margin-top:12px"></div>
+</section>
+
+<section class="panel">
+<h2>Almacenamiento informado</h2>
+<p>Brave puede modificar deliberadamente los valores de <code>StorageManager.estimate()</code>. Se muestran solo como información diagnóstica, nunca como cuota fiable.</p>
+<div class="grid">
+<div class="metric"><span>Uso reportado</span><b id="usage">Sin consultar</b></div>
+<div class="metric"><span>Cuota reportada</span><b id="quota">Sin consultar</b></div>
+<div class="metric"><span>Persistencia actual</span><b id="persisted">Sin consultar</b></div>
+<div class="metric"><span>Persistencia solicitada</span><b id="persistResult">Sin solicitar</b></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>Archivos: exportación e importación básicas</h2>
+<p>Descarga un JSON sintético y vuelve a seleccionarlo. Esto prueba el mecanismo básico de descarga y el selector estándar de archivos. No es una copia cifrada de Prisma.</p>
+<div class="actions">
+<button id="download">Descargar archivo de prueba</button>
+<label class="file-label secondary" for="file">Seleccionar archivo descargado</label>
+<input id="file" class="hidden" type="file" accept=".json,application/json">
+</div>
+<div id="fileResult" aria-live="polite" style="display:grid;gap:8px;margin-top:10px"></div>
+<div class="grid" style="margin-top:10px">
+<div class="metric"><span>showOpenFilePicker</span><b id="openPicker">—</b></div>
+<div class="metric"><span>showSaveFilePicker</span><b id="savePicker">—</b></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>Modo sin conexión</h2>
+<p>Registra el Service Worker y recarga esta página. Cuando aparezca como controlador, activa modo avión y vuelve a cargar <code>http://127.0.0.1:8765/</code>. El servidor local de Termux debe seguir ejecutándose.</p>
+<div class="grid">
+<div class="metric"><span>Service Worker</span><b id="swSupport">—</b></div>
+<div class="metric"><span>Controla esta página</span><b id="swControl">—</b></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>Limpiar únicamente esta sonda</h2>
+<p>Elimina solo la base de datos, carpeta OPFS, caché y Service Worker creados por esta herramienta, en este origen localhost.</p>
+<button id="cleanup" class="secondary">Limpiar datos de la sonda</button>
+<div id="cleanupResult" class="detail" aria-live="polite"></div>
+</section>
+
+<section class="panel">
+<h2>Informe para compartir</h2>
+<p>Descarga los resultados técnicos. No incluye SIM, operador ni archivos personales.</p>
+<button id="report" class="secondary">Descargar informe JSON</button>
+</section>
+<footer><small>Prisma-Web · tools/browser-probe · Sin dependencias externas · Sin telemetría · Datos sintéticos.</small></footer>
+</main>
+
+<script>
+(() => {
+"use strict";
+const DB_NAME="prisma-browser-probe-v1", STORE="checks";
+const OPFS_DIR="prisma-browser-probe-v1", CACHE_PREFIX="prisma-browser-probe-";
+const results=[];
+const $=id=>document.getElementById(id);
+const prettyStatus=s=>s==="ok"?"CORRECTO":s==="warn"?"CONDICIONAL":s==="bad"?"FALLÓ":"PENDIENTE";
+function addResult(name,status,detail){
+ results.push({name,status,detail,time:new Date().toISOString()});
+ const row=document.createElement("div");row.className="row";
+ const top=document.createElement("div");top.className="rowtop";
+ const title=document.createElement("strong");title.textContent=name;
+ const st=document.createElement("span");st.className="status "+status;st.textContent=prettyStatus(status);
+ const body=document.createElement("div");body.className="detail";body.textContent=detail;
+ top.append(title,st);row.append(top,body);$("results").append(row);
+}
+function addFileResult(text){const n=document.createElement("div");n.className="row";n.textContent=text;$("fileResult").append(n);}
+function txDone(tx){return new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||Error("Transacción abortada"));tx.onerror=()=>reject(tx.error||Error("Error de transacción"));});}
+function reqResult(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error("Error IndexedDB"));});}
+function openDB(){
+ return new Promise((resolve,reject)=>{
+  if(!("indexedDB" in window))return reject(Error("IndexedDB no está expuesto"));
+  const req=indexedDB.open(DB_NAME,1);
+  req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE,{keyPath:"id"});};
+  req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error("No se pudo abrir IndexedDB"));
+  req.onblocked=()=>reject(Error("Apertura bloqueada por otra pestaña"));
+ });
+}
+async function testIDB(){
+ const db=await openDB();
+ try{
+  const id="temporary-"+crypto.randomUUID();let tx,strict=true;
+  try{tx=db.transaction(STORE,"readwrite",{durability:"strict"});}catch(_){strict=false;tx=db.transaction(STORE,"readwrite");}
+  tx.objectStore(STORE).put({id,value:"prisma-probe",at:Date.now()});await txDone(tx);
+  const read=db.transaction(STORE,"readonly"),record=await reqResult(read.objectStore(STORE).get(id));await txDone(read);
+  if(!record||record.value!=="prisma-probe")throw Error("El registro leído no coincide");
+  const del=db.transaction(STORE,"readwrite");del.objectStore(STORE).delete(id);await txDone(del);
+  return "Escritura, lectura y borrado correctos. Durabilidad estricta: "+(strict?"aceptada":"no aceptada; se usó la opción predeterminada")+".";
+ }finally{db.close();}
+}
+async function testRollback(){
+ const db=await openDB(),id="rollback-"+crypto.randomUUID();
+ try{
+  const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put({id,value:"no debe persistir"});tx.abort();
+  try{await txDone(tx);}catch(_){}
+  const read=db.transaction(STORE,"readonly"),record=await reqResult(read.objectStore(STORE).get(id));await txDone(read);
+  if(record)throw Error("El registro abortado apareció en la base");
+  return "La transacción abortada no dejó datos parciales.";
+ }finally{db.close();}
+}
+async function saveMarker(){
+ const db=await openDB();
+ try{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put({id:"persistence-marker",value:"prisma-probe-persistence-v1",createdAt:new Date().toISOString()});await txDone(tx);}
+ finally{db.close();}
+}
+async function checkMarker(){
+ try{
+  const db=await openDB();
+  try{
+   const tx=db.transaction(STORE,"readonly"),m=await reqResult(tx.objectStore(STORE).get("persistence-marker"));await txDone(tx);
+   if(m)addResult("Persistencia tras recarga","ok","El marcador sigue presente. Creado: "+m.createdAt);
+   else addResult("Persistencia tras recarga","pending","No hay marcador. Ejecuta las pruebas y recarga para comprobarlo.");
+  }finally{db.close();}
+ }catch(e){addResult("Persistencia tras recarga","bad",e.message);}
+}
+async function testCrypto(){
+ if(!crypto.subtle||!crypto.getRandomValues)throw Error("Web Crypto no disponible en este contexto");
+ const key=await crypto.subtle.generateKey({name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+ const iv=crypto.getRandomValues(new Uint8Array(12)),plain=new TextEncoder().encode("prisma-probe-aes-gcm");
+ const enc=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,plain);
+ const dec=await crypto.subtle.decrypt({name:"AES-GCM",iv},key,enc);
+ if(new TextDecoder().decode(dec)!=="prisma-probe-aes-gcm")throw Error("El texto descifrado no coincide");
+ return "AES-256-GCM cifró y descifró un texto sintético.";
+}
+async function testOPFS(){
+ if(!navigator.storage||typeof navigator.storage.getDirectory!=="function")throw Error("navigator.storage.getDirectory() no está expuesto.");
+ const root=await navigator.storage.getDirectory(),dir=await root.getDirectoryHandle(OPFS_DIR,{create:true});
+ const file=await dir.getFileHandle("probe.txt",{create:true}),w=await file.createWritable();
+ await w.write("prisma-probe-opfs-ok");await w.close();
+ const f=await file.getFile(),text=await f.text();
+ await dir.removeEntry("probe.txt");await root.removeEntry(OPFS_DIR,{recursive:true});
+ if(text!=="prisma-probe-opfs-ok")throw Error("La lectura OPFS no coincide");
+ return "Creación, escritura, lectura y limpieza completadas.";
+}
+async function testOPFSWorker(){
+ if(typeof Worker!=="function")throw Error("Web Workers no están disponibles");
+ const code=
+' self.onmessage=async()=>{try{if(!navigator.storage||!navigator.storage.getDirectory)throw Error("OPFS no disponible dentro del Worker");'+
+'const root=await navigator.storage.getDirectory();const dir=await root.getDirectoryHandle("prisma-browser-probe-v1",{create:true});'+
+'const f=await dir.getFileHandle("sync-worker.bin",{create:true});if(!f.createSyncAccessHandle)throw Error("createSyncAccessHandle no disponible");'+
+'const h=await f.createSyncAccessHandle();const b=new TextEncoder().encode("prisma-probe-worker");h.write(b,{at:0});h.flush();const out=new Uint8Array(b.length);h.read(out,{at:0});h.close();'+
+'const text=new TextDecoder().decode(out);await dir.removeEntry("sync-worker.bin");await root.removeEntry("prisma-browser-probe-v1",{recursive:true});'+
+'if(text!=="prisma-probe-worker")throw Error("Lectura sync no coincide");postMessage({ok:true,detail:"Worker + SyncAccessHandle correctos."});'+
+'}catch(e){postMessage({ok:false,error:e.message||String(e)});}};';
+ const url=URL.createObjectURL(new Blob([code],{type:"text/javascript"}));
+ try{return await new Promise((resolve,reject)=>{
+  const worker=new Worker(url),timer=setTimeout(()=>{worker.terminate();reject(Error("Tiempo de espera agotado (8 s)"));},8000);
+  worker.onmessage=e=>{clearTimeout(timer);worker.terminate();e.data.ok?resolve(e.data.detail):reject(Error(e.data.error));};
+  worker.onerror=e=>{clearTimeout(timer);worker.terminate();reject(Error(e.message||"Error del Worker"));};worker.postMessage({});
+ });}finally{URL.revokeObjectURL(url);}
+}
+async function storageInfo(){
+ const s=navigator.storage;if(!s)return;
+ try{if(s.estimate){const e=await s.estimate();$("usage").textContent=e.usage==null?"No informado":(e.usage/1048576).toFixed(2)+" MB";$("quota").textContent=e.quota==null?"No informada":(e.quota/1048576).toFixed(2)+" MB";}}
+ catch(e){$("usage").textContent=$("quota").textContent="Error: "+e.message;}
+ try{$("persisted").textContent=s.persisted?String(await s.persisted()):"API no disponible";}catch(e){$("persisted").textContent="Error: "+e.message;}
+}
+async function requestPersist(){
+ const s=navigator.storage;
+ if(!s||!s.persist){$("persistResult").textContent="No disponible";addResult("Solicitud de persistencia","warn","persist() no está expuesto.");return;}
+ try{
+  const granted=await s.persist(),after=s.persisted?await s.persisted():"desconocido";
+  $("persistResult").textContent=String(granted);$("persisted").textContent=String(after);
+  addResult("Solicitud de persistencia",granted?"ok":"warn","persist() = "+granted+"; persisted() = "+after+". La decisión corresponde al navegador.");
+ }catch(e){$("persistResult").textContent="Error";addResult("Solicitud de persistencia","bad",e.message);}
+}
+async function testSW(){
+ if(!("serviceWorker" in navigator)){$("swSupport").textContent="No disponible";addResult("Service Worker","bad","navigator.serviceWorker no está expuesto.");return;}
+ try{
+  const reg=await navigator.serviceWorker.register("./sw.js",{scope:"./"});await navigator.serviceWorker.ready;
+  $("swSupport").textContent="Registrado";$("swControl").textContent=navigator.serviceWorker.controller?"Sí":"Aún no";
+  addResult("Service Worker","ok","Registrado. Controlador: "+(navigator.serviceWorker.controller?"sí":"no; recarga para activarlo")+". Scope: "+reg.scope);
+ }catch(e){$("swSupport").textContent="Error";addResult("Service Worker","bad",e.message);}
+}
+function downloadJSON(name,data){
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob);
+ const a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function exportFile(){
+ downloadJSON("prisma-browser-probe.json",{format:"prisma-browser-probe-file-v1",createdAt:new Date().toISOString(),note:"Archivo sintético; no es backup de Prisma.",marker:"prisma-probe-file-roundtrip",sample:[{id:"synthetic-1",title:"Película de prueba"}]});
+ $("fileResult").innerHTML="";addFileResult("Descarga iniciada. Busca el archivo en Descargas.");
+}
+async function importFile(file){
+ $("fileResult").innerHTML="";
+ try{
+  const data=JSON.parse(await file.text()),ok=data.format==="prisma-browser-probe-file-v1"&&data.marker==="prisma-probe-file-roundtrip";
+  addFileResult(ok?"CORRECTO: JSON sintético leído y validado.":"NO COINCIDE: no es el archivo generado por esta sonda.");
+ }catch(e){addFileResult("FALLÓ: "+e.message);}
+}
+async function cleanup(){
+ if(!confirm("¿Eliminar únicamente los datos creados por esta sonda en localhost?"))return;
+ const notes=[];
+ try{await new Promise((resolve,reject)=>{const r=indexedDB.deleteDatabase(DB_NAME);r.onsuccess=resolve;r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error("Cierra otras pestañas de la sonda."));});notes.push("IndexedDB propia eliminada");}catch(e){notes.push("IndexedDB: "+e.message);}
+ try{if(navigator.storage?.getDirectory){const root=await navigator.storage.getDirectory();await root.removeEntry(OPFS_DIR,{recursive:true}).catch(()=>{});notes.push("Carpeta OPFS propia revisada");}}catch(e){notes.push("OPFS: "+e.message);}
+ try{
+  const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith(CACHE_PREFIX)).map(k=>caches.delete(k)));
+  const regs=await navigator.serviceWorker.getRegistrations();
+  await Promise.all(regs.filter(reg=>new URL(reg.scope).pathname==="/").map(reg=>reg.unregister()));
+  notes.push("Caché y Service Worker de sonda revisados");
+ }catch(e){notes.push("Service Worker: "+e.message);}
+ $("cleanupResult").textContent=notes.join(". ")+".";
+}
+function detect(){
+ $("engine").textContent=navigator.userAgent.match(/(?:Chrome|Chromium)\\/([0-9.]+)/)?.[1]||"No identificado";
+ $("secure").textContent=String(isSecureContext);
+ $("memory").textContent=navigator.deviceMemory?navigator.deviceMemory+" GB (aprox.)":"No expuesta";
+ $("browser").textContent="Comprobando Brave…";
+ if(navigator.brave?.isBrave){navigator.brave.isBrave().then(v=>$("browser").textContent=v?"Brave confirmado":"No confirmado como Brave").catch(()=>$("browser").textContent="No confirmado");}
+ else $("browser").textContent=navigator.userAgent.includes("Brave")?"Brave (UA)":"No confirmado como Brave";
+ $("openPicker").textContent=typeof showOpenFilePicker==="function"?"Disponible":"No expuesto";
+ $("savePicker").textContent=typeof showSaveFilePicker==="function"?"Disponible":"No expuesto";
+ $("swSupport").textContent="serviceWorker" in navigator?"Sí":"No";
+ $("swControl").textContent=navigator.serviceWorker?.controller?"Sí":"No";
+ navigator.serviceWorker?.addEventListener("controllerchange",()=>$("swControl").textContent="Sí");
+ storageInfo();checkMarker();
+}
+$("run").onclick=async()=>{
+ $("run").disabled=true;$("results").innerHTML="";results.length=0;
+ try{addResult("IndexedDB","ok",await testIDB());}catch(e){addResult("IndexedDB","bad",e.message);}
+ try{addResult("Rollback de transacción","ok",await testRollback());}catch(e){addResult("Rollback de transacción","bad",e.message);}
+ try{addResult("Web Crypto AES-256-GCM","ok",await testCrypto());}catch(e){addResult("Web Crypto AES-256-GCM","bad",e.message);}
+ try{addResult("OPFS","ok",await testOPFS());}catch(e){addResult("OPFS","warn",e.message);}
+ try{addResult("OPFS SyncAccessHandle en Worker","ok",await testOPFSWorker());}catch(e){addResult("OPFS SyncAccessHandle en Worker","warn",e.message);}
+ try{await saveMarker();addResult("Marcador de persistencia","ok","Guardado. Recarga la página para comprobar que permanece.");}catch(e){addResult("Marcador de persistencia","bad",e.message);}
+ await storageInfo();$("run").disabled=false;
+};
+$("persist").onclick=requestPersist;$("sw").onclick=testSW;
+$("download").onclick=exportFile;$("file").onchange=e=>{if(e.target.files?.[0])importFile(e.target.files[0]);};
+$("cleanup").onclick=cleanup;
+$("report").onclick=()=>downloadJSON("prisma-browser-probe-report.json",{
+ tool:"Prisma Browser Probe",version:1,generatedAt:new Date().toISOString(),
+ browser:$("browser").textContent,userAgent:navigator.userAgent,engine:$("engine").textContent,secureContext:isSecureContext,
+ deviceMemoryReported:navigator.deviceMemory||null,hardwareConcurrencyReported:navigator.hardwareConcurrency||null,
+ storage:{usage:$("usage").textContent,quota:$("quota").textContent,persisted:$("persisted").textContent,persistResult:$("persistResult").textContent},
+ filePickers:{open:$("openPicker").textContent,save:$("savePicker").textContent},
+ serviceWorker:{supported:"serviceWorker" in navigator,controlled:!!navigator.serviceWorker?.controller},tests:results
+});
+detect();
+})();
+</script>
+</body>
+</html>
