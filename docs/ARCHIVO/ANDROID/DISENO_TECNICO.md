@@ -1,8 +1,10 @@
+> **Archivo histórico de la etapa Android.** Fuente sincronizada desde `feature/fase1-android-foundation` antes de retirar el repositorio anterior. Los hitos y requisitos históricos se conservan como antecedente; la fuente vigente de Prisma Web está en `docs/ROADMAP.md` y `docs/TECNICO/`.
+
 # Diseño técnico — Prisma
 
 **Estado:** diseño técnico preliminar; las decisiones se verificarán y concretarán en la especificación de cada fase.  
-**Revisión:** 0.3.7.  
-**Última actualización:** 9 de noviembre de 2026.  
+**Revisión:** 0.3.15.  
+**Última actualización:** 10 de noviembre de 2026.  
 **No implica autorización para programar.**
 
 ## 1. Objetivo técnico
@@ -17,7 +19,8 @@ Las decisiones se basan primero en las recomendaciones oficiales de Android. Las
 - **Identidad Android aprobada:** `applicationId = "dev.elfast.prisma"` y `namespace = "dev.elfast.prisma"`. Ambos valores se mantienen iguales y estables; no se modifican después de distribuir la aplicación. El `applicationId` identifica la aplicación para Android y debe conservarse para que las actualizaciones se reconozcan como la misma app.
 - **Interfaz:** Jetpack Compose y Material 3.
 - **Tipografía de interfaz:** familia **Inter**, seleccionada como identidad tipográfica global de Prisma. El tamaño de referencia para el texto normal de lectura continua es **16 px**, para el texto secundario es **14 px**, para el texto auxiliar es **12 px** y para los títulos de sección es **22 px**; los pesos aprobados para la familia son **400, 500 y 600**. Estos valores no sustituyen los tamaños específicos de componentes ya aprobados. Inter se incorporará como recurso local dentro de la aplicación, no como fuente descargada en tiempo de ejecución, para mantener la presentación disponible sin conexión y consistente entre dispositivos. El texto normal de **16 px** utiliza peso **regular (400)**, altura de línea de **24 px** y espaciado entre caracteres (*letter spacing*) de **0 px adicionales**; el texto secundario de **14 px** utiliza peso **regular (400)**, altura de línea de **20 px** y espaciado entre caracteres (*letter spacing*) de **0 px adicionales**; el texto auxiliar de **12 px** tiene una altura de línea de **18 px**, utiliza peso **regular (400)** (opción A aprobada) y mantiene espaciado entre caracteres (*letter spacing*) de **0 px adicionales** (opción A aprobada), conservando el espaciado natural de Inter; los títulos de sección de **22 px** utilizan peso **medio (500)**, altura de línea de **28 px** y espaciado entre caracteres (*letter spacing*) de **0 px adicionales**. La escala global actual comprende estos cuatro niveles y se considera suficiente por ahora; solo se ampliará si una necesidad concreta del producto lo justifica. La versión concreta y los archivos de fuente se fijarán en la especificación técnica de implementación, conservando la licencia SIL OFL 1.1.
-- **Navegación:** una sola Activity; se evaluará Navigation 3 si su versión estable y su integración cumplen los requisitos al iniciar la fase de navegación.
+- **Navegación:** una sola Activity con Navigation 3 estable `1.2.1`, mediante `androidx.navigation3:navigation3-runtime` y `androidx.navigation3:navigation3-ui`. La aplicación conserva el control del back stack y presenta los destinos Compose con `NavDisplay`.
+- **Áreas seguras y edge-to-edge:** la Activity habilita una ventana de borde a borde en API 26–37. Las pantallas personalizadas aplican los insets de `safeDrawing` en la parte superior y los laterales; la navegación inferior aplica `navigationBarsPadding()` y conserva 16 dp adicionales hasta el área del sistema. El estilo de las barras del sistema cambia con Obsidiana/Cuarzo para mantener legibles sus iconos.
 - **Concurrencia:** Kotlin Coroutines y Flow.
 - **Estado de interfaz:** ViewModel, StateFlow y flujo unidireccional de datos.
 - **Inyección de dependencias:** Hilt, salvo que la verificación de compatibilidad vigente muestre una razón técnica para escoger otra alternativa.
@@ -54,24 +57,17 @@ Reglas:
 - Los cambios importantes se expresan como casos de uso transaccionales para evitar estados contradictorios.
 - Coroutines/Flow y actualización de estado unidireccional facilitan pruebas y coherencia.
 
-## 3.1 Calidad, mantenibilidad y auditoría del código
+## 3.1 Calidad, mantenibilidad y auditoría
 
-La calidad técnica se verifica durante el desarrollo, no solo al final. Antes de ampliar una capacidad importante y antes de cerrar cada fase se revisan, como mínimo:
+La calidad técnica se verifica de forma continua y antes del cierre de cada fase. La revisión cubre capas y dependencias, cohesión y acoplamiento, duplicación, responsabilidades, modelo de datos, transacciones, migraciones, ciclo de vida Android, concurrencia, seguridad, privacidad, dependencias, accesibilidad y adaptación de interfaz. También cubre compilación, lint/análisis estático, pruebas unitarias, instrumentadas, regresiones y CI.
 
-- Separación de responsabilidades y dependencias entre presentación, dominio y datos.
-- Cohesión, acoplamiento, duplicación, complejidad accidental, código muerto y claridad de nombres.
-- Consistencia del modelo local, restricciones, transacciones, migraciones y protección contra pérdida/corrupción.
-- Ciclo de vida Android, concurrencia, navegación, estado de UI y paridad funcional de Obsidiana/Cuarzo.
-- Seguridad, privacidad, permisos, almacenamiento, red, secretos y dependencias.
-- Compilación, análisis estático, advertencias, pruebas unitarias/instrumentadas, regresión y CI.
+Cada hallazgo se documenta con archivo/ruta, evidencia, impacto, severidad y reproducción. P0: seguridad, privacidad o pérdida/corrupción de datos. P1: fallo crítico o arquitectura que impide cumplir requisitos. P2: deuda técnica o mantenibilidad relevante. P3: pulido no bloqueante. No se cierra una fase con P0/P1 conocidos.
 
-Los hallazgos se documentan con archivo/ruta, evidencia, impacto, severidad y una forma de reproducirlos. P0 corresponde a seguridad, privacidad o pérdida/corrupción de datos; P1 a fallos críticos o arquitectura que impide cumplir requisitos; P2 a deuda técnica y mantenibilidad importante; P3 a pulido no bloqueante. No se declara una fase lista con P0/P1 abiertos.
+La instrucción expresa del propietario autoriza condicionalmente iniciar una reconstrucción limpia cuando la auditoría demuestre con evidencia que los cimientos están comprometidos y que reconstruir es más seguro o mantenible que reparar. En ese caso, la IA puede comenzar la nueva implementación en una rama aislada, paralela y no destructiva, sin pedir otra aprobación para iniciar ese trabajo. Esta autorización condicional **no** permite borrar, sobrescribir, abandonar, fusionar ni sustituir la implementación existente. La rama y el trabajo anteriores, los datos, los artefactos y los puntos de recuperación deben conservarse intactos. Después de comparar ambas implementaciones y validar la nueva frente a los requisitos y pruebas, la IA debe presentar los resultados y obtener aprobación expresa del propietario antes de integrar la reconstrucción o retirar la versión anterior. Si la auditoría no alcanza ese umbral, debe corregir o refactorizar de forma incremental y no reiniciar por preferencia personal.
 
-Si los problemas están extendidos, se compara corregir localmente, refactorizar progresivamente o reconstruir de forma limpia. La instrucción expresa del propietario autoriza condicionalmente iniciar una reconstrucción limpia cuando la auditoría demuestre con evidencia que los cimientos están comprometidos y que reconstruir es más seguro o mantenible que reparar. En ese caso, la IA puede comenzar la nueva implementación en una rama aislada, paralela y no destructiva, sin pedir otra aprobación para iniciar ese trabajo. Esta autorización condicional **no** permite borrar, sobrescribir, abandonar, fusionar ni sustituir la implementación existente. La rama y el trabajo anteriores, los datos, los artefactos y los puntos de recuperación deben conservarse intactos. Después de comparar ambas implementaciones y validar la nueva frente a los requisitos y pruebas, la IA debe presentar los resultados y obtener aprobación expresa del propietario antes de integrar la reconstrucción o retirar la versión anterior. Si la auditoría no alcanza ese umbral, debe corregir o refactorizar de forma incremental y no reiniciar por preferencia personal.
+Una reconstrucción autorizada conserva requisitos, funciones aprobadas, diseños, restricciones y exclusiones; no habilita funciones nuevas. Se diseña una arquitectura simple, se trabaja en incrementos pequeños, se prueba cada incremento, se preservan o migran los datos verificablemente y se mantiene un punto de recuperación hasta superar la aceptación y regresión.
 
-Una reconstrucción autorizada debe mantener el alcance aprobado, decisiones visuales, restricciones y exclusiones; no habilita funciones nuevas. Debe preservar o migrar los datos de forma verificable, compilar y probar cada incremento, superar los criterios de aceptación y regresión y conservar una vía de recuperación hasta validar la sustitución.
-
-No se puede prometer ausencia absoluta de errores en todo dispositivo y condición. El estándar de entrega es no tener defectos P0/P1 conocidos abiertos, superar las verificaciones y pruebas aplicables, investigar advertencias relevantes y declarar claramente lo que no se haya podido probar y los riesgos residuales. Una CI verde no sustituye la revisión técnica ni demuestra por sí sola que toda la aplicación está libre de defectos.
+No se promete ausencia absoluta de errores en todos los dispositivos. El estándar es no entregar defectos conocidos, cerrar con P0/P1 resueltos, superar las verificaciones aplicables e informar de limitaciones y escenarios no probados.
 
 ## 4. Persistencia local
 
@@ -121,6 +117,9 @@ La política se aplica a todas las comunicaciones iniciadas por Prisma, incluida
 6. La carga de imágenes usa un cliente separado sin cabecera Authorization. Puede seguir una redirección a otro host únicamente si sigue siendo HTTPS y la validación TLS/hostname normal tiene éxito.
 7. Los logs no registran cabeceras, tokens, cuerpos sensibles, URL con credenciales ni consultas completas. Se permiten errores de red sanitizados (tipo de fallo, código HTTP cuando exista y host permitido), sin secretos ni datos personales.
 
+La implementación inicial de `PrismaHttpClient` fija `ConnectionSpec.MODERN_TLS` a TLS 1.3 y TLS 1.2, y desactiva tanto `followRedirects` como `followSslRedirects`. Por tanto, la respuesta de redirección se devuelve al llamador y el cliente no abre automáticamente una segunda petición que pueda reenviar credenciales. La suite JVM incluye una prueba de comportamiento para una redirección autenticada a otro origen; la suite instrumentada incluye una prueba de rechazo de HTTP con loopback.
+
+Las pruebas instrumentadas de TLS usan un servidor HTTPS local con un certificado de laboratorio y una CA raíz cargada únicamente en un cliente de prueba derivado de `PrismaHttpClient`. Los assets `prisma-tls-test-ca.pem` y `prisma-tls-valid-server.p12` están limitados a `app/src/androidTest/assets/tls`; la clave privada es ficticia y no debe reutilizarse. La configuración de producción sigue confiando exclusivamente en autoridades del sistema, sin excepciones ni `TrustManager`/verificador permisivos. Se comprueba TLS 1.2, TLS 1.3 cuando la plataforma lo soporta, rechazo de CA no confiable y rechazo de un certificado cuyo SAN no coincide con el hostname solicitado.
 
 - Cliente HTTP encapsulado en una fuente de datos remota y repositorio.
 - Autenticación TMDB mediante cabecera Authorization: Bearer con el API Read Access Token personal.
@@ -257,30 +256,34 @@ Keystore protege la clave de cifrado y limita su extracción; no se debe promete
 
 ### 6.3 Copias cifradas
 
-Exportación/importación manual de un archivo versionado:
+Exportación/importación manual de un archivo `.prisma` versionado. Esta sección fija invariantes para la fase que implemente la capacidad; todavía no existe código de exportación/restauración ni se considera validado un formato binario final.
 
-- Derivar una clave de cifrado desde la contraseña introducida, usando un KDF con sal aleatoria y parámetros almacenados en el encabezado versionado.
-- Cifrar/autenticar con AES-256-GCM y nonce aleatorio.
-- No guardar la contraseña ni enviarla a ningún servicio.
-- Rechazar archivos manipulados, contraseñas incorrectas y versiones no compatibles sin sobrescribir los datos existentes.
-- Validar y probar el proceso de restauración de extremo a extremo.
-- No incluir credenciales de TMDB.
-- La contraseña olvidada no se puede recuperar.
+- La cabecera debe identificar un magic, versión de formato/esquema, KDF y parámetros, sal, algoritmo de cifrado, nonce, longitud del contenido y metadatos mínimos. La cabecera completa se autentica como AAD de AES-GCM para impedir cambios de versión, KDF o longitudes sin detección.
+- La recomendación inicial es Argon2id con sal aleatoria. OWASP publica como mínimo de referencia 19 MiB, 2 iteraciones y paralelismo 1; se debe medir el coste real en Android 8/API 26 antes de fijar parámetros de producto. Scrypt es una alternativa si la compatibilidad de la biblioteca lo exige. PBKDF2-HMAC-SHA256 se reservaría para una necesidad concreta de compatibilidad/FIPS, no como complejidad añadida.
+- Los parámetros KDF leídos de un archivo se validan y limitan antes de derivar la clave. La sal debe ser aleatoria y distinta por exportación; la contraseña nunca se guarda ni se envía a servicios.
+- Cifrar y autenticar con AES-256-GCM, nonce aleatorio de 96 bits y tag de 128 bits. No reutilizar nonces bajo una misma clave derivada. La cabecera versionada participa en AAD.
+- La restauración se prepara primero en un área privada temporal (*staging*). Se valida longitud, versión, parámetros acotados, etiqueta GCM, estructura, límites de tamaño y relaciones del contenido completo antes de tocar los datos vigentes. La sustitución se confirma de forma atómica/transaccional, con rollback si falla; no se permiten importaciones parciales que destruyan el diario anterior.
+- Rechazar contraseña incorrecta, archivos truncados/manipulados, versiones desconocidas y parámetros fuera de límites sin sobrescribir datos existentes. No extraer rutas arbitrarias ni admitir rutas tipo zip-slip o cargas comprimidas desproporcionadas.
+- No incluir token TMDB, claves Android Keystore, secretos, caché de metadatos/imágenes, logs ni temporales. La clave portátil procede de la contraseña y el KDF, no de la Keystore local.
+- No guardar ni recuperar la contraseña olvidada. La recuperación depende exclusivamente de que el propietario conserve su contraseña y el archivo exportado.
 
-Los parámetros concretos del KDF, del encabezado y del formato de archivo se fijarán en la fase que implemente copias, después de revisar las recomendaciones de seguridad vigentes.
+Los parámetros definitivos del KDF, la biblioteca y los objetivos de tiempo/memoria se fijarán en la fase de implementación tras medir en API 26. Referencias: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html y https://developer.android.com/privacy-and-security/cryptography.
 
 ### 6.4 Copias automáticas del sistema Android
 
 - Prisma desactiva Android Auto Backup mediante `android:allowBackup="false"`.
-- La configuración no dependerá solo de ese atributo: algunos fabricantes pueden seguir permitiendo transferencias directas entre dispositivos aunque se desactive la copia en nube. Se deben establecer reglas explícitas para todos los modos de extracción que Android admita.
+- La configuración no depende solo de ese atributo: algunos fabricantes pueden seguir permitiendo transferencias directas entre dispositivos aunque se desactive la copia en nube. Se establecen reglas explícitas para todos los modos de extracción que Android admita.
 - Para API 26–30, el manifiesto apunta mediante `android:fullBackupContent` a reglas `full-backup-content` que excluyen todos los datos de la aplicación.
-- Para API 31 o superior, el manifiesto apunta mediante `android:dataExtractionRules` a reglas `data-extraction-rules` que excluyen todo el contenido tanto en `<cloud-backup>` como en `<device-transfer>`. Si se admite una modalidad de transferencia multiplataforma, también se excluye explícitamente.
-- No se permitirá que Room, DataStore, preferencias, archivos privados, credenciales, claves, caché persistente ni datos temporales de Prisma entren en copias del sistema. Los directorios de caché/no-backup no sustituyen las reglas explícitas de exclusión.
-- Las exportaciones `.prisma` iniciadas por el usuario son independientes de Android Auto Backup y siguen permitidas; contienen datos seleccionados conforme al formato de copia manual, siempre cifrados y sin tokens ni claves.
-- Las pruebas de la configuración se ejecutarán en API 26–30 y API 31+, verificando por separado respaldo en nube y transferencia directa entre dispositivos en los entornos compatibles. Se repetirán al introducir Room/DataStore y al modificar rutas de almacenamiento o el manifiesto.
+- Para API 31 o superior, el manifiesto apunta mediante `android:dataExtractionRules` a reglas `data-extraction-rules` con exclusiones completas en `<cloud-backup>` y `<device-transfer>`.
+- En Android 16 QPR2 o superior, donde el sistema admite transferencia multiplataforma, la configuración incluye `<cross-platform-transfer platform="ios">` con exclusiones de los nueve dominios de datos. La prueba instrumentada `modernCrossPlatformTransferRulesExcludeEveryApplicationDataDomain` verifica el XML en API 26 y API 37. Esto demuestra configuración y lectura, **no** una transferencia real con iOS. No se inventan `bundleId`, `teamId` ni parámetros de una aplicación iOS que Prisma no tiene emparejada.
+- Los dominios explícitamente excluidos son root, file, database, sharedpref, external, device_root, device_file, device_database y device_sharedpref. No se permite que Room, DataStore, preferencias, archivos privados, credenciales, claves, caché persistente ni temporales de Prisma entren en copias automáticas.
+- La exportación manual `.prisma` es independiente de Android Auto Backup y sigue permitida; contiene datos seleccionados, cifrados con clave derivada de contraseña, sin tokens ni claves.
+- **Evidencia efectiva CI #62:** en API 26 y API 37 se habilitó BackupManager, se seleccionó el `LocalTransport` del sistema y `bmgr backupnow` devolvió `Backup is not allowed` para `dev.elfast.prisma.internal`. Tras desinstalar y reinstalar el mismo APK, cinco marcadores temporales (root, files, DataStore, shared preferences y database) siguieron ausentes. Esto prueba rechazo del paquete y la ruta local de reinstalación con el transporte local del emulador; **no** es una copia real de Google Drive/cuenta.
+- **D2D:** en CI #62 el transporte GMS pudo inicializarse, pero rechazó temporalmente el paquete con `Transport rejected package because it wasn't able to process it at the time`. El informe marca `INCONCLUSIVE`; no hubo payload aceptado ni restauración D2D. La prueba limpia el modo de prueba y no declara la transferencia superada.
 - La pérdida/desinstalación del dispositivo sin exportación manual implica que Android no restaurará automáticamente los datos privados de Prisma; la interfaz y la ayuda de copias deben comunicar esta consecuencia.
+- La compatibilidad real con nubes de cuentas, transferencias OEM entre dos dispositivos y una contraparte iOS debe verificarse por separado en hardware/servicios compatibles. Las pruebas instrumentadas y `LocalTransport` no sustituyen esas evidencias.
 
-La política se basa en las reglas de extracción de Android: https://developer.android.com/identity/data/autobackup y https://developer.android.com/about/versions/12/behavior-changes-12.
+La política se basa en las reglas de extracción de Android: https://developer.android.com/identity/data/autobackup, https://developer.android.com/about/versions/12/behavior-changes-12 y https://developer.android.com/about/versions/16/qpr2/behavior-changes-16-qpr2.
 
 ## 7. Fechas de visionado
 
@@ -313,10 +316,23 @@ Pruebas previstas según la fase activa:
 - Pruebas de sincronización de metadatos y respuestas ausentes/error usando un cliente de red falso.
 - Pruebas de estado offline y recuperación de conexión.
 - Pruebas de interfaz de Compose para flujos críticos.
-- Transporte HTTPS/TLS: comprobar rechazo de HTTP, negociación TLS 1.2 y TLS 1.3 cuando esté soportado, rechazo de certificado inválido/caducado y hostname incorrecto, rechazo de redirección HTTPS→HTTP, rechazo de redirección cross-origin autenticada sin reenviar Bearer, y carga de imágenes HTTPS sin credenciales.
+- Android BackupManager: CI #62 ejecutó `bmgr backupnow` mediante `LocalTransport`, verificó el rechazo del paquete y repitió la instalación para comprobar que no regresaran cinco marcadores privados. API 26 y API 37 pasaron. El transporte D2D de Google quedó `INCONCLUSIVE` por rechazo transitorio; la transferencia real entre dos dispositivos y el backup de cuenta Google siguen sin validarse.
+- Transporte HTTPS/TLS: comprobar rechazo de HTTP, negociación TLS 1.2 y TLS 1.3 cuando esté soportado, rechazo de certificado no confiable/expirado y hostname incorrecto, rechazo de redirección HTTPS→HTTP, rechazo de redirección cross-origin autenticada sin reenviar Bearer y carga de imágenes HTTPS sin credenciales. CI #47 (`42726414134`) confirmó el rechazo de HTTP en API 26 y API 37 y CI #48 (`42728145540`) confirmó la regresión completa de la base. CI #49 (`42729920970`) detectó y aisló un defecto en la prueba de disponibilidad TLS 1.3 (consulta de un `SSLContext` no inicializado); no fue un defecto del cliente. CI #50 (`42731583151`) pasó TLS 1.2/1.3, CA no confiable y hostname incorrecto en API 37, pero identificó incompatibilidad del formato PKCS#12 con el proveedor de Android 8. Tras regenerar el fixture con MAC SHA-1/PBE-SHA1-3DES, CI #51 (`42733048755`) confirmó TLS 1.2 y los rechazos de CA/hostname en API 26 y API 37, TLS 1.3 en API 37 y 6/6 pruebas JVM. CI #52 (`42734670743`) pasó compilación, lint, 6 JVM, 17 pruebas API 37 y 17 casos API 26 (1 omitido solo porque TLS 1.3 no está soportado en Android 8). CI #53 (`42736143972`, segundo intento) confirmó 19/19 pruebas API 37 y 18/19 API 26, sin fallos ni errores; la única omisión corresponde a TLS 1.3 no disponible en Android 8. Los dos casos agregados —certificado expirado y redirección HTTPS→HTTP— pasaron en ambos emuladores. Los informes XML identifican `AVD - 17` y `AVD - 8.0.0`, con código de salida 0, y se publicó APK cuyo checksum interno fue comprobado. El primer intento de #53 falló resolviendo el plugin Compose, antes de compilar o ejecutar pruebas; el segundo terminó correctamente.
+El fixture del certificado expirado tiene SAN IP 127.0.0.1, está firmado por la CA local y su PKCS#12 usa cifrado legacy compatible con API 26. No se modifica la configuración de confianza ni el código de producción para permitir los escenarios negativos.
+- **BackupManager CI #61/#62:** CI #61 (`42749624000`) registró 20 pruebas sin fallos en API 37 y 20 casos en API 26 (una omisión TLS 1.3), pero terminó con error de etapa por D2D (`-1000`). CI #62 (`42750815542`) terminó `success`: API 37 20/20, API 26 20 casos con 0 fallos y 1 omisión TLS 1.3, JVM 6/6. Los ciclos cloud/local con `LocalTransport` pasaron en ambos emuladores; `bmgr backupnow` devolvió `Backup is not allowed` y cinco marcadores permanecieron ausentes después de reinstalar.
+- **D2D CI #62:** el transporte se inicializó (`Initialization result: 0`), pero rechazó temporalmente el paquete. El transcript lo etiqueta `INCONCLUSIVE`; no se ejecutó restauración D2D.
+- **CI #119 — validación completa, versionado y ventanas amplias:** ejecución [42911749013](https://github.com/ElFast-dev/Prisma/actions/runs/42911749013), commit `403522649cae2fabe0bc59cad4c46129b666cbfb`, terminó con `success`. Build/lint, 10/10 pruebas Python del validador y 6/6 pruebas JVM pasaron. `productionDebug` se inspeccionó sin firmar ni publicar y se confirmó `dev.elfast.prisma`, versión `0.1.0`, `versionCode=1` (primera Release estable aún no publicada). API 37: 24/24 instrumentadas, 0 fallos/errores/omisiones; repetición de `PrismaAdaptiveWindowTest` a 1280×800 px y 160 dpi: 2/2 (Obsidiana y Cuarzo), código de salida 0 y aserción de ventana de al menos 600 dp. API 26: 24 casos, 0 fallos/errores, 1 omisión justificada por TLS 1.3 no disponible. Los ciclos cloud/LocalTransport pasaron en ambas APIs. En D2D, el paquete auxiliar de control respaldó y restauró su marcador; el transporte confirmó después que Prisma no tenía datos elegibles por las exclusiones configuradas, por lo que **no se ejecutó una restauración D2D de datos de Prisma**. Se publicó el APK interno `dev.elfast.prisma.internalfix2`; no es una Release pública ni fue instalado físicamente en el Galaxy por esta ejecución.
+
+- **CI #118 — resultado de regresión:** build/lint/JVM y validador versionCode pasaron; API 37 24/24 instrumentadas y API 26 24 casos sin fallos/errores (una omisión TLS 1.3). Ambos ciclos cloud/local pasaron. API37 D2D quedó `INCONCLUSIVE` (`bmgr init -1000`). El paso falló después por una función Bash multilínea enviada como comando aislado a `/usr/bin/sh -c` por Android Emulator Runner; no se ejecutó el perfil específico 1280×800. API26 completó. El nuevo bloque de ventana se encapsula en un único `bash -c` y el fallo D2D añade logcat y estado del servicio sin suprimir la inconclusión.
+- **D2D CI #116:** el test de control auxiliar falló antes de llegar a Prisma, con `Package @pm@ with result: Transport error`; se observó además `No backup account for initializeDevice` al inicializar GMS. Las pruebas instrumentadas de Prisma pasaron 22/22 en API 37 y 21 ejecutadas + 1 omisión TLS 1.3 en API 26; los ensayos cloud/local pasaron. No se publicó APK. Se ajustó el orden de selección D2D para que ocurra antes de habilitar BackupManager en el emulador sin cuenta cloud, siguiendo una pista técnica documentada; queda pendiente la validación CI posterior. No se silencia el fallo del probe.
+- **CI #112 — APK de referencia de la primera validación física:** ejecución [42899984672](https://github.com/ElFast-dev/Prisma/actions/runs/42899984672), commit `eaaed7f709f81a0f0339f15425dbd97e23163232`, terminó con éxito: build/lint, JVM 6/6, API 37 22/22 y API 26 22 casos sin fallos ni errores (1 omisión TLS 1.3 esperada en API 26). En API 37, `LocalTransport` rechazó el backup de Prisma y los cinco marcadores de prueba permanecieron ausentes tras reinstalar. D2D restauró un marcador del paquete auxiliar; Prisma no generó payload elegible, por lo que no se ejecutó un ciclo de restauración de Prisma. La restauración auxiliar valida el transporte, no una migración real de datos de Prisma.
+- **Validación física:** el propietario instaló el APK interno de CI #112 en el Galaxy A03 `SM-A035M` (Android 13/API 33) y confirmó su funcionamiento correcto. Es una verificación física funcional inicial; el benchmark de rendimiento y la cobertura de API 26 en hardware continúan diferenciados.
+- **Transferencia multiplataforma:** la prueba instrumentada confirmó lectura y exclusión de nueve dominios en API 26 y 37. No se ejecutó transferencia Android↔iOS real.
+- **Prueba física disponible:** Samsung Galaxy A03 `SM-A035M`, Android 13/API 33, One UI 5.1 Core, Unisoc T606 arm64, GPU Mali/OpenGL ES 3.2, 4 GB RAM física + 4 GB zRAM, 109 GB nominales (6,2 GB libres), microSD de 7 GB, pantalla 300 dpi sin HDR y puerto micro-USB. Esta unidad aporta validación física real en API 33; el propietario confirmó que el APK de CI #112 se instaló y funciona correctamente. El mínimo API 26 sigue cubierto por emulador CI, no por hardware físico.
+- **.prisma:** KDF, cabecera autenticada, staging y restauración atómica son recomendaciones para una fase posterior; no hay implementación ni prueba end-to-end todavía.
 - Verificar en configuración y artefactos de producción que no existan excepciones cleartext, validadores TLS inseguros, `HostnameVerifier` permisivos ni Certificate Pinning.
 - Copias automáticas de Android: comprobar exclusión completa en API 26–30 y API 31+, incluyendo por separado nube y transferencia directa entre dispositivos en los equipos compatibles.
-- Compatibilidad Android: comprobar la instalación y el recorrido esencial en API 26 (`minSdk`, nivel mínimo aprobado) y ejecutar las pruebas de comportamiento con `targetSdk = 37`.
+- Compatibilidad Android: mantener pruebas en CI/emulador API 26 y API 37. El recorrido físico inicial del APK CI #112 en Galaxy A03 Android 13/API 33 ya fue realizado y confirmado por el propietario; no presentar API 33 como prueba física de Android 8 ni como sustituto de benchmarks o futuras pruebas de aceptación por capacidad.
 - Ventanas y pantallas grandes: verificar con `targetSdk = 37` que la interfaz se adapta al redimensionamiento y a tamaños de pantalla amplios; no debe recortar contenido, ocultar acciones esenciales ni impedir completar los recorridos principales. Incluir pruebas en emulador o dispositivo con ventana redimensionable.
 - Preferencia de tema: comprobar Obsidiana en una instalación sin preferencia, el cambio manual entre Obsidiana y Cuarzo y la conservación del último valor seleccionado después de cerrar y volver a abrir la aplicación.
 - Verificación de que tokens y datos privados no aparezcan en logs o artefactos.
@@ -327,18 +343,43 @@ Pruebas previstas según la fase activa:
 
 ### Identificación de versiones Android
 
-- `versionName` mostrará la versión pública SemVer de Prisma y seguirá la secuencia global definida en el Roadmap (por ejemplo, `0.1.0`, `0.2.0`, `0.2.1`). No se reinicia al cambiar de fase.
-- `versionCode` será un contador entero secuencial único para las versiones distribuidas. El primer APK público tendrá `versionCode = 1`; cada nueva Release distribuida incrementará el valor exactamente en una unidad, incluidas las versiones de corrección.
-- El `versionCode` no depende de SemVer, nunca se reutiliza ni se reinicia al cambiar de fase o llegar a `1.0.0`. Se conserva una única secuencia durante toda la vida de Prisma.
-- Se establece `2.100.000.000` como límite máximo operativo de seguridad. No se generará ni publicará una Release que supere ese valor.
-- CI comprobará antes de publicar que el código propuesto sea exactamente el siguiente de la secuencia de producción y mayor que el de la última Release distribuida; el proceso debe fallar ante duplicados, retrocesos, saltos o valores fuera del límite.
-- Las compilaciones internas de desarrollo/prueba utilizarán una variante con identificador de aplicación separado (por ejemplo, sufijo de aplicación) y una numeración propia que no consuma ni se mezcle con la secuencia de producción. La configuración concreta de Gradle se fijará en la especificación de la Fase 1.
+La separación entre hitos de desarrollo, compilaciones internas y versiones de producto está definida en docs/TECNICO/VERSIONADO_Y_COMPILACIONES.md. Esta política prevalece sobre cualquier numeración antigua de roadmap conservada en el historial.
+
+- versionName es el SemVer del producto únicamente al preparar una Release aprobada. No aumenta por fase, pantalla, módulo, tarea ni build CI.
+- versionCode es un entero independiente. El primer producto publicado (alpha/beta/RC/estable) comienza en 1; cada Release de producto publicada incrementa una unidad. Las pre-releases públicas también consumen código; los artefactos internos y drafts no.
+- Límite operativo conservado: 2.100.000.000.
+- Variantes internas utilizan IDs de aplicación y versionCode separados y no se confunden con producción.
+- Valores verificados actualmente: producción base versionName=0.1.0/versionCode=1; internalDebug=0.1.0-internal/1000001; internalFixDebug=0.1.0-internal-fix/1000002; internalFix2Debug=0.1.0-internal-fix2/1000003. No se modifican como parte de la reorganización.
+- productionDebug se compila solo para inspeccionar la identidad pública y la secuencia. Actualmente no hay Tags ni Releases; su 0.1.0/1 es un valor de configuración de inspección, no una versión publicada.
+- El validador CI inspecciona todas las Releases públicas publicadas, incluidas las pre-releases, comprueba la identidad/consistencia de sus APK y exige el siguiente versionCode. No usa solo /releases/latest, que omite pre-releases.
+- Como CI ejecuta esta comprobación en cada push, el versionCode de producción en Gradle representa el siguiente código disponible. Después de publicar una Release se avanza mediante un commit explícito al siguiente entero; no se cambia por cada build interno y no se tocan los códigos de las variantes QA.
+- El número de build CI se identifica con GitHub Actions run_number, SHA completo/corto y variante. No se inserta como SemVer ni se utiliza para consumir versionCode de producción.
+
+**Control de secuencia de versiones públicas:** el workflow construye productionDebug únicamente para inspección y valida su identidad/versionCode con aapt; no firma con claves de producción ni publica ese APK. El script Python consulta el inventario paginado de GitHub Releases, verifica la identidad del repositorio, inspecciona los APK de todas las Releases publicadas (incluidas pre-releases), verifica el package ID, la coherencia y unicidad de los códigos y el digest SHA-256 cuando GitHub lo expone. El candidato debe ser exactamente el siguiente entero; cuando no existe ninguna Release publicada, debe ser versionCode=1. Los drafts no consumen código. Otros errores de API detienen el workflow. El token GITHUB_TOKEN se limita al paso de lectura y nunca se pasa a Gradle, al APK ni a procesos de producción. Las pruebas unitarias del validador se ejecutan antes de la construcción.
+
+**Validación de ventanas amplias:** las pruebas Compose `PrismaAdaptiveWindowTest` comprueban que Descubrir, Apariencia, la navegación y los cuatro accesos de Personal siguen visibles y utilizables en Obsidiana/Cuarzo. En CI API 37 se repite esta clase con el emulador en 1280×800 px y densidad 160 dpi (ventana lógica de al menos 600 dp); los informes de la ejecución normal y de la ventana amplia se almacenan por separado. Es una simulación automatizada de ventana amplia, no una prueba física en tablet o plegable.
 
 GitHub Actions será el sistema de CI:
 
+- El workflow de Fase 1 ejecuta lint, pruebas unitarias, `assembleInternalFix2Debug`, la inspección `assembleProductionDebug` y el validador de secuencia `versionCode`; después ejecuta `connectedInternalFix2DebugAndroidTest` en Android 17 (API 37, paquetes `37.0`, canal canary) y Android 8 (API 26, Google APIs x86). En ambos emuladores ejecuta además `scripts/verify-android-backup-exclusions.sh`: cloud/local en API 26 y 37 y D2D cuando la imagen API 37 ofrece el transporte. Los transcripts de BackupManager se publican junto con los XML/HTML independientes. El APK interno y su checksum solo se preparan después de superar ambos pasos instrumentados.
+- Evidencia del incremento base, verificada el 9 de noviembre de 2026: ejecución `42706068176` (#30), commit `670f2d7b26639d7e19ec6033ee926a5e856e8fda`, conclusión `success`; compilación, lint, pruebas unitarias y suite instrumentada pasaron.
+- Evidencia anterior de corrección de iconos: ejecución `42709442180` (#32), commit `82896a60fccac1ef811ac4a84da9901394087608`, conclusión `success`; compilación, lint, pruebas unitarias y `connectedInternalDebugAndroidTest` en emulador Android 17 pasaron.
+- Evidencia vigente de la silueta final de Ajustes: ejecución `42712403446` (#35), HEAD `25adec22a7396118b6667714575e60e5c6a55321`, que contiene el código `8cd345fe2807e82327fe378ace99be07c420eb44`; conclusión `success`. Pasaron compilación, lint, pruebas unitarias, `connectedInternalDebugAndroidTest` en Android 17 y publicación del artefacto `prisma-internal-apk-25adec22a7396118b6667714575e60e5c6a55321` (ZIP: 13.256.635 bytes; SHA-256 ZIP: `3a3c6e8e90872c0d4edbd99cab650abd4d7a2c47a814f838966316c4c1911bb3`), que caduca el 23 de noviembre de 2026 a las 22:37:32 UTC. Registro y descarga: [GitHub Actions #35](https://github.com/ElFast-dev/Prisma/actions/runs/42712403446).
+- La CI documental #36 (`42715050804`) terminó correctamente sobre HEAD `643ae7a3`: compilación, lint, pruebas unitarias y suite instrumentada Android 17 pasaron.
+- CI #37 (`42716063385`) validó `connectedInternalDebugAndroidTest` en Android 17/API 37 y Android 8/API 26, además de compilación, lint, pruebas unitarias y publicación del APK interno.
+- CI #38 (`42719435851`) pasó en Android 17/API 37 y Android 8/API 26. Las seis comprobaciones instrumentadas de `NetworkSecurityPolicy`, trust anchors del sistema, ausencia de pinning, `allowBackup=false` y exclusiones completas para backup legacy, nube y device-transfer quedaron superadas en ambos emuladores.
+- El APK interno de esta ejecución se publicó como `prisma-internal-apk-1cd8e6a67934624594c7959fc07d6bde1366b9a3` (ZIP: 13.256.633 bytes; SHA-256: `61e42fa97093e9cdebf13a876411d5c75dfe441f70ca9fe9bbe94cd0ac2e9be3`), caduca el 23 de noviembre de 2026 a las 23:26:27 UTC. Enlace verificable: [GitHub Actions #38](https://github.com/ElFast-dev/Prisma/actions/runs/42719435851).
+- CI #40 (`42722310507`), sobre `e4723d69ac797e642d58667c7418160f3cb716f8`, terminó con `success`: compilación, lint, pruebas unitarias y `connectedInternalDebugAndroidTest` pasaron. Los registros muestran la tarea instrumentada completada en Android 17/API 37 y Android 8/API 26; no se publicaron informes XML por método en esa ejecución.
+- CI #47 (`42726414134`), sobre `29407ffb66178f28825aef1ab6938727f0afc773`, terminó con `success`. Compilación, lint, `testInternalDebugUnitTest`, `assembleInternalDebug` y las pruebas instrumentadas de API 37 y API 26 pasaron. Los XML de ambas APIs registran 13 pruebas, 0 fallos y 0 errores; se confirma el resultado individual de `prismaHttpClientRejectsCleartextRequestsBeforeOpeningSocket` en ambos emuladores. Se conservaron dos artefactos de informes instrumentados y el APK interno. El ZIP de APK mide 13.256.632 bytes (SHA-256: `97f6b0d82fb4fc4344898ec1ad914a05ce937ca3a26995c12522688f151f6b0d`); el APK extraído mide 13.789.254 bytes (SHA-256 verificado: `dbb94b831e5235bf859c5d2ab6ee93735d17d8261ad1e36d96040b218b327199`). Registro: [GitHub Actions #47](https://github.com/ElFast-dev/Prisma/actions/runs/42726414134).
+- La prueba JVM de redirección cross-origin forma parte de `PrismaHttpClientTest`; CI #53 publicó sus XML y confirmó 6/6 pruebas JVM. Las pruebas instrumentadas #53 validaron en API 26 y 37 TLS 1.2, TLS 1.3 cuando está soportado, CA no confiable, certificado expirado, hostname incorrecto, cleartext y downgrade HTTPS→HTTP.
+- **CI #61** (`42749624000`) comprobó la nueva exclusión `cross-platform-transfer`: 20/20 instrumentadas API 37 y 20 casos API 26 (una omisión TLS 1.3), 6 JVM; los ciclos cloud/local pasaron. La ejecución global falló solo por la inicialización D2D (`-1000`).
+- **CI #62** (`42750815542`), commit de workflow `d900c0f118cb56454f0257c6584bb8bddc05ee94`, terminó con `success`. API 37: 20 pruebas, 0 fallos/errores/omisiones; API 26: 20 casos, 0 fallos/errores, 1 omisión TLS 1.3; JVM 6/6. Ambos ciclos cloud/local pasaron; D2D quedó `INCONCLUSIVE` tras rechazo temporal del transporte.
+- **APK interno CI #62:** artefacto ID `13732984791`, ZIP de 13.256.761 bytes; APK de 13.789.370 bytes; SHA-256 verificado `b08f6bbaf24dbcf1b779ec4b88458ca8812438cafeb37402899a7b7e1f76ca08`. Registro: [GitHub Actions #62](https://github.com/ElFast-dev/Prisma/actions/runs/42750815542).
+- **Pendiente:** validación en teléfono físico (incluido API 26 real), D2D real entre dispositivos compatibles, backup con servicio/cuenta Google y transferencia multiplataforma efectiva con una contraparte iOS.
+
 - Al abrir/actualizar Pull Requests y al integrar cambios en la rama principal: compilar y ejecutar pruebas automatizadas.
-- Antes de crear una Release distribuida: validar automáticamente que `versionCode` sigue la secuencia aprobada, que no excede el límite y que el artefacto se identifica como variante de producción.
-- Al completar una versión: crear tag y Release con notas breves en español.
+- Antes de crear cualquier Release distribuida (incluida una pre-release): validar automáticamente que `versionCode` es el siguiente de todas las Releases publicadas, que no excede el límite y que el artefacto se identifica como variante de producción.
+- Solo tras superar la puerta de producto y recibir aprobación expresa: crear el tag SemVer y la GitHub Release correspondiente.
 - **Cada versión distribuida al usuario** se publica en GitHub Releases con tag SemVer, notas en español y un APK instalable compatible con la distribución elegida. Los artifacts de GitHub Actions se reservan para validaciones internas y no sustituyen la Release de una versión distribuida.
 - Nunca guardar secretos en workflows o repositorio.
 
@@ -400,23 +441,113 @@ Esta capacidad no forma parte del MVP. Se desarrollará en la Fase 8 para que el
 
 ### Publicación
 
-- Cada versión distribuida se publica en GitHub Releases con tag SemVer, changelog obligatorio en español y un APK instalable compatible con el formato de distribución elegido. El contenido del changelog debe coincidir con el que Prisma muestra dentro de su historial de versiones.
+- Cada versión de producto autorizada se publica en GitHub Releases con tag SemVer, changelog obligatorio en español y un APK instalable compatible con el formato de distribución elegido. Las pre-releases se marcan como tales. El contenido del changelog debe coincidir con el que Prisma muestra dentro de su historial de versiones.
 - Las Releases y sus assets se generan mediante el flujo de entrega continua definido en esta sección.
 - El actualizador integrado posterior al MVP ofrecerá la versión pública estable más reciente. El soporte de *pre-releases*, canales alternativos o selección de versiones queda pendiente de aprobación.
 
 
 La configuración y los permisos exactos de Actions se verificarán antes de implementarlos.
 
+### Rendimiento del ciclo de compilación y CI
+
+- Mantener feedback rápido durante la implementación: compilar y ejecutar primero las tareas afectadas, ampliar a pruebas unitarias/instrumentadas y matriz completa en las puertas de integración y distribución.
+- Medir los tiempos por tarea con Build Scan o informes de perfil antes de cambiar la configuración. Corregir el cuello de botella real en lugar de aumentar indiscriminadamente memoria, concurrencia o complejidad.
+- Aprovechar Gradle Daemon, compilación incremental, Build Cache y Configuration Cache, así como caché de dependencias y artefactos de CI, cuando las versiones fijadas y los plugins sean compatibles. Adoptar Configuration Cache de forma gradual y verificar que sus entradas/salidas y tareas personalizadas son correctas.
+- Paralelizar tareas y jobs independientes solo cuando no compitan por recursos escasos ni comprometan reproducibilidad. Reutilizar resultados del mismo commit y evitar ejecutar varias veces una suite completa que no cambió.
+- Evitar `clean`, sincronizaciones y descargas de dependencias repetidas cuando no sean necesarias. Mantener las versiones estables y evitar actualizaciones de herramientas ajenas al objetivo que generen nueva resolución, recompilación o riesgos de compatibilidad.
+- En GitHub-hosted runners, aprovechar que cada job parte de un checkout nuevo: no ejecutar `clean` de forma rutinaria. Mantener el Gradle Daemon durante las invocaciones sucesivas del mismo job y dejar que `setup-gradle` gestione su cierre al finalizar. La configuración se valida en CI; medir los tiempos de ejecución para cuantificar su impacto antes de afirmar una mejora.
+- No reducir matrices, omitir pruebas, ignorar fallos ni marcar pasos como opcionales para mejorar artificialmente los tiempos. Las comprobaciones obligatorias permanecen como puerta de calidad antes de integrar o distribuir.
+- Referencias: [Gradle — mejorar el rendimiento de las compilaciones](https://docs.gradle.org/current/userguide/performance.html), [Gradle — buenas prácticas de rendimiento](https://docs.gradle.org/current/userguide/best_practices_performance.html), [Gradle Daemon y reutilización entre builds](https://docs.gradle.org/current/userguide/gradle_daemon.html), [Gradle — Configuration Cache](https://docs.gradle.org/current/userguide/configuration_cache.html) y [GitHub Actions — rutas omitidas y checks pendientes](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+
+
 ## 11. Rendimiento y accesibilidad
 
-- Usar claves estables y reutilización en listas/paginación.
-- Evitar cargar todas las imágenes del Feed en memoria.
-- Probar desplazamiento y carga de imágenes en dispositivos reales o emuladores.
-- Considerar Baseline Profiles cuando existan recorridos de uso medibles.
-- Respetar escalado de texto, contraste, descripciones accesibles y objetivos táctiles.
+### 11.1 Principio general
+
+El objetivo es que Prisma sea rápida, fluida, estable y eficiente en CPU, memoria, almacenamiento, red y batería, sin reducir arbitrariamente sus funciones ni la calidad de la experiencia. El rendimiento se mejora eliminando trabajo innecesario, eligiendo algoritmos y estructuras adecuados, cargando datos bajo demanda y midiendo los recorridos reales; no desactivando funciones, seguridad, persistencia o controles de calidad.
+
+No se impondrán topes de producto a listas, historial, aprendizaje, metadatos o capacidades solo para ocultar ineficiencias. Sí se deben administrar de forma responsable los recursos finitos del dispositivo: memoria de trabajo y caché en RAM acotadas, imágenes decodificadas del tamaño necesario, operaciones paginadas cuando el volumen lo justifique y liberación de recursos que ya no se usan. La gestión de caché nunca debe eliminar historial, puntuaciones, listas ni otros datos personales para liberar espacio.
+
+### 11.2 Medición y dispositivos de referencia
+
+- Medir inicio en frío, tibio y caliente; distinguir **TTID** (primera interfaz visible) de **TTFD** (interfaz completamente utilizable). Usar Macrobenchmark y trazas Perfetto/Android Studio para localizar el trabajo que retrasa el inicio; no inferir rapidez solo por inspección visual.
+- Evaluar renderizado, desplazamiento, transiciones, entrada de texto, navegación, carga de imágenes, operaciones Room, recuperación offline, memoria, uso de CPU y trabajo en segundo plano. El análisis debe incluir las fases de mayor carga y no limitarse a abrir la pantalla inicial.
+- Probar recorridos representativos en el Samsung Galaxy A03 `SM-A035M` (Android 13/API 33), además de emuladores API 26 y API 37. El teléfono físico es el control de rendimiento de hardware real disponible; los emuladores amplían la cobertura de compatibilidad, pero no sustituyen las mediciones físicas de CPU, memoria, batería o temperatura.
+- Comparar antes y después bajo condiciones equivalentes: mismo dispositivo, variante de compilación, conjunto de datos, estado de caché y recorrido. Registrar la métrica, el escenario y la causa; no atribuir una mejora a una variación que no se ha medido.
+- Para una medición representativa de entrega, usar un build de tipo release o equivalente no depurable con R8 y la configuración de optimización que vaya a distribuirse. La instrumentación de depuración puede distorsionar los tiempos.
+- Los umbrales específicos de Prisma se definirán a partir de una línea base reproducible y de los recorridos reales; no se inventarán cifras de aceptación. Como referencia técnica, Android recomienda mantener los frames dentro de unos 16 ms para 60 Hz y considera congelados los frames superiores a 700 ms. Ajustar el análisis a la frecuencia de refresco real del dispositivo.
+
+### 11.3 Inicio, hilo principal y concurrencia
+
+- Mantener libre el hilo principal: no ejecutar en él I/O de archivos o base de datos, red, descargas, decodificación de imágenes ni cálculos intensivos. Utilizar dispatchers y trabajo de fondo adecuados, con cancelación y propagación controlada de errores.
+- Durante el arranque, ejecutar solo lo necesario para mostrar una interfaz correcta y utilizable. Diferir inicializadores, consultas y bibliotecas no esenciales hasta después de la primera presentación, sin retrasar datos imprescindibles para la coherencia visual o la privacidad, como la recuperación del tema persistido.
+- Evitar inicializaciones automáticas costosas y trabajo duplicado. No sustituir trabajo esencial por una pantalla vacía ni mostrar datos incorrectos para mejorar artificialmente TTID.
+- Evitar bloqueos, esperas activas, polling sin necesidad y reintentos infinitos. Cancelar trabajos obsoletos cuando cambia la consulta, el destino o el ciclo de vida.
+
+### 11.4 Jetpack Compose y renderizado
+
+- Mantener las funciones composables ligeras: no ordenar colecciones grandes, calcular algoritmos costosos ni transformar datos extensos dentro del cuerpo de una composición que puede repetirse con frecuencia.
+- Usar `remember` para resultados costosos que deban conservarse, `derivedStateOf` cuando reduzca lecturas y recomposiciones, y lecturas diferidas de estado cuando sea útil. No añadir estos mecanismos mecánicamente si no aportan beneficio.
+- Proporcionar claves estables y `contentType` a listas lazy para conservar identidad y reutilización; mantener estables e inmutables los modelos cuando reflejen realmente esas propiedades. No etiquetar como inmutable un objeto que puede cambiar.
+- Investigar recomposiciones evitables, medición/layout/dibujo costosos y asignaciones por frame con herramientas de Compose y trazas. No utilizar anotaciones, APIs experimentales ni trucos que cambien semántica solo para silenciar diagnósticos.
+- Las listas y pantallas largas deben renderizar elementos bajo demanda y conservar el estado de desplazamiento cuando el producto lo requiera. La paginación debe evitar consultas y renderizados redundantes sin ocultar o descartar elementos válidos.
+
+### 11.5 Imágenes, memoria y almacenamiento
+
+- No cargar ni decodificar todas las imágenes de un Feed o colección al mismo tiempo. Solicitar tamaños adecuados al espacio de presentación, reutilizar cachés, limitar las imágenes simultáneamente activas y liberar referencias cuando dejan de ser necesarias.
+- Separar caché de memoria y caché persistente. La RAM debe permanecer acotada incluso si el usuario acumula muchos registros; la política de disco debe considerar el espacio disponible y permitir gestionar caché derivada sin borrar datos personales.
+- Medir asignaciones, memoria residente, retención accidental de Activities/Views/Context, referencias de imágenes y comportamiento al volver de segundo plano. Comprobar escenarios de poca memoria y almacenamiento insuficiente.
+- Room conserva los datos estructurados personales; las operaciones de limpieza de caché no pueden eliminar o alterar información de usuario. No mantener grandes conjuntos completos en memoria si una consulta incremental o paginada resuelve el recorrido sin limitar la capacidad funcional.
+
+### 11.6 Línea base, perfiles y regresiones
+
+- Crear benchmarks para recorridos representativos cuando las pantallas y flujos correspondientes estén implementados y estables. Añadir Macrobenchmark para inicio, navegación y desplazamiento cuando aporte cobertura automatizable.
+- Adoptar Baseline Profiles y, cuando tenga sentido, Startup Profiles después de definir recorridos de uso medibles; validar la mejora en builds equivalentes a producción. No añadir perfiles vacíos o prematuros.
+- Incorporar comprobaciones de rendimiento a CI donde sean repetibles y el entorno pueda producir datos comparables. Evitar umbrales inestables que generen falsos positivos; investigar toda regresión material antes de cerrar una entrega.
+- Optimizar guiándose por perfiles y datos, no por microoptimizaciones especulativas. Una mejora de velocidad no es aceptable si introduce pérdida de datos, más consumo de memoria/batería, regresiones de accesibilidad, complejidad injustificada o degradación de seguridad.
+- El rendimiento forma parte de la aceptación de cada capacidad relevante y de la revisión previa a 1.0.0. No se exigirán benchmarks de funciones aún no implementadas, pero se conservará la línea base de los recorridos que sí existen.
+
+### 11.7 Accesibilidad
+
+- Respetar escalado de texto, contraste, descripciones accesibles, orden de foco, navegación por teclado cuando corresponda y objetivos táctiles adecuados.
+- La optimización no puede eliminar etiquetas, semántica, animaciones funcionales necesarias ni feedback accesible. Obsidiana y Cuarzo deben mantener paridad funcional y legibilidad.
+
+Referencias oficiales:
+- [Android: medición y análisis del rendimiento](https://developer.android.com/topic/performance/measuring-performance).
+- [Android: análisis y optimización del arranque](https://developer.android.com/topic/performance/appstartup/analysis-optimization).
+- [Android: inicio de aplicaciones y métricas TTID/TTFD](https://developer.android.com/topic/performance/issues/launch-time).
+- [Android: renderizado lento y frames congelados](https://developer.android.com/topic/performance/issues/render).
+- [Android: buenas prácticas de rendimiento en Compose](https://developer.android.com/develop/ui/compose/performance/bestpractices).
+- [Android: estabilidad de parámetros en Compose](https://developer.android.com/develop/ui/compose/performance/stability).
+- [Android: buenas prácticas de optimización del arranque y Baseline Profiles](https://developer.android.com/topic/performance/appstartup/best-practices).
 
 ## 12. Decisiones técnicas revisables
 
 Las decisiones técnicas son responsabilidad del desarrollador y pueden evolucionar si aparece una alternativa claramente mejor. Un cambio que afecte requisitos, privacidad, UX o alcance aprobado requiere actualizar los documentos y avisar al propietario antes de incorporarlo.
 
 No se escribe código hasta que la especificación de la fase activa esté aprobada.
+
+## Anexo de implementación — versiones fijadas para Fase 1
+
+Las versiones siguientes quedan fijadas en el catálogo Gradle de la implementación inicial. Se eligieron tras comprobar las publicaciones estables y los requisitos de compatibilidad vigentes el 9 de noviembre de 2026. No se utilizan versiones dinámicas.
+
+| Componente | Versión | Criterio |
+|---|---:|---|
+| JDK | 17 | Versión aprobada. |
+| Android Gradle Plugin | 9.5.1 | Versión estable; admite API 37. |
+| Gradle Wrapper | 9.8.1 | Parche estable vigente; AGP 9.5.x requiere al menos Gradle 9.6.0. |
+| Android SDK | Platform 37 | compileSdk y targetSdk 37. |
+| Android Build Tools | 37.0.0 | Versión fijada para la compilación inicial. |
+| Compose BOM | 2026.09.00 | BOM estable recomendado por Android. |
+| Compose Compiler Plugin | 2.4.10 | Alineado con Kotlin 2.4.10; AGP 9 incorpora soporte Kotlin. |
+| DataStore Preferences | 1.2.1 | Versión estable. |
+| Navigation 3 | 1.2.1 | Versión estable publicada el 4 de noviembre de 2026. |
+| Lifecycle | 2.11.0 | Versión estable. |
+| Activity Compose | 1.13.0 | Versión estable. |
+| OkHttp | 5.5.1 | Cliente encapsulado para la política TLS aprobada. |
+
+El proyecto usa inicialmente un único módulo Android app. El flavor production conserva dev.elfast.prisma; el flavor internal utiliza dev.elfast.prisma.internal y una numeración independiente. La CI construye únicamente internalDebug; no configura firma ni secretos de producción.
+
+El recurso tipográfico Inter se incluye localmente como fuente variable y conserva la licencia SIL Open Font License 1.1 en app/src/main/assets/licenses/Inter-OFL-1.1.txt.
+
+La primera compilación interna incorporó la pantalla de Ajustes → Apariencia para verificar la persistencia de Obsidiana y Cuarzo. La implementación de Fase 1 ya añade la navegación estructural, Personal con sus cuatro accesos MVP y la barra inicial de Descubrir. La búsqueda funcional, el diario local y los destinos de sus accesos permanecen reservados a las fases correspondientes.
