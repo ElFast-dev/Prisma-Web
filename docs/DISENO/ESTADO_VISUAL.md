@@ -86,3 +86,19 @@ No se incorporan en este panel los modos Equilibrado/Afinidad/Exploración ni lo
 - Las vistas secundarias conservan un mecanismo claro para regresar a su contexto anterior (por ejemplo, flecha de regreso); la píldora no sustituye esa navegación contextual.
 - Su geometría y carácter flotante aprobados no cambian. Esta regla controla únicamente dónde aparece.
 
+
+
+## Ficha cinematográfica
+
+**Estado:** dirección de composición aprobada por el propietario el 12 de noviembre de 2026. La ficha sigue siendo conceptual; no autoriza implementar ni da por aprobados todos sus controles secundarios.
+
+- Cabecera panorámica a todo el ancho, con imagen cinematográfica y degradado inferior; título en blanco superpuesto, con fecha/año y metadatos básicos disponibles.
+- Flecha de regreso dentro de un control circular semitransparente arriba a la izquierda y menú de opciones arriba a la derecha.
+- Orden del contenido bajo la cabecera: **acciones principales (Historial/Pendientes) → sinopsis → calificación personal → visionados**.
+- Las secciones se separan mediante espacio y divisores discretos; se evitan tarjetas pesadas innecesarias.
+- Acciones y datos se adaptarán al estado real de la película: sin registrar, en Historial, Pendiente u Oculta. No se mostrarán acciones contradictorias ni controles sin función.
+- La calificación personal debe respetar los registros individuales de visionado. Una repetición crea un nuevo registro y no sobrescribe visionados ni calificaciones anteriores.
+- La píldora inferior Personal/Descubrir no aparece en la ficha. La navegación contextual utiliza el regreso a la pantalla que abrió la ficha.
+- La misma estructura se presenta en Obsidiana y Cuarzo, con sus paletas confirmadas.
+- Títulos, imágenes, fechas, metadatos y estados de esta maqueta son datos de ejemplo; en la aplicación solo se presentarán valores reales disponibles.
+
