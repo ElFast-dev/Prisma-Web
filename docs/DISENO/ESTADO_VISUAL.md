@@ -1,17 +1,29 @@
 # Estado visual — Prisma Web
 
-> **Nota de adaptación PWA (12 nov 2026):** las decisiones de identidad, paletas, tipografía, iconografía, geometría y composición aprobadas en el documento heredado se conservan. Las medidas Android `dp` se interpretan como unidades lógicas de diseño y se traducen a CSS responsive (preferencia por `rem`, `em`, porcentajes y tokens CSS; no como píxeles físicos del panel). Las medidas tipográficas Android `sp` se traducen a CSS `rem` con tamaño raíz de referencia 16 CSS px y respeto al zoom/accesibilidad del navegador. Los tamaños fijos deben adaptarse al viewport sin recortar contenido; no se cambian la jerarquía, el espaciado visual, los colores ni los estados aprobados sin aprobación del propietario. Los detalles específicos de Material/Compose quedan sustituidos por componentes web equivalentes, manteniendo el comportamiento aprobado. Cada pantalla se revisará en ambos temas y en varios anchos reales antes de considerarse implementada.
-
-El documento siguiente conserva el registro visual de la etapa anterior; sus decisiones visuales no dependientes de Android siguen siendo referencia vigente.
+> **Migración PWA (12 de noviembre de 2026):** este registro conserva las decisiones de identidad, paletas, tipografía, iconografía y composición aprobadas por el propietario. Las unidades Android (`dp`/`sp`) se traducen a CSS responsive usando unidades lógicas y respetando el zoom y la accesibilidad del navegador. La adaptación de plataforma no autoriza a cambiar jerarquía, colores, espaciado, contenido ni comportamiento aprobado. Los estados visuales y las pantallas pendientes de aprobación siguen pendientes; no deben implementarse por inferencia. El archivo histórico original de Android está en `docs/ARCHIVO/ANDROID/ESTADO_VISUAL_ANDROID.md`.
 
 ---
 
 # Estado visual — Prisma
 
-**Estado:** fundamentos visuales parcialmente aprobados (tipografía, roles cromáticos, espaciado e iconografía); el sistema de diseño completo y los conceptos finales de pantalla siguen pendientes. Hay componentes y decisiones parciales aprobados, pero no se considera que una pantalla completa esté lista para implementación.  
-**Última actualización:** 9 de noviembre de 2026.
+**Estado:** el concepto visual MVP de Personal y la composición de búsqueda/resultados de Descubrir están aprobados en Obsidiana y Cuarzo. Los estados vacíos, avisos contextuales y pantallas de etapas posteriores conservan sus pendientes específicos.  
+**Última actualización:** 11 de noviembre de 2026.
 
 ## Reglas de diseño
+
+### La interfaz es provisional e iterativa
+
+La interfaz de Prisma no queda congelada por sus primeras implementaciones. Las pantallas y componentes visuales pueden revisarse y rediseñarse cuando el propietario no esté conforme con el resultado. Ninguna implementación visual se considera intocable ni definitiva por el solo hecho de estar programada.
+
+- **Se conserva lo acordado:** los requisitos funcionales, flujos, comportamiento, datos, restricciones, decisiones aprobadas y alcance documentados siguen siendo la base del proyecto. Un cambio de apariencia no autoriza a eliminar, degradar o alterar silenciosamente esas funciones o decisiones.
+- **Se puede cambiar la presentación:** distribución, jerarquía, espaciado, tipografía, colores, iconografía, componentes y navegación visual pueden replantearse, respetando los requisitos funcionales y las decisiones cuya modificación requiera aprobación.
+- **Conceptos antes de cambios importantes:** para una pantalla nueva o un rediseño significativo, preparar propuestas conceptuales trabajadas que permitan visualizar y comparar alternativas antes de programarlas. Las propuestas deben mostrarse en su contexto real y contemplar Obsidiana y Cuarzo.
+- **Aprobación expresa:** una propuesta no se convierte en diseño aprobado por haber sido presentada, recomendada o implementada. El propietario elige o solicita ajustes; no se implementa una pantalla cuyo concepto siga pendiente de aprobación.
+- **Iteración después de implementar:** si el resultado en la aplicación no gusta, se revisa con el propietario, se preparan alternativas conceptuales cuando el cambio lo amerite, se actualiza el artefacto visual de referencia y se modifica la implementación. Después se vuelven a ejecutar las validaciones afectadas.
+- **Sin pérdida de decisiones:** antes de cada revisión se consultan los requisitos de producto, este estado visual y las especificaciones técnicas; solo se cambia aquello que el propietario haya pedido revisar. Una preferencia visual nueva no borra acuerdos funcionales previos.
+
+Esta regla aplica a toda Prisma y permanece vigente durante las fases de desarrollo y mantenimiento.
+
 
 ## Regla permanente para crear conceptos visuales
 
@@ -145,9 +157,33 @@ Las medidas expresadas como `px` en este documento son magnitudes nominales del 
 
 ### Personal: pantalla principal (composición MVP aprobada; pantalla completa pendiente)
 
-La composición del MVP queda aprobada como cuatro accesos en una columna vertical. Cada acceso es una fila horizontal uniforme que muestra un icono a la izquierda, nombre y descripción breve en el centro y chevron a la derecha. Los accesos son Historial, Pendientes, Ocultos y Gestionar listas. No se muestra Estadísticas, un acceso deshabilitado ni se deja un espacio vacío artificial. Esta decisión aprueba la estructura funcional y la distribución; el diseño visual final, dimensiones y estados siguen sujetos al sistema visual y a la especificación de la Fase 1.
+La composición del MVP queda aprobada como cuatro accesos en una columna vertical. Cada acceso es una fila horizontal uniforme que muestra un icono a la izquierda, nombre y descripción breve en el centro y chevron a la derecha. Los accesos son Historial, Pendientes, Ocultos y Gestionar listas. No se muestra Estadísticas, un acceso deshabilitado ni se deja un espacio vacío artificial. La propuesta visual de esta pantalla fue aprobada el 9 de noviembre de 2026 para las primeras versiones de Prisma; sus dimensiones, superficies, tipografía y textos se detallan a continuación.
 
 La experiencia completa conservará cinco accesos al incorporar Estadísticas en su fase posterior.
+
+#### Archivos fuente del concepto aprobado
+
+Los prototipos de referencia se conservan como SVG editables en `CONCEPTOS_MVP/` dentro de este directorio:
+- `prisma-mvp-personal-obsidiana.svg` y `prisma-mvp-personal-cuarzo.svg`.
+- `prisma-mvp-descubrir-obsidiana.svg` y `prisma-mvp-descubrir-cuarzo.svg`.
+
+Los mockups muestran únicamente la interfaz MVP. No sustituyen ni recortan la experiencia completa definida para las fases posteriores.
+
+#### Propuesta visual MVP aprobada — primeras versiones
+
+- Presentación: cuatro filas horizontales uniformes en una sola columna, sin encabezado redundante ni título «Personal» repetido.
+- Contenido de cada fila: icono lineal a la izquierda, nombre y descripción breve en el centro, chevron discreto a la derecha. El contenido se centra verticalmente.
+- Textos aprobados: **Historial** / «Películas que ya has visto»; **Pendientes** / «Películas que quieres ver después»; **Ocultos** / «Películas que has decidido ocultar»; **Gestionar listas** / «Crea y organiza tus listas».
+- Geometría aprobada: altura de fila **80 dp**, separación vertical **12 dp**, margen horizontal exterior **16 dp**, radio de esquina **14 dp** y contorno de **1 dp**.
+- Superficies: Obsidiana utiliza la superficie elevada global `#242A35` con contorno `#353535`; Cuarzo utiliza `#FFFFFF` con contorno `#DDD8CE`.
+- Iconos: estilo lineal, **24 dp**, trazo de **1,75 dp**; inactivos `#D0D0D0` en Obsidiana y `#8A857B` en Cuarzo.
+- Nombres: **16 sp**, peso medio (500); color `#F0F0F0` en Obsidiana y `#292B2F` en Cuarzo.
+- Descripciones: **14 sp**, peso regular (400); color secundario `#BDBDBD` en Obsidiana y `#68655F` en Cuarzo.
+- Chevron: **16 dp**, color auxiliar `#9B9B9B` en Obsidiana y `#706C64` en Cuarzo.
+- La primera fila comienza a **16 dp** del límite inferior del área segura superior. La adaptación a pantallas de distintas alturas conserva los márgenes y la separación entre filas.
+- La respuesta al pulsar reutiliza la respuesta global de superficies interactivas; no cambia la escala ni desplaza el contenido.
+- Esta composición se utiliza en las primeras versiones del MVP. No modifica ni sustituye la experiencia completa de cinco accesos descrita más adelante.
+
 
 **Todas las especificaciones visuales que siguen hasta «Navegación y Descubrir» describen exclusivamente la experiencia completa con cinco accesos; no prevalecen sobre la composición MVP aprobada de cuatro filas horizontales uniformes en una columna vertical.**
 
@@ -199,11 +235,20 @@ Las medidas, composición y variantes que siguen describen la experiencia comple
 
 ### Navegación y Descubrir
 
+#### Implementación Android de Fase 1 — estructura inicial
+
+- La navegación inferior se implementa como píldora flotante centrada de 240 × 64 dp, con dos espacios iguales de 120 dp, iconos lineales de 20 dp, etiquetas de 12 sp y separación de 4 dp. La sección inicial es Descubrir; los colores activos/inactivos y las transiciones siguen las decisiones aprobadas de cada tema.
+- Personal implementa únicamente las cuatro filas MVP aprobadas, manteniendo sus dimensiones, iconos, textos, superficies y colores definidos en esta sección. No añade Estadísticas ni las tarjetas cuadradas de la experiencia completa.
+- Descubrir implementa solo la barra superior aprobada: 52 dp de alto, radio 14 dp, márgenes laterales de 16 dp, lupa y engranaje de Ajustes dentro de la misma superficie. El texto visible del campo es exactamente `Buscar...` en ambos temas.
+- La Activity trabaja de borde a borde. Personal y Descubrir respetan `safeDrawing` arriba y en los laterales: los 16 dp superiores de sus composiciones se miden desde el límite seguro inferior de la barra de estado. La píldora inferior aplica el inset real de navegación y conserva 16 dp adicionales hasta el área del sistema, tanto con gestos como con navegación de tres botones. Los iconos de las barras del sistema adoptan contraste según Obsidiana/Cuarzo.
+- Esta entrega es una estructura visual y de navegación de Fase 1, no la implementación del diario ni de la búsqueda. Las filas de Personal no aparentan ejecutar acciones aún no disponibles; tampoco se muestran resultados ni pósteres ficticios.
+
+
 La navegación conserva Personal y Descubrir. El Feed, sus modos, filtros, mosaico y paginación son posteriores al MVP.
 
 #### Composición de Descubrir para el MVP (aprobada)
 
-- La pantalla utiliza una única barra de búsqueda en la parte superior. El campo ocupa el espacio principal, con icono de lupa a la izquierda y el texto indicativo «Buscar película...».
+- La pantalla utiliza una única barra de búsqueda en la parte superior. El campo ocupa el espacio principal, con icono de lupa a la izquierda y el texto indicativo «Buscar...».
 - A la derecha de la misma barra aparece un engranaje lineal de Ajustes. Al pulsarlo se abre Ajustes, donde se configura TMDB y las demás preferencias disponibles en la versión instalada.
 - La barra conserva el carácter continuo y minimalista; no se presenta como tres tarjetas independientes.
 - No se muestra el icono de Filtros en el MVP.
@@ -233,14 +278,15 @@ La navegación conserva Personal y Descubrir. El Feed, sus modos, filtros, mosai
 
 #### Jerarquía visual consolidada de Descubrir (MVP)
 
-- **Dirección conceptual seleccionada:** **Concepto A — Continuidad silenciosa**. Los avisos utilizan un tratamiento **integrado y discreto**. La elección aprueba la dirección estética y las medidas de barra y separaciones que se detallan a continuación, pero no la pantalla final ni los demás valores aún pendientes; la composición completa sigue en revisión y no autoriza programación.
+- **Dirección conceptual seleccionada:** **Concepto A — Continuidad silenciosa**. Los avisos utilizan un tratamiento **integrado y discreto**. La composición visual de la búsqueda y la lista de resultados del MVP se presentó y aprobó el 9 de noviembre de 2026 en Obsidiana y Cuarzo. Se respetan las medidas y jerarquías detalladas a continuación. La aprobación no resuelve la posición/composición de estados vacíos ni del aviso «Conecta TMDB», que mantienen sus pendientes P2 de Fase 3.
 
 La composición aprobada se lee en este orden: **barra única de búsqueda y Ajustes → contenido de estado contextual cuando corresponda → lista continua de resultados**. No se introducen tarjetas de fuente, encabezados de origen, Feed, filtros ni secciones paralelas.
 
-- **Barra:** un único contenedor continuo. La lupa queda a la izquierda del campo «Buscar película...» y el engranaje de Ajustes a la derecha. El campo ocupa el espacio flexible. El spinner remoto, cuando corresponde, se integra dentro de la propia barra, antes del área táctil de Ajustes y sin convertirse en una pantalla o panel de carga. No se muestra Filtros en el MVP.
+- **Barra:** un único contenedor continuo. La lupa queda a la izquierda del campo «Buscar...» y el engranaje de Ajustes a la derecha. El campo ocupa el espacio flexible. El spinner remoto, cuando corresponde, se integra dentro de la propia barra, antes del área táctil de Ajustes y sin convertirse en una pantalla o panel de carga. No se muestra Filtros en el MVP.
 - **Iconos de búsqueda y Ajustes:** ambos dibujos miden **18 × 18 dp** y se centran verticalmente en la barra. Se utiliza estilo lineal fino con grosor de trazo de **1,4 dp**, terminaciones redondeadas y uniones redondeadas.
 - **Lupa:** icono lineal de 18 × 18 dp, colocado a la izquierda del campo. Su espacio de alineación reserva **48 dp** de ancho y centra el dibujo. La lupa es decorativa y no constituye un botón independiente: el campo de búsqueda comienza a continuación y mantiene su propia zona de entrada.
-- **Engranaje de Ajustes:** dibujo lineal reconocible de seis dientes exteriores simplificados y de proyección corta, con abertura central de **4 dp**. Se centra en un área táctil de **48 × 48 dp**, alineada al extremo derecho de la barra. Esa área táctil queda dentro de la altura de 52 dp, con 2 dp libres arriba y abajo; el dibujo permanece en 18 × 18 dp para no sobredimensionar el icono.
+- **Engranaje de Ajustes:** dibujo lineal reconocible de seis dientes exteriores simplificados y de proyección corta, con abertura central de **4 dp**. El contorno exterior forma una sola silueta dentada cerrada; los dientes sobresalen del cuerpo y quedan unidos entre sí. No se dibujan radios interiores ni un aro independiente, para evitar que el símbolo se perciba como un timón o rueda de barco. Se centra en un área táctil de **48 × 48 dp**, alineada al extremo derecho de la barra. Esa área táctil queda dentro de la altura de 52 dp, con 2 dp libres arriba y abajo; el dibujo permanece en 18 × 18 dp para no sobredimensionar el icono.
+- La referencia manual `prisma-mvp-descubrir-obsidiana.svg` y su equivalente Cuarzo muestran la silueta dentada continua revisada; ambos temas conservan idéntica geometría, tamaño y grosor de trazo. **Aprobación visual:** el propietario confirmó que la forma final se ve correcta el 9 de noviembre de 2026; esta decisión queda cerrada.
 - **Distribución horizontal aprobada:** la barra mantiene un margen exterior de **16 dp** a izquierda y derecha. El slot visual de la lupa ocupa **48 dp**; entre ese slot y el inicio del texto hay **8 dp**. El campo de búsqueda ocupa todo el ancho flexible disponible; entre el final del campo y el slot de Ajustes hay otros **8 dp**. El slot derecho de Ajustes ocupa **48 dp** y contiene centrada su área táctil de 48 × 48 dp. Los dos slots se alinean verticalmente en el centro de la barra. La lupa no es un control independiente y el slot derecho conserva la acción de Ajustes.
 - **Cálculo de ancho flexible:** con estas reglas, el ancho disponible para el campo se obtiene restando al ancho de pantalla **144 dp** (32 dp de márgenes exteriores, 96 dp de slots y 16 dp de separaciones). El campo se adapta al ancho restante; no se fija una anchura absoluta.
 - **Paridad temática de iconos:** los dos iconos mantienen geometría, tamaño, trazo y alineación en Obsidiana y Cuarzo. En Obsidiana utilizan el color de icono/texto secundario `#BDBDBD`; en Cuarzo utilizan `#68655F`.
@@ -398,6 +444,50 @@ Todavía no hay un sistema de diseño completo aprobado. La familia tipográfica
 
 La iconografía global está definida como lineal, minimalista, esencial e híbrida en su geometría, con ajuste óptico del espacio de dibujo, tamaño de referencia de **24 × 24 dp**, grosor de trazo de **1,75 dp** y terminaciones y uniones redondeadas para iconos nuevos sin especificaciones particulares; se conservan las reglas y geometrías propias de componentes existentes, incluidos los tamaños de 20 dp y 32 dp y el grosor de 1,4 dp donde ya están aprobados.
 
+## Autoría y guía de iconografía — 11 de noviembre de 2026
+
+El propietario se encarga de crear y decidir el diseño final de todos los iconos de Prisma. El asistente proporciona dirección, información técnica, inventario y conceptos visuales de referencia; no convierte esas propuestas en arte final sin aprobación expresa.
+
+Se auditó el código actual: `PrismaIcon.kt` contiene diez glifos provisionales (PERSON, DISCOVER, HISTORY, PENDING, HIDDEN, LISTS, CHEVRON, SEARCH, SETTINGS y BACK). Las formas actuales son referencias de implementación, no un conjunto de arte final aprobado. Se añadirá una guía de producción en `CONCEPTOS_FASE2/../ICONOGRAFIA/README.md` y una lámina conceptual manual con variantes de lectura en Obsidiana/Cuarzo. La guía conserva el sistema aprobado: glifos base de 24 × 24 dp, trazo de 1,75 dp, terminaciones y uniones redondeadas; respeta los tamaños particulares ya aprobados de 20/1,4, 18/1,4, 20/1,5 y 16/1,5 dp según componente.
+
+Además del set de diez glifos, se revisarán por separado dos gráficos existentes: prisma vacío (ilustración de 96 × 96 dp) y marcador de póster (símbolo de 28 dp dentro de 56 × 84 dp). No deben contarse como iconos de acción. El icono lanzador de aplicación no está declarado todavía en el manifiesto Android ni tiene recursos propios; se registra como entregable de identidad previo a una distribución pública, con capas adaptables de color y monocromática. No se selecciona aún una dirección de marca.
+
+La autoría y decisión final de las formas queda reservada al propietario. El diseño conceptual no autoriza a sustituir las siluetas actuales por otras definitivas.
+
+## Propuestas visuales presentadas — Fase 2
+
+### Historial y Pendientes
+
+Se prepararon conceptos vectoriales manuales para las dos pantallas y sus dos temas, en `CONCEPTOS_FASE2/`. Se conserva la estructura de la búsqueda local y la navegación inferior de Prisma. Las composiciones usan el patrón de resultados aprobado (póster 56 × 84, título 14 px/500 y año 12 px/400), sin tarjetas voluminosas ni acciones superpuestas.
+
+- **Historial:** cada película aparece una sola vez, con contador de visionados y fecha del más reciente, sin perder la independencia de los registros individuales.
+- **Pendientes:** cada película aparece una sola vez; se muestra la fecha de incorporación y el orden es más reciente primero.
+- Obsidiana y Cuarzo se presentan en paralelo con la misma jerarquía y sus colores aprobados.
+- Los ejemplos son ficticios. Los pósteres son ilustraciones SVG originales.
+
+Archivos: `prisma-fase2-historial-obsidiana.svg`, `prisma-fase2-historial-cuarzo.svg`, `prisma-fase2-pendientes-obsidiana.svg` y `prisma-fase2-pendientes-cuarzo.svg`.
+
+**Aprobación de composición visual — 11 de noviembre de 2026:** el propietario respondió «Ok, está bien, continúa», confirmando la dirección visual presentada en las cuatro variantes. Quedan aprobados el encabezado con regreso y título, el buscador local, el contador de películas, la lista continua, la miniatura 56 × 84, la jerarquía tipográfica, los metadatos propios de cada lista, la navegación inferior con Personal seleccionado y la paridad estructural entre Obsidiana y Cuarzo.
+
+La aprobación cubre la composición principal de las listas, no los estados vacíos ni los estados de búsqueda sin coincidencias. Tampoco decide todavía si una fila abre la ficha ni el recorrido de retirada de Pendientes; la retirada seguirá requiriendo confirmación desde la ficha según los requisitos funcionales. Esos puntos permanecen pendientes y no se simulan con controles sin función.
+
+La implementación puede comenzar sobre la composición aprobada. Los estados no aprobados se mantienen deliberadamente sencillos y provisionales hasta presentar sus conceptos correspondientes.
+
+### Corrección de contraste entre temas — 11 de noviembre de 2026
+
+Se corrigió la herencia de color predeterminado en el tema global. `PrismaTheme.kt` proporciona ahora `LocalContentColor` desde `colorScheme.onBackground`, y Historial/Pendientes explicitan `onSurface` en el título de pantalla y en los títulos de película. La corrección conserva las paletas aprobadas de Obsidiana y Cuarzo; no altera sus valores cromáticos. El test `defaultTextColorFollowsPrismaThemeForBothModes` pasó en Android API 26 y API 37 durante CI #198. No se ha instalado el APK en el dispositivo físico, por lo que esta validación automatizada no sustituye la inspección visual en el Galaxy A03.
+
+### Estados vacíos y búsquedas sin coincidencias — aprobados e implementados
+
+El propietario aprobó las cuatro propuestas el 11 de noviembre de 2026:
+
+- [Historial · Obsidiana](CONCEPTOS_FASE2/prisma-fase2-historial-estados-obsidiana.svg) y [Historial · Cuarzo](CONCEPTOS_FASE2/prisma-fase2-historial-estados-cuarzo.svg).
+- [Pendientes · Obsidiana](CONCEPTOS_FASE2/prisma-fase2-pendientes-estados-obsidiana.svg) y [Pendientes · Cuarzo](CONCEPTOS_FASE2/prisma-fase2-pendientes-estados-cuarzo.svg).
+
+La aprobación incluye composición y textos: estado vacío con prisma lineal y mensaje específico; estado de búsqueda sin coincidencias con lupa discreta, consulta preservada y orientación neutral. No se añaden controles ni acciones. Las siluetas de los iconos son provisionales y quedan bajo autoría/diseño final del propietario; consultar `ICONOGRAFIA/README.md`.
+
+**Implementación:** commit `137187d3c62687cf3feba67f8ab423cb89a7ec34`, validado en CI #199. Se reutilizan `PrismaEmptyPrism` (96 dp) y `PrismaIconKind.SEARCH`. Los estados reciben colores desde el tema, conservando la paridad Obsidiana/Cuarzo.
+
 ## Decisiones de concepto pendientes de aprobación
 
 - Para la **experiencia completa de Personal posterior al MVP** se conserva el **concepto A**: una pantalla principal con cinco accesos. La distribución conceptual es una cuadrícula de dos columnas para Historial, Pendientes, Ocultos y Estadísticas, más Gestionar listas en una fila de ancho completo. Este concepto futuro no define la estructura del MVP; el diseño completo sigue pendiente de aprobación y no debe implementarse antes de su fase objetivo.
@@ -406,7 +496,7 @@ La iconografía global está definida como lineal, minimalista, esencial e híbr
 
 El registro distingue entre decisiones de componente ya aprobadas, conceptos parciales y pantallas completas pendientes. «Aprobado» no significa que la pantalla completa pueda implementarse si todavía falta su composición final o su adaptación al alcance del MVP.
 
-| Elemento | Estado | Versión de implementación |
+| Elemento | Estado | Fase y estado de implementación |
 |---|---|---|
 | Sistema de diseño | Parcialmente aprobado: tipografía, roles cromáticos, espaciado e iconografía tienen reglas aprobadas; faltan estados, componentes y documentación de aplicación completa | Por definir |
 | Geometría general | Radio base de 14 px para las superficies generales de Obsidiana y Cuarzo; se conservan los radios particulares ya aprobados | Por definir |
@@ -414,15 +504,71 @@ El registro distingue entre decisiones de componente ya aprobadas, conceptos par
 | Iconografía global | Estilo lineal, minimalista, esencial e híbrido; ajuste óptico del espacio de dibujo; tamaño de referencia de 24 × 24 dp, grosor de 1,75 dp y terminaciones y uniones redondeadas para iconos nuevos; se conservan las reglas y geometrías propias de componentes existentes | Aprobado |
 | Familia tipográfica global | Inter; pesos 400, 500 y 600; texto normal 16/24 px, peso 400, letter spacing 0 px; texto secundario 14/20 px, peso 400, letter spacing 0 px; texto auxiliar 12/18 px, peso 400, letter spacing 0 px; títulos de sección 22/28 px, peso 500, letter spacing 0 px; escala actual suficiente por ahora; ampliable si surge una necesidad concreta | Aprobado |
 | Temas de apariencia | Nombres aprobados: Obsidiana (oscuro) y Cuarzo (claro); Obsidiana: fondo principal global aprobado `#171A20`, superficie elevada global aprobada `#242A35` (RGB 36, 42, 53), con contorno global `#353535` de 1 px cuando no haya una regla particular de componente, y acento global aprobado `#70AEE0` (RGB 112, 174, 224), con `#5B9BD5` conservado como referencia anterior y en componentes con reglas particulares ya aprobadas; textos globales principal `#F0F0F0`, secundario `#BDBDBD` y auxiliar `#9B9B9B`, iconos inactivos globales `#BDBDBD` (excepto Personal `#D0D0D0`), contenido de controles deshabilitados `#888888`, superficie deshabilitada `#1D222B`, superficie transitoria de pulsación `#2B303A` sobre `#242A35`, contorno de controles deshabilitados sin línea visible (opción A aprobada), sin opacidad adicional (100 %, opción A aprobada), sin sombra global en superficies elevadas generales (alternativa A aprobada; se conservan sombras específicas de componentes), separadores internos `#353535` de 1 px, con 8 px por encima y 8 px por debajo del contenido adyacente (alternativa A aprobada); Cuarzo: fondo `#F4F1EA`, superficies `#FFFFFF`, contorno `#DDD8CE` de 1 px, texto principal `#292B2F`, secundario `#68655F`, auxiliar `#706C64`, acento `#356F9F`, neutro de iconos inactivos `#8A857B`, contenido de controles deshabilitados (texto e iconos) `#9D998F`, superficie deshabilitada `#F0EDE6`, separadores internos `#E8E3DA` de 1 px, con 8 px por encima y 8 px por debajo del contenido adyacente (alternativa A aprobada), y superficie de pulsación `#ECE7DE` aprobados; contorno de controles deshabilitados sin línea visible (opción A) aprobado; sin opacidad adicional (100 %, opción A aprobada), grosor de separadores de 1 px y separación de 8 px por encima y 8 px por debajo aprobados en ambos temas, otros neutros, otros bordes y otros estados pendientes | Paletas principales aprobadas; Obsidiana como tema inicial, cambio manual entre Obsidiana y Cuarzo desde Ajustes y persistencia local aprobados. Selector aprobado para Ajustes → Apariencia: control segmentado con «Obsidiana» y «Cuarzo», cambio inmediato y preferencia persistida localmente mediante DataStore. |
-| Pantalla Descubrir | Dirección conceptual seleccionada: Concepto A — Continuidad silenciosa; avisos integrados y discretos. Composición MVP aprobada: barra única con lupa, «Buscar película...», engranaje de Ajustes; lista continua sin bloques por procedencia y etiqueta secundaria «En tu Prisma» para películas guardadas. Sin Feed ni filtros. Altura de barra 52 dp, radio 14 dp, 16 dp entre barra y primera fila cuando no hay aviso y 12 dp a cada lado de un aviso intermedio. La separación nominal entre filas de 12 px se implementa como 12 dp según la regla compartida de unidades. Estado inicial aprobado con «Busca una película» y «AÑADIR PELÍCULA MANUALMENTE»; ilustraciones, ubicación exacta del aviso de token, composición final de estados y pantalla completa pendientes; las unidades de las filas ya están resueltas según la regla compartida | Fase 1, sujeto a especificación |
+| Pantalla Descubrir | Dirección conceptual seleccionada: Concepto A — Continuidad silenciosa; avisos integrados y discretos. Composición MVP aprobada: barra única con lupa, «Buscar...», engranaje de Ajustes; lista continua sin bloques por procedencia y etiqueta secundaria «En tu Prisma» para películas guardadas. Sin Feed ni filtros. Altura de barra 52 dp, radio 14 dp, 16 dp entre barra y primera fila cuando no hay aviso y 12 dp a cada lado de un aviso intermedio. La separación nominal entre filas de 12 px se implementa como 12 dp según la regla compartida de unidades. Estado inicial aprobado con «Busca una película» y «AÑADIR PELÍCULA MANUALMENTE»; ilustraciones, ubicación exacta del aviso de token, composición final de estados y pantalla completa pendientes; las unidades de las filas ya están resueltas según la regla compartida | Fase 1, sujeto a especificación |
 | Navegación Personal/Descubrir | Estructura y propiedades principales de la píldora aprobadas; composición visual completa y estados restantes pendientes de especificación | Fase 1 |
 | Personal: pantalla principal | Composición MVP aprobada: cuatro filas horizontales uniformes en una columna vertical (Historial, Pendientes, Ocultos y Gestionar listas), cada una con icono a la izquierda, nombre y descripción breve en el centro y chevron a la derecha. Composición funcional aprobada; dimensiones, acabado visual y estados pendientes de definición | Fase 1 |
-| Personal: Historial | Símbolo aprobado: reloj lineal con flecha de retorno integrada; el resto del concepto visual de la tarjeta y de la pantalla continúa pendiente | Por definir |
-| Personal: Pendientes | Símbolo aprobado: marcador lineal para películas guardadas para ver después; el resto del concepto visual de la tarjeta y de la pantalla continúa pendiente | Por definir |
+| Personal: Historial | Composición principal aprobada el 11-11-2026 y validada en CI #197: encabezado, búsqueda local, contador, lista continua, póster provisional 56 × 84, título 14/500, año 12/400, contador de visionados y fecha del último. Obsidiana/Cuarzo mantienen la misma jerarquía. Estados vacíos y coincidencias cero aprobados e implementados; validados en CI #199. Concepto A de ficha local aprobado en ambos temas el 11-11-2026; integración desde las filas en curso | Fase 2 · F2-H2 en desarrollo |
+| Personal: Pendientes | Composición principal aprobada el 11-11-2026 y validada en CI #197: encabezado, búsqueda local, contador, lista continua, póster provisional 56 × 84, título 14/500, año 12/400, fecha de incorporación y orden más reciente primero. Obsidiana/Cuarzo mantienen la misma jerarquía. Estados vacíos y coincidencias cero aprobados e implementados; validados en CI #199. Concepto A de ficha local aprobado en ambos temas el 11-11-2026; apertura y retirada confirmada desde ficha en curso | Fase 2 · F2-H2 en desarrollo |
 | Personal: Ocultos | Símbolo aprobado: ojo lineal tachado para representar películas ocultas; el resto del concepto visual de la tarjeta y de la pantalla continúa pendiente | Por definir |
 | Personal: Estadísticas (posterior al MVP) | Símbolo aprobado: tres barras verticales lineales ascendentes; acceso y composición visual pendientes de la fase correspondiente | Fase 7, sujeto a especificación |
 | Personal: Gestionar listas | MVP: fila horizontal uniforme dentro de la columna de cuatro accesos, con icono a la izquierda, nombre y descripción breve en el centro y chevron a la derecha. La gestión avanzada conserva el símbolo aprobado y los conceptos de tarjeta/colección descritos en requisitos; acabado final pendiente | Fase 1, sujeto a especificación |
-| Ficha cinematográfica | Estructura funcional detallada; diseño visual pendiente | Por definir |
+| Ficha cinematográfica | Dirección visual cinematográfica ya definida en Requisitos; el hito local F2-H2 (históricamente etiquetado 0.4.0) quedó aprobado como Concepto A en Obsidiana/Cuarzo el 11-11-2026. Las ampliaciones conservan su fase objetivo | Fase 2 · F2-H2 para ficha local; extensiones en las fases/hitos correspondientes |
 | Ajustes | Requisitos funcionales; diseño visual pendiente | Por definir |
 
-No se debe implementar el diseño visual de una pantalla mientras su concepto siga pendiente.
+Las composiciones principales ya aprobadas pueden implementarse. No deben implementarse estados visuales o interacciones cuyo concepto o flujo siga pendiente de decisión.
+
+
+## Sistema de iconografía final — aprobación e integración · 11 de noviembre de 2026
+
+- El propietario seleccionó las opciones A para Personal, Descubrir, Historial, Pendientes, Ocultos, Gestionar listas, Chevron derecho, Buscar, Ajustes y Volver; para Prisma vacío eligió B (diamante facetado).
+- Se refinaron los once vectores y se aprobaron para integración. Los glifos se mantienen monocromáticos, con `currentColor` en sus maestros SVG y tinte dinámico desde el tema; no se crean variantes cromáticas separadas para Obsidiana y Cuarzo.
+- **Corrección explícita de Ajustes:** el engranaje es de seis dientes. La lámina conceptual inicial que mostraba ocho dientes fue corregida; el SVG final y Compose usan la misma geometría de seis.
+- `PrismaIcon.kt` integra los diez glifos con las proporciones refinadas. `PrismaEmptyPrism.kt` sustituye la figura pentagonal por el diamante facetado B, conservando los 96 dp y los roles cromáticos del tema.
+- Los maestros SVG individuales se guardan en `docs/DISENO/ICONOGRAFIA/VECTORES_APROBADOS/`. No se modifica el icono lanzador, que continúa pendiente como activo de marca independiente.
+- Alcance: solo formas ya presentes en las pantallas y la ilustración de vacío. No se crean iconos para acciones futuras ni se modifican comportamientos, destinos o controles.
+- No se instala el APK en el Galaxy A03 ni se modifica `main`.
+
+
+ 
+#### Contraste de texto y herencia de color en Compose
+
+- El contenido textual principal utiliza `MaterialTheme.colorScheme.onSurface`; el contenido secundario utiliza `onSurfaceVariant`. En Obsidiana, los roles principales y secundarios conservan los tonos aprobados `#F0F0F0` y `#BDBDBD`; en Cuarzo se mantienen los valores de su esquema, sin introducir colores fijos de Obsidiana.
+- `PrismaTheme` expone `LocalContentColor` con el rol `onSurface`, de modo que los componentes Compose que no declaren un color propio hereden el primer plano correcto por defecto.
+- Los títulos de Personal y los mensajes principales de Descubrir declaran `onSurface` explícitamente. Los encabezados de Historial/Pendientes y sus metadatos ya utilizan `onSurface`/`onSurfaceVariant`.
+- No se debe introducir `Color.Black` ni colores de texto fijos en componentes compartidos: las excepciones cromáticas pertenecen al esquema o a la especificación particular aprobada del componente.
+- Estos ajustes no alteran la paleta ni las decisiones visuales de Obsidiana o Cuarzo; hacen explícita la semántica de los roles de texto ya existentes.
+
+ 
+#### Validación instrumentada del contraste — CI #202 · 11 de noviembre de 2026
+
+- Run `43070303943`, commit `85783237d32b2d7819c87d842444c31038c851b3`: **SUCCESS** en los cuatro trabajos.
+- La prueba basada en captura de píxeles confirmó `#F0F0F0` para texto principal de Obsidiana y `#292B2F` para Cuarzo en Descubrir, la fila «Historial» de Personal y el encabezado de Historial. Pasó en API 26 y API 37.
+- API 26: 48 pruebas instrumentadas, 0 fallos, 0 errores y 1 omisión esperada por ausencia de TLS 1.3 en Android 8. API 37: 48/48. Ventana amplia API 37: 2/2, incluyendo Obsidiana y Cuarzo.
+- La búsqueda en los componentes y recursos inspeccionados no encontró colores de texto negros fijados. En el código anterior, `onBackground` y `onSurface` tenían valores idénticos en ambos temas; la fila «Historial» ya heredaba `onSurface` desde su `Surface`. El cambio refuerza el uso semántico de `onSurface` y hace explícitos los colores de los textos principales. No demuestra por sí solo la causa del síntoma observado en el APK original, que no se reprodujo como discrepancia de paleta en las pruebas.
+- BackupManager comprobó exclusión de los datos de Prisma y ausencia de marcadores sintéticos tras reinstalar. El control positivo D2D restauró únicamente el marcador del paquete auxiliar; no hubo payload de Prisma ni una restauración real de datos Prisma.
+
+
+## Ficha local mínima F2-H2 — Concepto A aprobado (registro histórico 0.4.0) · 11 de noviembre de 2026
+
+El propietario aprobó el Concepto A — resumen primero, en Obsidiana y Cuarzo. La propuesta se refinó tomando como base la dirección de ficha cinematográfica que ya estaba definida en la sección «Ficha de película» y en `docs/PRODUCTO/REQUISITOS.md`. Esta decisión concreta la primera entrega local; no sustituye ni reinicia el diseño anterior de Prisma.
+
+Referencias vectoriales manuales aprobadas:
+
+- [A · Obsidiana](CONCEPTOS_FASE2/prisma-ficha-local-a-obsidiana.svg).
+- [A · Cuarzo](CONCEPTOS_FASE2/prisma-ficha-local-a-cuarzo.svg).
+
+La ficha conserva la cabecera horizontal a todo lo ancho, el degradado inferior, el título blanco sobre la cabecera, el control circular semitransparente de regreso y la claqueta gris sobre fondo gris oscuro cuando no existe una imagen disponible. No se muestra menú de tres puntos en F2-H2 porque no hay una acción de esa categoría habilitada en este incremento.
+
+Refinamientos acordados:
+
+- El título y el año se presentan una sola vez. No se duplica el año debajo de la cabecera.
+- Primero aparece el resumen del diario: estado de Historial cuando existen visionados, contador y fecha/hora más reciente disponible.
+- La acción primaria cambia según el estado: «AGREGAR A HISTORIAL» sin visionados y «REGISTRAR OTRO VISIONADO» cuando ya hay registros. Cada acción crea un registro independiente.
+- «AGREGAR A PENDIENTES» permanece como acción secundaria mientras la película no pertenezca a Pendientes. La retirada se ofrece desde la ficha, requiere confirmación y elimina solo esa pertenencia.
+- Los visionados se muestran en filas abiertas y separadas, del más reciente al más antiguo. Se muestra la hora solo si existe; en caso contrario, «Hora no registrada».
+- Obsidiana y Cuarzo tienen la misma estructura, orden, medidas y jerarquía. Solo varían los roles de color según las paletas aprobadas. La cabecera de claqueta conserva su tratamiento cinematográfico oscuro en ambos temas.
+- No hay póster remoto, fecha de estreno, país, duración, géneros, sinopsis ni puntuaciones inventadas. Los ejemplos de los vectores son ficticios.
+
+Los diálogos de registro y retirada se mantienen como componentes de la interacción F2-H2. El registro ofrece únicamente «Ahora» y «Seleccionar fecha»; la selección manual puede guardar fecha y hora o solo la fecha si se desconoce la hora. «Día de estreno» y «Ajustar al inicio» no se muestran hasta disponer de los datos verificados correspondientes en F3-H2.
+
+La alternativa B se conserva como material histórico no seleccionado; no se implementará ni reabre la elección. La aprobación de A habilita la integración en Compose, pero no autoriza funciones de F2-H3 o posteriores.
