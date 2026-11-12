@@ -190,9 +190,9 @@ Un punto relevante para el diario es `chromeTransactionDurability: "strict"`, op
 - La duración `strict` puede aumentar latencia y consumo; no conviene aplicarla indiscriminadamente.
 - Continúa sujeto a cuota, persistencia y políticas de almacenamiento del navegador.
 
-### Candidata B — SQLite 3.55.0 en WebAssembly con OPFS
+### Candidata B — SQLite WASM + OPFS
 
-SQLite ofrece un motor SQL relacional completo, restricciones, índices, consultas y transacciones ACID. La documentación oficial del proyecto SQLite Wasm registra la versión **3.55.0** el 1 de noviembre de 2026. El núcleo de SQLite está en dominio público. Fuentes: [noticias oficiales SQLite Wasm](https://www.sqlite.org/wasm/doc/trunk/news.md), [licencia del núcleo SQLite](https://www.sqlite.org/copyright.html).
+SQLite ofrece un motor SQL relacional completo, restricciones, índices, consultas y transacciones ACID. Para el benchmark reproducible se fijó el paquete oficial npm **`@sqlite.org/sqlite-wasm@3.54.1-build1`**. El benchmark también registra `sqlite3.version.libVersion`, porque la versión del paquete npm y la del núcleo SQLite no deben confundirse. El núcleo SQLite está en dominio público. Fuentes: [paquete oficial SQLite WASM](https://github.com/sqlite/sqlite-wasm), [noticias oficiales SQLite Wasm](https://www.sqlite.org/wasm/doc/trunk/news.md), [licencia del núcleo SQLite](https://www.sqlite.org/copyright.html).
 
 Para persistir desde una PWA se utiliza OPFS, que solo está disponible desde un Worker. No existe una única variante OPFS; cada VFS tiene compromisos diferentes:
 
@@ -225,7 +225,7 @@ Para el primer diario local, **Dexie 4.4.7 sobre IndexedDB es la candidata prefe
 
 No se elige porque sea la alternativa más básica. Se elige provisionalmente porque combina una biblioteca madura, migraciones y transacciones, almacenamiento nativo del navegador y menos restricciones de despliegue/concurrencia que SQLite OPFS. No añade sincronización ni requiere servicios externos.
 
-**SQLite 3.55.0 + OPFS no queda descartado.** Se mantiene como alternativa avanzada prioritaria si el benchmark demuestra una ventaja relevante en consultas, estadísticas o grandes volúmenes sin perjudicar la carga inicial, la memoria, el uso en Android ni la apertura de varias instancias.
+**SQLite WASM + OPFS no queda descartado.** Se mantiene como alternativa seria: la sonda real confirmó OPFS y SyncAccessHandle en Worker en Brave Android. El benchmark comparará el paquete SQLite WASM 3.54.1-build1 con Dexie; la decisión dependerá del rendimiento real, integridad, tamaño descargado, memoria, recuperación y concurrencia.
 
 No se deben mantener dos bases autoritativas ni sincronizarlas entre sí. La decisión final elegirá un único almacenamiento canónico.
 
@@ -324,4 +324,20 @@ El propietario ejecutó `tools/browser-probe` en su Galaxy A03 SM-A035M, Brave 1
 El User-Agent muestra `Android 10; K` por la reducción de User-Agent de Chromium para Android; no invalida el dato del sistema Android 13. `deviceMemory` y `hardwareConcurrency` son valores expuestos por el navegador y no equivalen al estado real de memoria libre ni al inventario físico de CPU.
 
 Fuentes: [Chromium — User-Agent Reduction](https://www.chromium.org/updates/ua-reduction/), [MDN — persist()](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist), [MDN — cuotas y desalojo](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria), [SQLite WASM — OPFS y concurrencia](https://sqlite.org/wasm/doc/tip/persistence.md).
+
+
+
+### Benchmark reproducible — estado del trabajo
+
+Se creó `tools/storage-benchmark/` para ejecutar en el Galaxy A03 la misma carga en Dexie 4.4.7 e SQLite WASM 3.54.1-build1 + OPFS SAH pool.
+
+- Incluye tres rondas alternando el orden de ejecución.
+- Mide inicialización de SQLite WASM y VFS por separado; el tiempo total de SQLite incluye inicialización del Worker/WASM/VFS, mientras Dexie ya está importado al comenzar. Por tanto, los totales no deben compararse sin tener en cuenta esa diferencia.
+- Compara generación del dataset, inserción+commit, consulta por año, búsqueda exacta por título, lectura ordenada de visionados, actualización de una nota, rollback y cierre/reapertura.
+- Verifica cantidades esperadas de películas/visionados, una sola coincidencia de título, una actualización, rollback sin registro parcial y el recuento tras reabrir.
+- SQLite usa el VFS `opfs-sahpool` en un Worker con directorio exclusivo para pruebas; se elimina al terminar cada ronda.
+
+**Limitación relevante:** SQLite SAH pool no admite acceso transparente de varias pestañas/instancias al mismo directorio; la documentación describe que la segunda instalación simultánea puede fallar. El benchmark no resuelve todavía la coordinación multi-pestaña ni evalúa `opfs-wl`. Un resultado de velocidad no bastará para elegir SQLite.
+
+Instrucciones: [tools/storage-benchmark/README.md](../../tools/storage-benchmark/README.md).
 
