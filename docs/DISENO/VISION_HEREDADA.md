@@ -30,7 +30,7 @@ El propietario ha confirmado expresamente que le gustan ambos temas y quiere con
 - Los dos temas deben tener igual prioridad, cobertura y calidad.
 - Una pantalla no puede estar terminada visualmente en un tema y descuidada en el otro.
 
-Las paletas cromáticas recuperadas están en [TEMAS_OBSIDiana_Y_CUARZO.md](TEMAS_OBSIDIANA_Y_CUARZO.md). Los valores de color se conservan como dirección confirmada. La tipografía Inter, la escala, los radios, el espaciado y las animaciones son decisiones históricas útiles que se deben validar para web, no trasladar mecánicamente desde Android.
+Las paletas cromáticas recuperadas están en [TEMAS_OBSIDIANA_Y_CUARZO.md](TEMAS_OBSIDIANA_Y_CUARZO.md). Los valores de color se conservan como dirección confirmada. La tipografía Inter, la escala, los radios, el espaciado y las animaciones son decisiones históricas útiles que se deben validar para web, no trasladar mecánicamente desde Android.
 
 ## 3. Dirección estética que se definió
 
@@ -245,7 +245,33 @@ La selección histórica incluía:
 
 El engranaje de Ajustes fue corregido a seis dientes. Los maestros SVG se conservan como referencias; deben revisarse en contexto web antes de considerarlos arte final. El icono de instalación PWA es una pieza distinta y no tenía una dirección de marca aprobada.
 
-## 13. Qué estaba aprobado, qué era futuro y qué quedó pendiente
+## 13. Estado real de la implementación Android anterior
+
+La rama más avanzada consultada fue `feature/fase1-android-foundation`. Su árbol contenía 150 archivos, entre código Kotlin/Compose, Room, pruebas, documentación y conceptos SVG. Esto demuestra que hubo implementación real, pero no que el producto completo se hubiera terminado ni que existiera una entrega estable y utilizable.
+
+El roadmap de esa rama registraba:
+- **Base local:** validada; Room, alta manual, título/año, persistencia, búsqueda offline y prevención de duplicados.
+- **Ficha local / Historial / Pendientes:** F2-H2 cerrado con aceptación del propietario el 11 de noviembre de 2026; incluía acceso a la ficha, consulta de visionados, registro local y retirada de Pendientes con confirmación.
+- **Calificaciones, Ocultos/restauración y listas manuales básicas:** F2-H3 en integración, con CI y aceptación pendientes en el último estado documentado.
+- **TMDB:** token cifrado y ciclo de vida seguro todavía posterior; búsqueda y enriquecimiento de datos también pendientes.
+- **Copias manuales cifradas y restauración:** seguían pendientes en la fase de protección de datos.
+- **Estadísticas y Espectro:** no estaban implementados como funciones completas; pertenecían a una etapa posterior.
+
+La rama también contenía temas Compose, selector de apariencia, navegación Personal/Descubrir, pantalla Personal, búsqueda/alta manual en Descubrir, pantallas locales de Historial/Pendientes, ficha y estructura de listas. El hecho de que una ruta o pantalla existiera en código no prueba que el recorrido estuviera completo, que todos los estados funcionaran ni que el APK pudiera utilizarse sin problemas.
+
+**Lección para Prisma Web:** distinguir siempre entre:
+1. concepto visual;
+2. pantalla construida;
+3. flujo conectado a datos;
+4. persistencia y recuperación verificadas;
+5. recorrido completo probado en el teléfono;
+6. capacidad aceptada y publicada.
+
+No anunciar una función como terminada por existir un archivo, una ruta, un test o un resultado de CI.
+
+---
+
+## 14. Qué estaba aprobado, qué era futuro y qué quedó pendiente
 
 | Área | Estado registrado en la etapa anterior |
 |---|---|
