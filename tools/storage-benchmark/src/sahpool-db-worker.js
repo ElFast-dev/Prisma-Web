@@ -142,12 +142,21 @@ async function handle(request) {
       insert.finalize();
     }
 
+    const totalRows = countRows();
+    const ownRows = clientRows(clientId);
+
+    self.postMessage({
+      kind: "stats",
+      totalRows,
+      dedicatedWorkerId: DEDICATED_WORKER_ID
+    });
+
     return {
       ok: true,
       type,
       inserted: count,
-      clientRows: clientRows(clientId),
-      totalRows: countRows()
+      clientRows: ownRows,
+      totalRows
     };
   }
 
