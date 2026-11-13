@@ -319,3 +319,29 @@ La primera consulta de la ejecución anterior había agotado el tiempo en el coo
 La etiqueta «Protocolo del coordinador» de la interfaz se conserva ahora al recibir el mensaje `owner-ready`, que no incluye por sí mismo ese campo. Antes, ese mensaje podía sobrescribir visualmente el protocolo ya anunciado por `state` con el texto «Coordinador anterior o sin diagnóstico», aunque la traza posterior demostrara que el protocolo nuevo estaba activo.
 
 
+### Diagnóstico adicional: escrituras originadas en pestañas secundarias (V8 broker trace 2)
+
+En la primera prueba con el protocolo `v8-broker-trace-1`, la pestaña secundaria completó consultas `status`, pero una solicitud `insertBatch` agotó el tiempo de 30 s. Después de reiniciar el navegador/Workers, SQLite volvió a mostrar 100 filas, no 125. Por tanto, la escritura secundaria no se considera confirmada y no debe repetirse sin consultar primero el total desde el propietario.
+
+La revisión `v8-broker-trace-2` añade:
+- `shared-received`: el SharedWorker recibió el mensaje de la pestaña, antes de comprobar el propietario.
+- `shared-forwarded`: se registró la solicitud pendiente y se intentó enviar al Dedicated Worker.
+- `shared-rejected`: el coordinador no encontró un propietario preparado y devuelve el motivo.
+- `shared-forward-failed`: `postMessage()` al Dedicated Worker lanzó una excepción, que ahora se devuelve inmediatamente.
+- `dedicated-received`, `dedicated-processing`, `dedicated-completed` y `dedicated-error`: etapas del Worker SQLite.
+- `BROKER WATCHDOG`: a los 18 s informa el último salto alcanzado, sin cancelar ni repetir la operación.
+- `request-cancelled-at-coordinator`: registra la cancelación de la correlación al agotar el tiempo de la página.
+
+Interpretación:
+- Sin `PAGE request-sent`: el botón no llegó a publicar la petición desde la página.
+- `PAGE request-sent` sin `shared-received`: investigar el canal Window–SharedWorker o la instancia viva del coordinador.
+- `shared-received` sin `shared-forwarded` ni `shared-rejected`: investigar el estado interno del coordinador.
+- `shared-forwarded` sin `dedicated-received`: el envío no llegó al puerto del Dedicated Worker o el Worker quedó suspendido/terminó.
+- `dedicated-processing` sin `dedicated-completed`: la operación se bloqueó dentro del Dedicated Worker/SQLite.
+- `dedicated-completed` sin respuesta correlacionada: investigar el retorno y la asociación de la respuesta.
+- `shared-forward-failed`: el error de envío se entrega a la página sin esperar al timeout.
+
+El watchdog no cancela una transacción SQLite. Al vencer el timeout de la página, se elimina únicamente la correlación pendiente; no se reintenta automáticamente una escritura. Si una escritura termina con timeout, consultar el total desde el propietario antes de repetirla. Mantener el conjunto de referencia en 100 filas hasta identificar el salto que falla.
+
+
+
