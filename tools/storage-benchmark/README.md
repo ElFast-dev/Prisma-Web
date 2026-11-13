@@ -569,3 +569,17 @@ La revisión 6 restaura el DDL y la comprobación de `sqlite_schema` antes de ej
 Instalador seguro: [install-opfs-wl-auto-test-revision-6.py](install-opfs-wl-auto-test-revision-6.py), fijado al commit `cf09dbe573949376d223704e421f904e9d5370dd`. Solo reemplaza el Worker y no toca SQLite WASM, dependencias, HTML, servidores, SAH pool, la aplicación Prisma ni directorios OPFS de ejecuciones anteriores.
 
 **Estado vigente:** la conexión OPFS-WL abre, la creación de esquema se demostró en revisión 4, revisión 5 tuvo una omisión DDL ya corregida en el código de revisión 6; todavía no hay aceptación de la prueba de escritura concurrente.
+
+### OPFS-WL AutoTest: sexta ejecución y causa del callback omitido (13-11-2026)
+
+La ejecución con revisión 6 abrió la conexión y confirmó la tabla writes, pero la siembra no se ejecutó: changesInsideTransaction y totalChangesInsideTransaction quedaron null, executedSeedSql vacío y los recuentos global/por RUN_ID en cero.
+
+RUN_ID: prisma-opfs-wl-auto-49ac6a3d-23cf-4fcb-8940-70fa16c318ff. Requisitos de aislamiento y VFS confirmados; no hubo 24 transacciones, 605 filas, reapertura ni limpieza.
+
+La inspección encontró que retryBusy() llamaba a sqlite3_js_retry_busy(-1, callback, ...). La implementación consultada de SQLite recorre for (let n = 1; n <= maxTimes; ++n); al pasar -1 no entra al bucle y omite el callback. Esto concuerda con las variables que quedaron sin asignar. Es una incompatibilidad entre el argumento -1 usado por la sonda y el bucle de implementación, no una prueba de fallo de OPFS-WL o del navegador. Fuente del código: https://chromium.googlesource.com/external/github.com/sqlite/sqlite/%2B/refs/heads/compile-commands/.
+
+La revisión 7 cambia el helper a 120 intentos positivos y añade el contador retryCallbackCalls al diagnóstico y al informe de conexión. Conserva el DDL, la inserción multirregistro y las comprobaciones previas. El Worker pasó comprobación sintáctica; aún no se ha ejecutado en Brave.
+
+Instalador: [install-opfs-wl-auto-test-revision-7.py](install-opfs-wl-auto-test-revision-7.py), fijado al commit b73eeff671db54022fbfaed3da4e3b573189ad42. Solo modifica el Worker de la sonda, verifica los hashes y no toca SQLite WASM, dependencias, HTML, los servidores, SAH pool, Prisma ni directorios OPFS anteriores.
+
+**Estado vigente:** apertura, VFS y creación de esquema observados; causa probable del callback omitido localizada en el límite negativo de reintentos; ejecución real con límite positivo pendiente. OPFS-WL sigue sin aceptación.
