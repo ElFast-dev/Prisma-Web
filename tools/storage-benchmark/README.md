@@ -462,7 +462,7 @@ Tras la aceptación real de Concurrency AutoTest V1, se añadió una sonda separ
 - Registra reintentos `SQLITE_BUSY`, latencias, secuencia de confirmación y estimación de memoria cuando el navegador exponga una API compatible.
 - Compara la carga de una imagen pública de TMDB en modo no-CORS y CORS bajo COEP para detectar posibles incompatibilidades de imágenes externas. No llama a la API de TMDB ni transmite datos personales.
 
-**Estado:** archivos creados y verificados en GitHub; comprobación sintáctica de JavaScript completada. Todavía no se ha instalado ni ejecutado en Brave y no existe resultado de aceptación. No declarar OPFS-WL compatible ni elegirla hasta recibir el informe real del Galaxy A03.
+**Estado histórico de preparación:** la sonda se creó y verificó sintácticamente. Las ejecuciones reales posteriores y el estado vigente se documentan en las secciones siguientes. No declarar OPFS-WL compatible ni elegirla hasta completar la prueba.
 
 La variante `require-corp` se prueba primero; `credentialless` queda disponible como comparación si las imágenes externas o la carga de recursos se ven afectadas. La herramienta no cambia la aplicación Prisma, las dependencias, sus versiones ni los datos de otras sondas.
 
@@ -477,6 +477,42 @@ El diagnóstico de imágenes bajo COEP `require-corp` informó que un póster p�
 
 Se identificó una diferencia en el código de la sonda respecto al ejemplo oficial SQLite: la primera versión envolvía el constructor de `OpfsWlDb` en `sqlite3_js_retry_busy()`; el ejemplo oficial trata por separado el posible `SQLITE_BUSY` del constructor y utiliza el helper para las operaciones SQL. Se preparó una revisión diagnóstica 2 con ese flujo, nombre de archivo URI `file:<RUN_ID>/shared.sqlite3` y detalles ampliados de errores, puntero, estado de apertura, VFS registrados, intentos y códigos SQLite.
 
-**Estado:** revisión de la herramienta preparada y documentada; aún no ejecutada en Brave. La hipótesis de corrección no es una aceptación. OPFS-WL continúa pendiente de una ejecución completa con dos conexiones, 24 transacciones, 605 filas, reapertura y limpieza verificada.
+**Resultado de revisión 2:** la apertura de OpfsWlDb quedó demostrada en la segunda ejecución real, pero falló la verificación de la tabla writes. La sonda sigue sin aceptación; el diagnóstico detallado y la revisión 3 se documentan a continuación.
 
 Documentación: [opfs-wl-auto-test/README.md](opfs-wl-auto-test/README.md).
+
+
+### OPFS-WL AutoTest: segunda ejecución, apertura SQLite confirmada y fallo de esquema (13-11-2026)
+
+La segunda ejecución real utilizó la revisión 2 del Worker y terminó **NO APROBADA** durante la inicialización, antes de las transacciones de carga.
+
+- RUN_ID: `prisma-opfs-wl-auto-7639517d-9ebf-4c96-be3b-eb83142243af`.
+- COOP `same-origin`, COEP `require-corp`, `crossOriginIsolated = true`.
+- SharedArrayBuffer, Atomics.waitAsync, Web Locks y OPFS disponibles.
+- Núcleo SQLite `3.54.1`; constructor `OpfsWlDb` disponible; VFS `opfs-wl` registrado.
+- Worker A: `dbIsOpen = true`, puntero de tipo `number`, una apertura, cero reintentos BUSY.
+- Error: `SQLITE_ERROR: no such table: writes`, desde `readCounts()` al terminar la inicialización del Worker A.
+- No se confirmaron las cinco filas sintéticas, las 24 transacciones, los 605 registros, el cierre/reapertura ni la limpieza.
+
+La página inicia B solo después de recibir `ready` de A; por eso la evidencia no apunta a una carrera de inicio entre ambos Workers. El diagnóstico confirma que la conexión está abierta, pero no confirma que el esquema haya quedado creado. No es evidencia de incompatibilidad de Brave ni de una falla del VFS `opfs-wl`.
+
+La comprobación de imagen repitió el resultado anterior: el póster de TMDB no cargó en no-CORS, pero sí en CORS a 500 × 750. Se conserva `require-corp`; el resultado de un recurso no-CORS no justifica cambiar la política COEP.
+
+RUN_ID y directorio OPFS de esta ejecución: **conservar íntegros para evidencia**; no borrar, limpiar datos del sitio ni reutilizar el nombre.
+
+### Revisión 3: inicialización de esquema separada y diagnóstico adicional
+
+Se preparó una nueva revisión que cambia solo el Worker de la sonda:
+
+- Crea tabla e índice mediante `db.exec()` en autocommit, fuera de la transacción de siembra.
+- Consulta `sqlite_schema` y exige que `writes` exista antes de leer o insertar filas.
+- Inserta las cinco filas de referencia dentro de su propia transacción y verifica el total.
+- Si falla, el diagnóstico incluye las tablas visibles y errores al consultar el esquema.
+
+La revisión 3 es experimental y **no significa que OPFS-WL esté aprobada**. Su finalidad es aislar la creación del esquema y registrar evidencia más precisa.
+
+Instalador seguro: [install-opfs-wl-auto-test-revision-3.py](install-opfs-wl-auto-test-revision-3.py). Descarga fijada al commit `c6d60e07d17fa09f8ddea64d9812b4d55930a075`. Modifica únicamente el Worker. No toca SQLite WASM, dependencias, HTML, servidores, el puerto 18767 ni ningún directorio OPFS existente.
+
+Con el servidor 18768 activo, basta recargar la página `http://127.0.0.1:18768/opfs-wl-auto-test/`; no reiniciar servidor. La siguiente prueba debe ejecutarse una sola vez en `require-corp` y reportarse íntegramente.
+
+**Estado vigente:** apertura de conexión OPFS-WL observada con éxito, siembra/esquema aún no verificados y aceptación pendiente. Requisitos para considerar aprobación: dos conexiones, 24/24 transacciones, 605 filas verificadas por ambos clientes, cierre/reapertura y limpieza de solo el RUN_ID de prueba.
