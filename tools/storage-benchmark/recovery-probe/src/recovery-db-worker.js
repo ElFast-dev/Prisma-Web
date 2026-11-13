@@ -246,7 +246,7 @@ async function ensureDatabase(options = {}) {
 
 async function handle(request) {
   const {
-    type, clientId, runId, requestId, brokerRequestId, controlId,
+    type, clientId, runId, requestId, brokerRequestId, controlId, activationId,
     expectExistingDb = false, expectedMinRows = 0, databaseImage = null
   } = request || {};
 
@@ -254,6 +254,7 @@ async function handle(request) {
     await ensureDatabase({ expectExistingDb, expectedMinRows, databaseImage });
     return {
       kind: type === "activate" ? "activated" : "response",
+      activationId,
       requestId,
       brokerRequestId,
       controlId,
@@ -588,6 +589,7 @@ async function processRequest(request) {
       requestId: request?.requestId,
       brokerRequestId: request?.brokerRequestId,
       controlId: request?.controlId,
+      activationId: request?.activationId,
       clientId: request?.clientId,
       ok: false,
       error: error?.message || String(error),
