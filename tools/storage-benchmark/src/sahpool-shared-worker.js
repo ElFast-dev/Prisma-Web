@@ -8,6 +8,7 @@ const pending = new Map();
 
 let ownerClientId = null;
 let databaseWorkerId = null;
+let persistedTotalRows = null;
 let brokerSequence = 0;
 
 function send(port, message, transfer = []) {
@@ -26,6 +27,7 @@ function publishState() {
     runId: RUN_ID,
     nestedWorkerConstructor: NESTED_WORKER_AVAILABLE,
     connections: sessions.size,
+    totalRows: persistedTotalRows,
     ownerClientId,
     databaseWorkerId,
     requiredOpfsApis: ownerClientId
@@ -104,6 +106,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
   if (message.kind === "activated") {
     if (ownerClientId !== ownerClientIdForPort) return;
     databaseWorkerId = message.dedicatedWorkerId;
+    persistedTotalRows = Number.isFinite(message.totalRows) ? message.totalRows : persistedTotalRows;
     owner.role = "owner";
     owner.opfsApis = message.requiredOpfsApis || null;
     owner.removedFailedV4Directory = message.removedFailedV4Directory === true;
@@ -144,6 +147,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
   }
 
   if (message.kind === "stats") {
+    if (Number.isFinite(message.totalRows)) persistedTotalRows = message.totalRows;
     for (const session of sessions.values()) {
       send(session.port, {
         kind: "stats",
@@ -160,6 +164,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     if (!request) return;
 
     pending.delete(message.brokerRequestId);
+    if (Number.isFinite(message.totalRows)) persistedTotalRows = message.totalRows;
     const target = sessions.get(request.clientId);
     if (target) {
       send(target.port, {
