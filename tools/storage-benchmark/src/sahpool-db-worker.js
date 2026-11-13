@@ -1,6 +1,6 @@
 import sqlite3InitModule from "../node_modules/@sqlite.org/sqlite-wasm/dist/index.mjs";
 
-const DB_DIRECTORY = "/prisma-sahpool-sharedworker-probe-v2";
+const DB_DIRECTORY = "/prisma-sahpool-sharedworker-probe-v3";
 const DB_FILE = "/sharedworker-probe.sqlite3";
 const DEDICATED_WORKER_ID = crypto.randomUUID();
 
@@ -8,16 +8,13 @@ let sqlite3 = null;
 let pool = null;
 let db = null;
 let initialization = null;
+let port = null;
 let queue = Promise.resolve();
 
-function postResponse(request, payload) {
-  self.postMessage({
-    kind: "response",
-    requestId: request?.requestId,
-    clientId: request?.clientId,
-    dedicatedWorkerId: DEDICATED_WORKER_ID,
-    ...payload
-  });
+function send(payload) {
+  if (!port) return;
+  try { port.postMessage({ dedicatedWorkerId: DEDICATED_WORKER_ID, ...payload }); }
+  catch { /* The owner tab may have closed. */ }
 }
 
 function requiredOpfsApis() {
@@ -56,7 +53,6 @@ async function ensureDatabase() {
       pool = await sqlite3.installOpfsSAHPoolVfs({
         directory: DB_DIRECTORY,
         initialCapacity: 6,
-        clearOnInit: true,
         preserveOnInitFailure: true
       });
 
@@ -67,12 +63,13 @@ async function ensureDatabase() {
         "PRAGMA journal_mode = DELETE;" +
         "CREATE TABLE IF NOT EXISTS writes (" +
           "id TEXT PRIMARY KEY," +
+          "run_id TEXT NOT NULL," +
           "client_id TEXT NOT NULL," +
           "sequence INTEGER NOT NULL," +
           "created_at INTEGER NOT NULL" +
         ");" +
-        "CREATE INDEX IF NOT EXISTS idx_writes_client " +
-          "ON writes(client_id, sequence);"
+        "CREATE INDEX IF NOT EXISTS idx_writes_run_client " +
+          "ON writes(run_id, client_id, sequence);"
       );
 
       return db;
@@ -86,52 +83,58 @@ async function ensureDatabase() {
   return db;
 }
 
-function countRows() {
-  return Number(db.selectValue("SELECT COUNT(*) FROM writes"));
+function countRows(runId) {
+  return Number(db.selectValue(
+    "SELECT COUNT(*) FROM writes WHERE run_id = ?",
+    runId
+  ));
 }
 
-function clientRows(clientId) {
+function clientRows(runId, clientId) {
   return Number(db.selectValue(
-    "SELECT COUNT(*) FROM writes WHERE client_id = ?",
+    "SELECT COUNT(*) FROM writes WHERE run_id = ? AND client_id = ?",
+    runId,
     clientId
   ));
 }
 
 async function handle(request) {
-  const { type, clientId } = request || {};
-  if (typeof type !== "string") {
-    throw new Error("Solicitud sin tipo de operación.");
-  }
+  const { type, clientId, runId, requestId, brokerRequestId } = request || {};
 
-  if (type === "hello" || type === "status") {
+  if (type === "activate" || type === "status") {
     await ensureDatabase();
     return {
+      kind: type === "activate" ? "activated" : "response",
+      requestId,
+      brokerRequestId,
+      clientId,
       ok: true,
-      type,
-      dedicatedWorkerId: DEDICATED_WORKER_ID,
-      requiredOpfsApis: requiredOpfsApis(),
-      totalRows: countRows(),
-      clientRows: clientRows(clientId)
+      totalRows: countRows(runId),
+      clientRows: clientRows(runId, clientId),
+      requiredOpfsApis: requiredOpfsApis()
     };
   }
 
   if (type === "insertBatch") {
     await ensureDatabase();
 
-    if (typeof clientId !== "string" || !clientId) {
-      throw new Error("Falta el identificador de la pestaña.");
+    if (typeof clientId !== "string" || !clientId ||
+        typeof runId !== "string" || !runId) {
+      throw new Error("Falta clientId o runId.");
     }
 
     const count = Math.max(1, Math.min(100, Number(request.count) || 25));
     const insert = db.prepare(
-      "INSERT INTO writes (id, client_id, sequence, created_at) VALUES (?, ?, ?, ?)"
+      "INSERT INTO writes (id, run_id, client_id, sequence, created_at) " +
+      "VALUES (?, ?, ?, ?, ?)"
     );
 
     try {
       db.transaction("IMMEDIATE", () => {
         for (let i = 1; i <= count; i += 1) {
           insert.bind([
-            clientId + ":" + i,
+            runId + ":" + clientId + ":" + i,
+            runId,
             clientId,
             i,
             Date.now()
@@ -142,20 +145,18 @@ async function handle(request) {
       insert.finalize();
     }
 
-    const totalRows = countRows();
-    const ownRows = clientRows(clientId);
-
-    self.postMessage({
-      kind: "stats",
-      totalRows,
-      dedicatedWorkerId: DEDICATED_WORKER_ID
-    });
+    const totalRows = countRows(runId);
+    send({ kind: "stats", runId, totalRows });
 
     return {
+      kind: "response",
+      requestId,
+      brokerRequestId,
+      clientId,
       ok: true,
       type,
       inserted: count,
-      clientRows: ownRows,
+      clientRows: clientRows(runId, clientId),
       totalRows
     };
   }
@@ -166,10 +167,14 @@ async function handle(request) {
     db = new pool.OpfsSAHPoolDb(DB_FILE);
 
     return {
+      kind: "response",
+      requestId,
+      brokerRequestId,
+      clientId,
       ok: true,
       type,
-      totalRows: countRows(),
-      clientRows: clientRows(clientId)
+      totalRows: countRows(runId),
+      clientRows: clientRows(runId, clientId)
     };
   }
 
@@ -189,29 +194,52 @@ async function handle(request) {
     initialization = null;
 
     return {
+      kind: "response",
+      requestId,
+      brokerRequestId,
+      clientId,
       ok: true,
       type,
       removeVfsResult
     };
   }
 
-  throw new Error("Operación desconocida: " + type);
+  throw new Error("Operación desconocida: " + String(type));
+}
+
+async function processRequest(request) {
+  try {
+    const result = await handle(request);
+    if (result.kind === "activated") {
+      send(result);
+    } else {
+      send(result);
+    }
+  } catch (error) {
+    send({
+      kind: "response",
+      requestId: request?.requestId,
+      brokerRequestId: request?.brokerRequestId,
+      clientId: request?.clientId,
+      ok: false,
+      error: error?.message || String(error),
+      requiredOpfsApis: requiredOpfsApis()
+    });
+  }
 }
 
 self.addEventListener("message", (event) => {
-  const request = event.data;
+  if (event.data?.type !== "attach" || !event.ports?.[0]) return;
+  if (port) {
+    event.ports[0].close();
+    return;
+  }
 
-  // SAH pool has one database owner. Serialize every request, even when
-  // two ports submit work at nearly the same time.
-  queue = queue.then(async () => {
-    try {
-      const result = await handle(request);
-      postResponse(request, result);
-    } catch (error) {
-      postResponse(request, {
-        ok: false,
-        error: error?.message || String(error)
-      });
-    }
-  });
+  port = event.ports[0];
+  port.onmessage = (messageEvent) => {
+    const request = messageEvent.data;
+    queue = queue.then(() => processRequest(request));
+  };
+  port.start();
+  send({ kind: "dedicated-ready" });
 });
