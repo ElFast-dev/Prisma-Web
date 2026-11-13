@@ -200,7 +200,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
       databaseDiagnostics: owner.databaseDiagnostics
     });
 
-    if (completedHandoff) {
+    if (completedHandoff?.phase === "activating") {
       const previousOwner = sessions.get(completedHandoff.fromClientId);
       if (previousOwner) {
         send(previousOwner.port, {
@@ -211,6 +211,24 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
           databaseDiagnostics: owner.databaseDiagnostics
         });
       }
+    } else if (completedHandoff?.phase === "restoring") {
+      const failedCandidate = sessions.get(completedHandoff.fromClientId);
+      if (failedCandidate) {
+        send(failedCandidate.port, {
+          kind: "handoff-failed",
+          ownerRestored: true,
+          error: completedHandoff.failure,
+          restoredOwnerClientId: ownerClientIdForPort,
+          totalRows: message.totalRows,
+          databaseDiagnostics: owner.databaseDiagnostics
+        });
+      }
+      send(owner.port, {
+        kind: "handoff-restored",
+        error: completedHandoff.failure,
+        totalRows: message.totalRows,
+        databaseDiagnostics: owner.databaseDiagnostics
+      });
     }
     return;
   }
