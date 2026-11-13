@@ -344,4 +344,26 @@ Interpretación:
 El watchdog no cancela una transacción SQLite. Al vencer el timeout de la página, se elimina únicamente la correlación pendiente; no se reintenta automáticamente una escritura. Si una escritura termina con timeout, consultar el total desde el propietario antes de repetirla. Mantener el conjunto de referencia en 100 filas hasta identificar el salto que falla.
 
 
+### Resultado observado: escritura desde pestaña secundaria confirmada (13-11-2026)
+
+La ejecución posterior del Galaxy A03 / Brave completó una operación originada en una pestaña que mostraba «Otra pestaña», mientras la otra pestaña conservaba la propiedad SQLite. La instancia visible de la interfaz informó el protocolo `v8-broker-trace-1`.
+
+Evidencia de la pestaña secundaria:
+- `insertBatch` fue enviado con requestId `a387b58c-fab8-4a05-a934-1414f3fd12cc-1`.
+- El SharedWorker lo reenvió mediante brokerRequestId `a387b58c-fab8-4a05-a934-1414f3fd12cc:3`.
+- El Dedicated Worker confirmó `dedicated-received`, `dedicated-processing` y `dedicated-completed`.
+- La notificación compartida informó 125 filas.
+- La respuesta volvió correlacionada mediante `brokerRequestId`.
+- La pestaña secundaria mostró `Escritura confirmada. Total: 125.`
+- Desde esa misma pestaña se solicitó `reopenVerify`; la respuesta correlacionada confirmó 125 filas.
+- Una consulta `status` posterior desde la pestaña secundaria también devolvió 125 filas.
+
+Por tanto, queda demostrada al menos una ejecución completa de escritura, cierre/reapertura y consulta solicitados desde una pestaña no propietaria y ejecutados por el Dedicated Worker propietario. Esto demuestra el enrutamiento funcional de operaciones secundarias a través del SharedWorker.
+
+Después se reinició la instancia y una nueva pestaña con el protocolo `v8-broker-trace-2` recuperó las 125 filas en un archivo de 90.112 bytes. Esa captura muestra una sola pestaña conectada y propietaria; documenta persistencia de los 125 registros tras otra terminación en reposo, pero **no** constituye una nueva prueba de escritura secundaria con `v8-broker-trace-2`.
+
+Los timeouts anteriores de `insertBatch` siguen siendo evidencia válida de un fallo intermitente o dependiente de la instancia. Una ejecución exitosa no los borra ni demuestra todavía fiabilidad sostenida. La siguiente prueba debe repetir, en una instancia nueva `v8-broker-trace-2`, primero una consulta secundaria y luego una sola escritura secundaria controlada, observando `shared-received`, `shared-forwarded`, `shared-rejected`, `shared-forward-failed`, `BROKER WATCHDOG` y las etapas del Dedicated Worker. Consultar el total desde la propietaria después de cualquier timeout; nunca reintentar a ciegas.
+
+
+
 
