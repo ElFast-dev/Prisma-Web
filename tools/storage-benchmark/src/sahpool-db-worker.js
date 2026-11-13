@@ -31,6 +31,21 @@ function requiredOpfsApis() {
   };
 }
 
+async function removeFailedV4TestDirectory() {
+  // V4 opened its isolated synthetic database before failing in clientRows().
+  // Remove only that known test directory, after the user closes old V4 tabs.
+  const root = await navigator.storage.getDirectory();
+  try {
+    await root.removeEntry("prisma-sahpool-sharedworker-probe-v4", {
+      recursive: true
+    });
+    return true;
+  } catch (error) {
+    if (error?.name === "NotFoundError") return false;
+    throw error;
+  }
+}
+
 async function ensureDatabase() {
   if (db) return db;
 
@@ -49,6 +64,7 @@ async function ensureDatabase() {
       }
 
       sqlite3 = await sqlite3InitModule();
+      const removedFailedV4Directory = await removeFailedV4TestDirectory();
 
       pool = await sqlite3.installOpfsSAHPoolVfs({
         directory: DB_DIRECTORY,
@@ -112,7 +128,8 @@ async function handle(request) {
       ok: true,
       totalRows: countRows(runId),
       clientRows: clientRows(runId, clientId),
-      requiredOpfsApis: requiredOpfsApis()
+      requiredOpfsApis: requiredOpfsApis(),
+      removedFailedV4Directory
     };
   }
 
