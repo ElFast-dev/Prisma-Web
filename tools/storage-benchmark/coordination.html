@@ -218,7 +218,7 @@ function connect() {
     // inside SharedWorkerGlobalScope. Only the elected tab opens the SAH pool.
     dbWorker = new Worker("./src/sahpool-db-worker.js", {
       type: "module",
-      name: "prisma-sahpool-db-owner-candidate-v6-" + clientId
+      name: "prisma-sahpool-db-owner-candidate-v7-" + clientId
     });
 
     dbWorker.onerror = (event) => {
@@ -237,7 +237,7 @@ function connect() {
 
     shared = new SharedWorker("./src/sahpool-shared-worker.js", {
       type: "module",
-      name: "prisma-sahpool-sharedworker-probe-v6"
+      name: "prisma-sahpool-sharedworker-probe-v7"
     });
 
     port = shared.port;
@@ -256,11 +256,30 @@ function connect() {
 
       if (message.kind === "handoff-released") {
         log("VFS pausado; SyncAccessHandles liberados sin borrar la base.");
+        log("Antes de ceder: total " + String(message.totalRows) +
+          "; DB encontrada: " + String(message.databaseDiagnostics?.databaseFileFound) +
+          "; bytes: " + String(message.databaseDiagnostics?.databaseFileBytes) +
+          "; archivos: " + JSON.stringify(message.databaseDiagnostics?.fileNames || []));
         return;
       }
 
       if (message.kind === "handoff-complete") {
         log("Transferencia completada. Otra pestaña es ahora la propietaria activa.");
+        log("Registros recuperados por el nuevo propietario: " + String(message.totalRows));
+        return;
+      }
+
+      if (message.kind === "handoff-restored") {
+        log("El nuevo candidato no recuperó la base. Se restauró el propietario anterior.");
+        log("Registros recuperados: " + String(message.totalRows) +
+          "; diagnóstico: " + JSON.stringify(message.databaseDiagnostics || {}));
+        return;
+      }
+
+      if (message.kind === "handoff-failed") {
+        log("TRANSFERENCIA RECHAZADA; se conservó el propietario anterior.");
+        log("Motivo: " + String(message.error));
+        log("Registros tras restaurar: " + String(message.totalRows));
         return;
       }
 
@@ -284,6 +303,16 @@ function connect() {
         });
         log("SQLite listo. Dedicated Worker ID: " + message.databaseWorkerId);
         log("APIs OPFS: " + JSON.stringify(message.requiredOpfsApis || {}));
+        log("Archivo SQLite recuperado: " +
+          String(message.databaseDiagnostics?.databaseFileFound) +
+          "; bytes: " + String(message.databaseDiagnostics?.databaseFileBytes));
+        log("Archivos del pool: " +
+          JSON.stringify(message.databaseDiagnostics?.fileNames || []));
+        log("Tablas writes: " +
+          String(message.databaseDiagnostics?.writesTableExists) +
+          "; total filas: " + String(message.databaseDiagnostics?.totalRows));
+        log("VFS: " + String(message.databaseDiagnostics?.vfsName) +
+          "; directorio: " + String(message.databaseDiagnostics?.directory));
         log("Directorio temporal V4 anterior eliminado: " +
           String(message.removedFailedV4Directory === true));
         return;
@@ -312,6 +341,10 @@ function connect() {
         $("connectionStatus").textContent = message.error;
         $("connectionStatus").className = "status bad";
         log("ERROR: " + message.error);
+        if (message.databaseDiagnostics) {
+          log("Diagnóstico del archivo SQLite: " +
+            JSON.stringify(message.databaseDiagnostics));
+        }
         if (message.requiredOpfsApis) {
           $("opfs").textContent = JSON.stringify(message.requiredOpfsApis);
           log("APIs OPFS: " + JSON.stringify(message.requiredOpfsApis));
