@@ -63,10 +63,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
 </div>
 <div class="actions">
   <button id="connect">Conectar y registrar</button>
-  <button id="status" class="secondary" disabled>Consultar estado</button>
+  <button id="status" class="secondary" disabled>Consultar SQLite</button>
+  <button id="refreshSharedState" class="secondary" disabled>Actualizar estado compartido</button>
   <button id="handoff" class="secondary" disabled>Ceder propiedad a otra pestaña</button>
 </div>
 <p id="connectionStatus" class="status warn">Esperando conexión.</p>
+<div class="note">
+  <strong>Sesiones observadas por el coordinador</strong>
+  <div id="sessionState" class="log">Esperando el primer estado compartido.</div>
+</div>
 <p>«Preparando propiedad» significa que la pestaña fue elegida, pero SQLite aún no está listo. Solo «Propietaria activa» habilita las operaciones. Para transferir el acceso, pulsa «Ceder propiedad» antes de cerrar la pestaña propietaria.</p>
 </section>
 
@@ -130,6 +135,23 @@ function log(message) {
   area.scrollTop = area.scrollHeight;
 }
 
+function requestSharedState(reason = "manual") {
+  if (!port || !connected) return;
+  port.postMessage({ type: "getState", reason });
+  log("Solicitud de instantánea del coordinador: " + reason);
+}
+
+function sendLifecycle(eventName, lifecycleState = eventName) {
+  if (!port || !connected) return;
+  port.postMessage({
+    type: "lifecycle",
+    eventName,
+    lifecycleState,
+    visibilityState: document.visibilityState,
+    timestamp: Date.now()
+  });
+}
+
 function updateState(data) {
   $("datasetId").textContent = data.runId || "—";
   $("workerId").textContent = data.workerId || "—";
@@ -141,6 +163,28 @@ function updateState(data) {
   }
   $("connections").textContent = String(data.connections ?? "—");
   $("dbWorkerId").textContent = data.databaseWorkerId || "Pendiente";
+  $("refreshSharedState").disabled = !connected;
+
+  if (Array.isArray(data.sessions)) {
+    $("sessionState").textContent = data.sessions.map((item) => {
+      const ageMs = Math.max(0, Date.now() - Number(item.lastLifecycleAt || item.registeredAt || Date.now()));
+      return [
+        item.clientId,
+        "rol=" + item.role,
+        "visibilidad=" + item.visibilityState,
+        "ciclo=" + item.lifecycleState,
+        "evento=" + item.lastLifecycleEvent,
+        "última señal hace " + Math.round(ageMs / 1000) + " s",
+        "puerto Dedicated Worker=" + (item.dedicatedWorkerPortAttached ? "adjunto" : "no adjunto")
+      ].join(" · ");
+    }).join("\n") || "No hay sesiones registradas.";
+  }
+
+  if (data.activationAttempt) {
+    log("Activación en curso: " + data.activationAttempt.clientId +
+      "; " + data.activationAttempt.activationId +
+      "; terminación solicitada=" + data.activationAttempt.terminationRequested);
+  }
 
   const selectedHere = data.ownerClientId === clientId;
   const activeHere = Boolean(data.ownerReady && selectedHere);
@@ -286,8 +330,27 @@ function connect() {
     port.onmessage = (event) => {
       const message = event.data || {};
 
-      if (message.kind === "state") {
+      if (message.kind === "state" || message.kind === "state-snapshot") {
         updateState(message);
+        if (message.kind === "state-snapshot") {
+          log("Instantánea compartida recibida: " + message.connections +
+            " sesiones; propietario=" + (message.ownerClientId || "ninguno") +
+            "; rol=" + (message.ownerRole || "ninguno"));
+        }
+        return;
+      }
+
+      if (message.kind === "terminate-activation-candidate") {
+        log("ACTIVACIÓN SIN RESPUESTA: el coordinador solicita terminar el Dedicated Worker candidato. ID=" +
+          String(message.activationId) + "; motivo=" + String(message.reason));
+        try { dbWorker?.terminate(); } catch {}
+        dbWorker = null;
+        port?.postMessage({
+          type: "activationCandidateTerminated",
+          activationId: message.activationId,
+          reason: message.reason || "activation-timeout"
+        });
+        log("Dedicated Worker candidato terminado; confirmación enviada al coordinador. Esta pestaña requerirá recargarse para volver a registrarse como reserva.");
         return;
       }
 
@@ -462,7 +525,12 @@ function connect() {
     $("connectionStatus").className = "status warn";
 
     port.postMessage(
-      { type: "register", clientId },
+      {
+        type: "register",
+        clientId,
+        visibilityState: document.visibilityState,
+        lifecycleState: "registered"
+      },
       [dbWorkerPort]
     );
     dbWorkerPort = null;
@@ -478,6 +546,10 @@ function connect() {
 }
 
 $("connect").addEventListener("click", connect);
+
+$("refreshSharedState").addEventListener("click", () => {
+  requestSharedState("botón-manual");
+});
 
 $("handoff").addEventListener("click", () => {
   if (!port || !connected) return;
@@ -608,12 +680,44 @@ $("cleanup").addEventListener("click", async () => {
   }
 });
 
+document.addEventListener("visibilitychange", () => {
+  sendLifecycle("visibilitychange", document.visibilityState);
+  if (document.visibilityState === "visible") {
+    requestSharedState("visibility-restored");
+  }
+});
+
+document.addEventListener("freeze", () => {
+  sendLifecycle("freeze", "frozen");
+});
+
+document.addEventListener("resume", () => {
+  sendLifecycle("resume", "resumed");
+  requestSharedState("page-resume");
+});
+
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    log("PAGESHOW desde BFCache: se registra una conexión nueva porque pagehide retiró los Workers anteriores.");
+    connected = false;
+    shared = null;
+    port = null;
+    dbWorker = null;
+    dbWorkerPort = null;
+    connect();
+    return;
+  }
+  sendLifecycle("pageshow", "active");
+  requestSharedState("pageshow");
+});
+
 // Connect automatically on initial load so the SharedWorker state is restored
 // in the UI without requiring a manual click. The button remains available
 // as a retry if this initial connection fails.
 connect();
 
-window.addEventListener("pagehide", () => {
+window.addEventListener("pagehide", (event) => {
+  sendLifecycle("pagehide", event.persisted ? "pagehide-bfcache" : "pagehide");
   // Queue unregister, then terminate the Dedicated Worker synchronously.
   // The SharedWorker processes the unregister after this pagehide task ends.
   try { port?.postMessage({ type: "unregister" }); } catch {}
