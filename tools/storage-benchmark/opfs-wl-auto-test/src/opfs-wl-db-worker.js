@@ -223,6 +223,56 @@ async function openDb() {
 
 function seedDatabase() {
   /*
+   * Revision 6 restores the schema creation omitted by revision 5.
+   * The DDL is committed before the multi-row seed transaction.
+   */
+  const schemaBefore = {
+    schemaVersion: db.selectValue("PRAGMA schema_version"),
+    filename: db.dbFilename("main"),
+    vfs: db.dbVfsName("main"),
+    readOnly: sqlite3.capi.sqlite3_db_readonly(db.pointer, "main"),
+    databaseList: db.selectArrays("PRAGMA database_list")
+  };
+  const preparedSchemaSql = [];
+  const ddlSql =
+    "CREATE TABLE IF NOT EXISTS writes (" +
+      "id TEXT PRIMARY KEY," +
+      "run_id TEXT NOT NULL," +
+      "client_id TEXT NOT NULL," +
+      "batch_no INTEGER NOT NULL," +
+      "row_no INTEGER NOT NULL," +
+      "created_at INTEGER NOT NULL" +
+    ");" +
+    "CREATE INDEX IF NOT EXISTS idx_writes_run_client " +
+      "ON writes(run_id, client_id, batch_no);";
+
+  db.exec(ddlSql, { saveSql: preparedSchemaSql });
+
+  const schemaAfter = {
+    schemaVersion: db.selectValue("PRAGMA schema_version"),
+    filename: db.dbFilename("main"),
+    vfs: db.dbVfsName("main"),
+    readOnly: sqlite3.capi.sqlite3_db_readonly(db.pointer, "main"),
+    databaseList: db.selectArrays("PRAGMA database_list")
+  };
+  const schemaTables = db.selectValues(
+    "SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name"
+  );
+  if (!schemaTables.includes("writes")) {
+    throw new Error(
+      "La creación DDL no confirmó la tabla writes. Diagnóstico: " +
+      JSON.stringify({
+        schemaBefore,
+        schemaAfter,
+        preparedSchemaSql,
+        schemaTables,
+        pageCount: db.selectValue("PRAGMA page_count"),
+        dbPointer: db.pointer
+      })
+    );
+  }
+
+  /*
    * Use one multi-row SQL INSERT rather than the prepared-statement loop.
    * The report separates whole-table rows from rows matching this RUN_ID.
    */
