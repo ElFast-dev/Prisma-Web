@@ -130,7 +130,7 @@ Esta prueba valida el actor compartido y el acceso a SAH pool desde dos pestaña
 
 `FileSystemSyncAccessHandle` y `createSyncAccessHandle()` están disponibles únicamente dentro de Dedicated Workers, no dentro de SharedWorkers. Por eso SQLite SAH pool no debe inicializarse directamente en el SharedWorker.
 
-La prueba utiliza dos tipos de Worker, pero el SharedWorker no crea el Dedicated Worker (el constructor `Worker()` no está expuesto en su contexto):
+La ejecución anterior en Brave Android terminó con `Worker is not defined` al intentar crear un Dedicated Worker desde el SharedWorker. Aunque la especificación HTML incluye la interfaz `Worker` en los contextos Window, DedicatedWorker y SharedWorker, la prueba debe registrar lo que expone el runtime real. La nueva interfaz muestra `typeof Worker` dentro del SharedWorker y evita depender de ese constructor:
 
 - Cada pestaña crea un candidato `Dedicated Worker` desde su propio contexto de ventana.
 - `src/sahpool-shared-worker.js`: SharedWorker coordinador; elige un único candidato como propietario y reenvía a él las operaciones de todas las pestañas.
