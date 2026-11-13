@@ -13,8 +13,8 @@ let brokerSequence = 0;
 let controlSequence = 0;
 let handoffInProgress = null;
 
-function send(port, message) {
-  try { port.postMessage(message); } catch { /* Client closed. */ }
+function send(port, message, transfer = []) {
+  try { port.postMessage(message, transfer); } catch { /* Client closed. */ }
 }
 
 function sessionFor(port) {
@@ -47,7 +47,8 @@ function activateNextOwner({
   excludeClientId = null,
   preferredClientId = null,
   expectExistingDb = false,
-  expectedMinRows = 0
+  expectedMinRows = 0,
+  databaseImage = null
 } = {}) {
   databaseWorkerId = null;
   ownerClientId = null;
@@ -69,13 +70,20 @@ function activateNextOwner({
 
   ownerClientId = candidate.clientId;
   candidate.role = "starting";
-  candidate.dbPort.postMessage({
+  const activation = {
     type: "activate",
     clientId: candidate.clientId,
     runId: RUN_ID,
     expectExistingDb,
     expectedMinRows
-  });
+  };
+  const transfer = [];
+  if (databaseImage instanceof ArrayBuffer && databaseImage.byteLength) {
+    const imageCopy = databaseImage.slice(0);
+    activation.databaseImage = imageCopy;
+    transfer.push(imageCopy);
+  }
+  candidate.dbPort.postMessage(activation, transfer);
   publishState();
 }
 
@@ -129,6 +137,28 @@ function finishHandoff(ownerClientIdForPort, message) {
   }
 
   const previousOwner = sessions.get(ownerClientIdForPort);
+
+  if (!(message.databaseImage instanceof ArrayBuffer) ||
+      message.databaseImage.byteLength <= 0) {
+    const expectedRows = Number.isFinite(message.totalRows) ? message.totalRows : 0;
+    handoffInProgress = {
+      controlId: handoffInProgress.controlId,
+      phase: "restoring",
+      fromClientId: null,
+      toClientId: ownerClientIdForPort,
+      expectedRows,
+      databaseImage: null,
+      failure: "El propietario no pudo exportar una instantánea SQLite para el relevo."
+    };
+    ownerClientId = null;
+    databaseWorkerId = null;
+    activateNextOwner({
+      preferredClientId: ownerClientIdForPort,
+      expectExistingDb: true,
+      expectedMinRows: expectedRows
+    });
+    return;
+  }
   if (previousOwner) {
     previousOwner.role = "paused";
     previousOwner.databaseWorkerId = message.dedicatedWorkerId;
@@ -140,6 +170,8 @@ function finishHandoff(ownerClientIdForPort, message) {
   handoffInProgress.expectedRows = Number.isFinite(message.totalRows)
     ? message.totalRows
     : 0;
+  handoffInProgress.databaseImage = message.databaseImage.slice(0);
+  handoffInProgress.databaseImageBytes = message.databaseImage.byteLength;
 
   ownerClientId = null;
   databaseWorkerId = null;
@@ -149,7 +181,8 @@ function finishHandoff(ownerClientIdForPort, message) {
       kind: "handoff-released",
       totalRows: message.totalRows,
       databaseDiagnostics: message.databaseDiagnostics || null,
-      vfsPaused: message.vfsPaused === true
+      vfsPaused: message.vfsPaused === true,
+      databaseImageBytes: message.databaseImageBytes || 0
     });
   }
 
@@ -159,7 +192,8 @@ function finishHandoff(ownerClientIdForPort, message) {
     excludeClientId: ownerClientIdForPort,
     preferredClientId: targetClientId,
     expectExistingDb: true,
-    expectedMinRows: handoffInProgress.expectedRows
+    expectedMinRows: handoffInProgress.expectedRows,
+    databaseImage: handoffInProgress.databaseImage
   });
 }
 
@@ -264,13 +298,15 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
         fromClientId: ownerClientIdForPort,
         toClientId: failedHandoff.fromClientId,
         expectedRows: failedHandoff.expectedRows,
+        databaseImage: failedHandoff.databaseImage || null,
         failure: message.error || "El nuevo propietario no recuperó la base anterior."
       };
       activateNextOwner({
         excludeClientId: ownerClientIdForPort,
         preferredClientId: failedHandoff.fromClientId,
         expectExistingDb: true,
-        expectedMinRows: failedHandoff.expectedRows
+        expectedMinRows: failedHandoff.expectedRows,
+        databaseImage: failedHandoff.databaseImage || null
       });
     } else if (
       handoffInProgress?.phase === "restoring" &&
