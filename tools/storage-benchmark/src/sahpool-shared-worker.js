@@ -1,139 +1,251 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
-const ports = new Set();
+const RUN_ID = crypto.randomUUID();
+const sessions = new Map();
+const portOwners = new Map();
 const pending = new Map();
 
-let databaseWorker = null;
-let databaseWorkerFailure = null;
+let ownerClientId = null;
+let databaseWorkerId = null;
+let brokerSequence = 0;
 
-function send(port, message) {
-  try { port.postMessage(message); } catch { /* The tab may have closed. */ }
+function send(port, message, transfer = []) {
+  try { port.postMessage(message, transfer); } catch { /* A client may have closed. */ }
 }
 
-function broadcast(message) {
-  for (const port of ports) send(port, message);
+function sessionFor(port) {
+  const clientId = portOwners.get(port);
+  return clientId ? sessions.get(clientId) : null;
 }
 
-function failPending(error) {
-  for (const [requestId, owner] of pending) {
-    send(owner, {
-      kind: "response",
-      requestId,
-      ok: false,
-      workerId: SHARED_WORKER_ID,
-      error
-    });
+function publishState() {
+  const state = {
+    kind: "state",
+    workerId: SHARED_WORKER_ID,
+    runId: RUN_ID,
+    connections: sessions.size,
+    ownerClientId,
+    databaseWorkerId,
+    ownerReady: Boolean(ownerClientId && databaseWorkerId)
+  };
+  for (const session of sessions.values()) send(session.port, state);
+}
+
+function activateNextOwner() {
+  ownerClientId = null;
+  databaseWorkerId = null;
+
+  const candidate = [...sessions.values()].find((session) => session.dbPort);
+  if (!candidate) {
+    publishState();
+    return;
   }
-  pending.clear();
+
+  ownerClientId = candidate.clientId;
+  candidate.role = "starting";
+  candidate.dbPort.postMessage({
+    type: "activate",
+    clientId: candidate.clientId,
+    runId: RUN_ID
+  });
+  publishState();
 }
 
-function startDatabaseWorker() {
-  if (databaseWorker) return databaseWorker;
-  if (databaseWorkerFailure) throw new Error(databaseWorkerFailure);
+function removeSession(clientId, reason) {
+  const session = sessions.get(clientId);
+  if (!session) return;
 
-  // SyncAccessHandle is available only in Dedicated Workers. This SharedWorker
-  // coordinates tabs and forwards all SQLite operations to one dedicated owner.
-  databaseWorker = new Worker(
-    new URL("./sahpool-db-worker.js", import.meta.url),
-    {
-      type: "module",
-      name: "prisma-sahpool-database-owner-v2"
+  portOwners.delete(session.port);
+  sessions.delete(clientId);
+
+  try { session.dbPort?.close(); } catch {}
+  try { session.port.close(); } catch {}
+
+  for (const [brokerRequestId, request] of pending) {
+    if (request.clientId === clientId) {
+      pending.delete(brokerRequestId);
     }
-  );
+  }
 
-  databaseWorker.onmessage = (event) => {
-    const message = event.data || {};
+  if (ownerClientId === clientId) activateNextOwner();
+  else publishState();
+}
 
-    if (message.kind === "stats") {
-      broadcast({
-        ...message,
+function onDatabaseMessage(ownerClientIdForPort, message) {
+  const owner = sessions.get(ownerClientIdForPort);
+  if (!owner) return;
+
+  if (message.kind === "dedicated-ready") {
+    return;
+  }
+
+  if (message.kind === "activated") {
+    if (ownerClientId !== ownerClientIdForPort) return;
+    databaseWorkerId = message.dedicatedWorkerId;
+    owner.role = "owner";
+    owner.opfsApis = message.requiredOpfsApis || null;
+    publishState();
+    send(owner.port, {
+      kind: "owner-ready",
+      workerId: SHARED_WORKER_ID,
+      databaseWorkerId,
+      requiredOpfsApis: owner.opfsApis,
+      totalRows: message.totalRows
+    });
+    return;
+  }
+
+  if (message.kind === "stats") {
+    for (const session of sessions.values()) {
+      send(session.port, {
+        kind: "stats",
         workerId: SHARED_WORKER_ID,
-        connections: ports.size
+        databaseWorkerId: message.dedicatedWorkerId,
+        totalRows: message.totalRows
+      });
+    }
+    return;
+  }
+
+  if (message.kind === "response") {
+    const request = pending.get(message.brokerRequestId);
+    if (!request) return;
+
+    pending.delete(message.brokerRequestId);
+    const target = sessions.get(request.clientId);
+    if (target) {
+      send(target.port, {
+        ...message,
+        kind: "response",
+        workerId: SHARED_WORKER_ID,
+        databaseWorkerId: databaseWorkerId
+      });
+    }
+  }
+}
+
+function registerSession(port, message, dbPort) {
+  const clientId = message.clientId;
+  if (typeof clientId !== "string" || !clientId || !dbPort) {
+    send(port, {
+      kind: "error",
+      error: "Registro inválido: falta clientId o puerto del Dedicated Worker."
+    });
+    try { dbPort?.close(); } catch {}
+    return;
+  }
+
+  if (sessions.has(clientId)) {
+    send(port, { kind: "error", error: "clientId duplicado." });
+    try { dbPort.close(); } catch {}
+    return;
+  }
+
+  const session = {
+    clientId,
+    port,
+    dbPort,
+    role: "standby",
+    registeredAt: Date.now()
+  };
+  sessions.set(clientId, session);
+  portOwners.set(port, clientId);
+
+  dbPort.onmessage = (event) => onDatabaseMessage(clientId, event.data || {});
+  dbPort.onmessageerror = () => {
+    if (ownerClientId === clientId) {
+      send(port, {
+        kind: "error",
+        error: "No se pudo deserializar un mensaje del Dedicated Worker SQLite."
+      });
+    }
+  };
+  dbPort.start();
+
+  publishState();
+  if (!ownerClientId) activateNextOwner();
+}
+
+function handleClientMessage(port, message, dbPort) {
+  if (message?.type === "register") {
+    registerSession(port, message, dbPort);
+    return;
+  }
+
+  const session = sessionFor(port);
+  if (!session) {
+    send(port, { kind: "error", error: "La pestaña todavía no está registrada." });
+    return;
+  }
+
+  if (message.type === "heartbeat") return;
+
+  if (message.type === "unregister") {
+    removeSession(session.clientId, "page-unload");
+    return;
+  }
+
+  if (message.type === "dbWorkerFailed") {
+    if (ownerClientId === session.clientId) {
+      removeSession(session.clientId, "database-worker-failed");
+    }
+    return;
+  }
+
+  if (message.type === "request") {
+    if (!ownerClientId || !databaseWorkerId) {
+      send(port, {
+        kind: "response",
+        requestId: message.requestId,
+        ok: false,
+        error: "Todavía no hay un Dedicated Worker propietario de SQLite."
       });
       return;
     }
 
-    if (message.kind === "response") {
-      const owner = pending.get(message.requestId);
-      if (!owner) return;
-
-      pending.delete(message.requestId);
-      send(owner, {
-        ...message,
-        workerId: SHARED_WORKER_ID,
-        connections: ports.size
+    const owner = sessions.get(ownerClientId);
+    if (!owner?.dbPort) {
+      activateNextOwner();
+      send(port, {
+        kind: "response",
+        requestId: message.requestId,
+        ok: false,
+        error: "El propietario de SQLite no está disponible. Reintenta."
       });
+      return;
     }
-  };
 
-  databaseWorker.onerror = (event) => {
-    const detail = event.message || "Error desconocido en el Dedicated Worker SQLite.";
-    databaseWorkerFailure = detail;
-    databaseWorker?.terminate();
-    databaseWorker = null;
-    failPending("Fallo del Dedicated Worker SQLite: " + detail);
-    broadcast({
-      kind: "fatal",
-      workerId: SHARED_WORKER_ID,
-      error: detail
+    const brokerRequestId =
+      session.clientId + ":" + String(++brokerSequence);
+    pending.set(brokerRequestId, {
+      clientId: session.clientId,
+      requestId: message.requestId
     });
-  };
 
-  databaseWorker.onmessageerror = () => {
-    failPending("No se pudo deserializar una respuesta del Dedicated Worker SQLite.");
-  };
-
-  return databaseWorker;
+    owner.dbPort.postMessage({
+      type: message.operation,
+      clientId: session.clientId,
+      runId: RUN_ID,
+      requestId: message.requestId,
+      brokerRequestId,
+      count: message.count
+    });
+  }
 }
 
 self.onconnect = (event) => {
   const port = event.ports[0];
-  ports.add(port);
-
   port.onmessage = (messageEvent) => {
-    const request = messageEvent.data || {};
-    const requestId = request.requestId;
-
-    if (typeof requestId !== "string" || !requestId) {
-      send(port, {
-        kind: "response",
-        ok: false,
-        workerId: SHARED_WORKER_ID,
-        error: "Solicitud sin requestId."
-      });
-      return;
-    }
-
-    if (pending.has(requestId)) {
-      send(port, {
-        kind: "response",
-        requestId,
-        ok: false,
-        workerId: SHARED_WORKER_ID,
-        error: "requestId duplicado."
-      });
-      return;
-    }
-
-    try {
-      const owner = startDatabaseWorker();
-      pending.set(requestId, port);
-      owner.postMessage(request);
-    } catch (error) {
-      send(port, {
-        kind: "response",
-        requestId,
-        ok: false,
-        workerId: SHARED_WORKER_ID,
-        error: error?.message || String(error)
-      });
-    }
+    handleClientMessage(
+      port,
+      messageEvent.data || {},
+      messageEvent.ports?.[0] || null
+    );
   };
-
+  port.onmessageerror = () => {};
   port.start();
-
-  broadcast({
-    kind: "connections",
-    workerId: SHARED_WORKER_ID,
-    connections: ports.size
-  });
 };
+
+setInterval(() => {
+  // Explicit pagehide/unregister is used for normal tab closure.
+  // No short heartbeat timeout: background mobile tabs may be throttled.
+}, 30000);
