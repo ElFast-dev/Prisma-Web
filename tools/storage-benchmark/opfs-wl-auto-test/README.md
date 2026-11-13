@@ -172,7 +172,7 @@ La revisión 3 **no es una aceptación ni prueba que el problema esté resuelto*
 Para instalarla en Termux, ejecuta:
 
 ```sh
-python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/c6d60e07d17fa09f8ddea64d9812b4d55930a075/tools/storage-benchmark/install-opfs-wl-auto-test-revision-3.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/8f3ef0b343680acf86713056117e7420f87cd28b/tools/storage-benchmark/install-opfs-wl-auto-test-revision-3.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
 ```
 
 El instalador modifica únicamente `opfs-wl-auto-test/src/opfs-wl-db-worker.js`. Comprueba el SHA exacto del servidor y del archivo descargado, y cancela si detecta cambios locales no reconocidos. No cambia SQLite WASM, el HTML, las dependencias, ningún servidor ni los archivos OPFS anteriores.
