@@ -13,8 +13,8 @@ let brokerSequence = 0;
 let controlSequence = 0;
 let handoffInProgress = null;
 
-function send(port, message, transfer = []) {
-  try { port.postMessage(message, transfer); } catch { /* Client closed. */ }
+function send(port, message) {
+  try { port.postMessage(message); } catch { /* Client closed. */ }
 }
 
 function sessionFor(port) {
@@ -36,13 +36,19 @@ function publishState() {
     databaseWorkerId,
     requiredOpfsApis: owner?.opfsApis || null,
     removedFailedV4Directory: owner?.removedFailedV4Directory ?? null,
+    databaseDiagnostics: owner?.databaseDiagnostics || null,
     ownerReady: Boolean(ownerClientId && owner?.role === "owner" && databaseWorkerId),
-    handoffInProgress: Boolean(handoffInProgress)
+    handoffInProgress: handoffInProgress?.phase || null
   };
   for (const session of sessions.values()) send(session.port, state);
 }
 
-function activateNextOwner({ excludeClientId = null, preferredClientId = null } = {}) {
+function activateNextOwner({
+  excludeClientId = null,
+  preferredClientId = null,
+  expectExistingDb = false,
+  expectedMinRows = 0
+} = {}) {
   databaseWorkerId = null;
   ownerClientId = null;
 
@@ -66,7 +72,9 @@ function activateNextOwner({ excludeClientId = null, preferredClientId = null } 
   candidate.dbPort.postMessage({
     type: "activate",
     clientId: candidate.clientId,
-    runId: RUN_ID
+    runId: RUN_ID,
+    expectExistingDb,
+    expectedMinRows
   });
   publishState();
 }
@@ -114,6 +122,7 @@ function removeSession(clientId, reason) {
 
 function finishHandoff(ownerClientIdForPort, message) {
   if (!handoffInProgress ||
+      handoffInProgress.phase !== "releasing" ||
       handoffInProgress.fromClientId !== ownerClientIdForPort ||
       ownerClientId !== ownerClientIdForPort) {
     return;
@@ -123,10 +132,15 @@ function finishHandoff(ownerClientIdForPort, message) {
   if (previousOwner) {
     previousOwner.role = "paused";
     previousOwner.databaseWorkerId = message.dedicatedWorkerId;
+    previousOwner.databaseDiagnostics = message.databaseDiagnostics || null;
   }
 
   const targetClientId = handoffInProgress.toClientId;
-  handoffInProgress = null;
+  handoffInProgress.phase = "activating";
+  handoffInProgress.expectedRows = Number.isFinite(message.totalRows)
+    ? message.totalRows
+    : 0;
+
   ownerClientId = null;
   databaseWorkerId = null;
 
@@ -134,13 +148,18 @@ function finishHandoff(ownerClientIdForPort, message) {
     send(previousOwner.port, {
       kind: "handoff-released",
       totalRows: message.totalRows,
+      databaseDiagnostics: message.databaseDiagnostics || null,
       vfsPaused: message.vfsPaused === true
     });
   }
 
+  // The incoming Worker must recover the exact same DB file and at least
+  // the row count confirmed by the outgoing owner. Empty DBs are rejected.
   activateNextOwner({
     excludeClientId: ownerClientIdForPort,
-    preferredClientId: targetClientId
+    preferredClientId: targetClientId,
+    expectExistingDb: true,
+    expectedMinRows: handoffInProgress.expectedRows
   });
 }
 
@@ -161,6 +180,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     owner.opfsApis = message.requiredOpfsApis || null;
     owner.removedFailedV4Directory = message.removedFailedV4Directory === true;
     owner.databaseWorkerId = databaseWorkerId;
+    owner.databaseDiagnostics = message.databaseDiagnostics || null;
 
     const completedHandoff =
       handoffInProgress?.toClientId === ownerClientIdForPort
@@ -176,7 +196,8 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
       databaseWorkerId,
       requiredOpfsApis: owner.opfsApis,
       removedFailedV4Directory: owner.removedFailedV4Directory,
-      totalRows: message.totalRows
+      totalRows: message.totalRows,
+      databaseDiagnostics: owner.databaseDiagnostics
     });
 
     if (completedHandoff) {
@@ -186,7 +207,8 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
           kind: "handoff-complete",
           newOwnerClientId: ownerClientIdForPort,
           databaseWorkerId,
-          totalRows: message.totalRows
+          totalRows: message.totalRows,
+          databaseDiagnostics: owner.databaseDiagnostics
         });
       }
     }
@@ -198,24 +220,62 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
 
     owner.role = "failed";
     owner.opfsApis = message.requiredOpfsApis || null;
+    owner.databaseDiagnostics = message.databaseDiagnostics || null;
+
     send(owner.port, {
       kind: "error",
-      error: message.error || "No se pudo inicializar SQLite en el Dedicated Worker.",
+      error: message.error || "No se pudo recuperar la base SQLite en el Dedicated Worker.",
       requiredOpfsApis: owner.opfsApis,
+      databaseDiagnostics: owner.databaseDiagnostics,
       workerId: SHARED_WORKER_ID
     });
 
     const failedHandoff =
-      handoffInProgress?.toClientId === ownerClientIdForPort
+      handoffInProgress?.phase === "activating" &&
+      handoffInProgress.toClientId === ownerClientIdForPort
         ? handoffInProgress
         : null;
-    handoffInProgress = null;
+
     ownerClientId = null;
     databaseWorkerId = null;
 
-    activateNextOwner({
-      preferredClientId: failedHandoff?.fromClientId || null
-    });
+    if (failedHandoff) {
+      // Restore the old owner, whose own PoolUtil remains paused in memory.
+      handoffInProgress = {
+        phase: "restoring",
+        fromClientId: ownerClientIdForPort,
+        toClientId: failedHandoff.fromClientId,
+        expectedRows: failedHandoff.expectedRows,
+        failure: message.error || "El nuevo propietario no recuperó la base anterior."
+      };
+      activateNextOwner({
+        excludeClientId: ownerClientIdForPort,
+        preferredClientId: failedHandoff.fromClientId,
+        expectExistingDb: true,
+        expectedMinRows: failedHandoff.expectedRows
+      });
+    } else if (
+      handoffInProgress?.phase === "restoring" &&
+      handoffInProgress.toClientId === ownerClientIdForPort
+    ) {
+      // The previous owner could not recover either. Stop automatic retries
+      // and report the failure rather than presenting an empty DB as success.
+      const restoreFailure = handoffInProgress.failure;
+      handoffInProgress = null;
+      publishState();
+      for (const session of sessions.values()) {
+        send(session.port, {
+          kind: "handoff-failed",
+          error: "No se pudo completar ni revertir el relevo. Error inicial: " +
+            restoreFailure + ". Error de recuperación: " +
+            (message.error || "desconocido"),
+          databaseDiagnostics: owner.databaseDiagnostics
+        });
+      }
+    } else {
+      handoffInProgress = null;
+      activateNextOwner({ excludeClientId: ownerClientIdForPort });
+    }
     return;
   }
 
@@ -226,6 +286,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
 
   if (message.kind === "release-error") {
     if (!handoffInProgress ||
+        handoffInProgress.phase !== "releasing" ||
         handoffInProgress.fromClientId !== ownerClientIdForPort ||
         ownerClientId !== ownerClientIdForPort) {
       return;
@@ -238,6 +299,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     send(owner.port, {
       kind: "handoff-error",
       error: message.error || "SQLite no pudo liberar el VFS.",
+      databaseDiagnostics: message.databaseDiagnostics || null,
       vfsPaused: message.vfsPaused === true
     });
     return;
@@ -247,12 +309,16 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     if (Number.isFinite(message.totalRows)) {
       persistedTotalRows = message.totalRows;
     }
+    if (message.databaseDiagnostics) {
+      owner.databaseDiagnostics = message.databaseDiagnostics;
+    }
     for (const session of sessions.values()) {
       send(session.port, {
         kind: "stats",
         workerId: SHARED_WORKER_ID,
         databaseWorkerId: message.dedicatedWorkerId,
-        totalRows: message.totalRows
+        totalRows: message.totalRows,
+        databaseDiagnostics: message.databaseDiagnostics || null
       });
     }
     return;
@@ -265,6 +331,9 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     pending.delete(message.brokerRequestId);
     if (Number.isFinite(message.totalRows)) {
       persistedTotalRows = message.totalRows;
+    }
+    if (message.databaseDiagnostics) {
+      owner.databaseDiagnostics = message.databaseDiagnostics;
     }
     const target = sessions.get(request.clientId);
     if (target) {
@@ -303,7 +372,8 @@ function registerSession(port, message, dbPort) {
     registeredAt: Date.now(),
     opfsApis: null,
     removedFailedV4Directory: null,
-    databaseWorkerId: null
+    databaseWorkerId: null,
+    databaseDiagnostics: null
   };
   sessions.set(clientId, session);
   portOwners.set(port, clientId);
@@ -357,8 +427,10 @@ function beginHandoff(session) {
   const controlId = "handoff-" + String(++controlSequence);
   handoffInProgress = {
     controlId,
+    phase: "releasing",
     fromClientId: session.clientId,
-    toClientId: candidate.clientId
+    toClientId: candidate.clientId,
+    expectedRows: null
   };
 
   session.role = "releasing";
