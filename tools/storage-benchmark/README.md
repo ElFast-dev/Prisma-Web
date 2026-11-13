@@ -179,3 +179,16 @@ La interfaz anterior mostraba «Esta pestaña» al seleccionarse un candidato, a
 Para una cesión normal se utiliza el botón «Ceder propiedad a otra pestaña». El Dedicated Worker propietario cierra primero su conexión SQLite y ejecuta `PoolUtil.pauseVfs()`, lo que libera los SyncAccessHandles sin eliminar el contenido de OPFS. Solo tras recibir la confirmación de pausa, el SharedWorker promueve la pestaña candidata. Su Dedicated Worker ejecuta `unpauseVfs()` si ya tenía un pool pausado, o inicializa el pool si es nuevo.
 
 La propiedad solo se considera transferida cuando el nuevo Dedicated Worker confirma la apertura de SQLite. Los cierres abruptos del propietario siguen siendo un escenario distinto; no deben confundirse con la cesión controlada.
+
+
+Procedimiento para probar el relevo controlado:
+
+1. Conecta dos pestañas y espera a que una muestre `Propietaria activa` y la otra `Otra pestaña`.
+2. En la pestaña propietaria pulsa `Ceder propiedad a otra pestaña`.
+3. Espera a que la pestaña anterior indique que SQLite está activo en otra pestaña y que la nueva indique `Propietaria activa`.
+4. En la nueva propietaria consulta el estado, que debe conservar el total anterior, y verifica que puedes insertar y reabrir SQLite.
+5. Cierra la pestaña anterior (ya no propietaria) y confirma que la nueva sigue operativa.
+
+La interfaz no debe mostrar `Esta pestaña · PROPIETARIA ACTIVA` hasta recibir la confirmación `activated` del Dedicated Worker. La selección inicial se muestra como `Preparando propiedad` y mantiene deshabilitadas las operaciones.
+
+No se debe cerrar manualmente la pestaña propietaria antes de completar la cesión. `pagehide` es un evento de ciclo de vida y no permite esperar de forma fiable a una operación asíncrona de liberación de OPFS; el relevo normal se prueba con la cesión cooperativa explícita. Los cierres abruptos se evalúan en una prueba aparte.
