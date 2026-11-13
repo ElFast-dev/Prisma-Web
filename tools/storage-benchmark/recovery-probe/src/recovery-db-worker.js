@@ -13,6 +13,7 @@ let removedFailedV4Directory = false;
 let importedDatabaseBytes = 0;
 let port = null;
 let queue = Promise.resolve();
+let openFaultTransaction = null;
 
 function send(payload, transfer = []) {
   if (!port) return;
@@ -295,6 +296,8 @@ async function handle(request) {
       insert.finalize();
     }
 
+    openFaultTransaction = { faultId, totalBefore, pendingRows: count };
+
     send({
       kind: "broker-trace",
       stage: "fault-transaction-open-before-commit",
@@ -322,7 +325,11 @@ async function handle(request) {
   }
 
   if (type === "faultRollback") {
+    if (!openFaultTransaction) {
+      throw new Error("No hay una transacción de fallo abierta para revertir.");
+    }
     db.exec("ROLLBACK;");
+    openFaultTransaction = null;
     return {
       kind: "response",
       requestId,
