@@ -263,3 +263,44 @@ python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.
 El instalador modifica únicamente `opfs-wl-auto-test/src/opfs-wl-db-worker.js`; verifica el SHA del servidor y del Worker, y acepta las versiones previas conocidas de ese archivo. No cambia SQLite WASM, dependencias, HTML, servidores, puerto 18767, aplicación Prisma ni directorios OPFS de pruebas anteriores.
 
 Mantén activo el servidor del puerto 18768, recarga una vez `http://127.0.0.1:18768/opfs-wl-auto-test/` y ejecuta una sola prueba con `require-corp`. Si vuelve a fallar, comparte todo el informe, especialmente `tableTotal`, `changesInsideTransaction`, `executedSeedSql`, `groups` y `sample`. No reinicies servidores ni borres carpetas OPFS.
+
+
+## Quinta ejecución observada y revisión 6 (13-11-2026)
+
+La ejecución con revisión 5 terminó **NO APROBADA** al consultar `writes`:
+
+- RUN_ID: `prisma-opfs-wl-auto-66eee9ef-9c94-4c01-bc24-97a78ab19613`
+- Requisitos COOP/COEP, `crossOriginIsolated`, SharedArrayBuffer, Atomics.waitAsync, Web Locks y OPFS: disponibles.
+- SQLite `3.54.1`, constructor `OpfsWlDb`, VFS `opfs-wl`, conexión abierta y puntero válido: confirmados.
+- Error `SQLITE_ERROR: no such table: writes` en `readCounts()`, llamado desde `seedDatabase()`.
+- No se confirmaron cinco filas, escrituras concurrentes, 605 filas, reapertura ni limpieza.
+- El póster TMDB no cargó no-CORS y cargó con CORS a 500 × 750; se conserva `require-corp`.
+
+### Causa identificada: regresión en el código de revisión 5
+
+La inspección del Worker publicado encontró que, al sustituir el método de inserción en la revisión 5, el bloque que ejecutaba `CREATE TABLE IF NOT EXISTS writes` y creaba el índice quedó eliminado accidentalmente de `seedDatabase()`. El Worker intentaba insertar y después consultar una tabla que nunca había creado. Esto explica el `no such table: writes` de esta ejecución; no apunta a un fallo de Brave ni del VFS OPFS-WL.
+
+La revisión 4 sí contenía el bloque DDL y había conseguido que la tabla apareciera en `sqlite_schema`. La revisión 6 restaura ese bloque antes de la siembra, conserva las inserciones SQL multirregistro de la revisión 5 y mantiene las comprobaciones de cambios y conteos.
+
+**La omisión fue un defecto introducido al preparar la revisión 5.** El informe de la quinta ejecución es válido como resultado de la sonda publicada, pero no permite juzgar la capacidad de inserción de OPFS-WL porque faltaba el esquema.
+
+### Revisión 6 preparada; aceptación pendiente
+
+El Worker de revisión 6:
+1. Ejecuta `CREATE TABLE IF NOT EXISTS writes` y el índice antes de insertar.
+2. Comprueba que `writes` aparece en `sqlite_schema`.
+3. Inserta las cinco filas de referencia en una transacción `IMMEDIATE` usando un `INSERT` multirregistro.
+4. Exige que SQLite reporte cinco cambios y verifica tanto el conteo global como el del RUN_ID.
+5. Conserva la misma ruta multirregistro para cada lote de 25 filas.
+
+El instalador modifica únicamente `opfs-wl-auto-test/src/opfs-wl-db-worker.js`. Está fijado al commit `cf09dbe573949376d223704e421f904e9d5370dd` y reconoce los SHA de las revisiones previas conocidas del Worker. No cambia SQLite WASM, dependencias, HTML, servidores, puerto 18767, aplicación Prisma ni directorios OPFS existentes.
+
+Comando en Termux:
+
+```sh
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/cf09dbe573949376d223704e421f904e9d5370dd/tools/storage-benchmark/install-opfs-wl-auto-test-revision-6.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+```
+
+Con el servidor 18768 activo, recarga una vez `http://127.0.0.1:18768/opfs-wl-auto-test/` y ejecuta una sola prueba con `require-corp`. Comparte todo el informe, en especial `changesInsideTransaction`, `executedSeedSql`, `tableTotal`, `groups` y `sample`. No reinicies servidores ni borres las carpetas OPFS de ejecuciones anteriores.
+
+**Estado vigente:** se demostró apertura de la conexión y se ha aislado el error de la revisión 5 como omisión DDL. La revisión 6 aún no se ha ejecutado. OPFS-WL permanece sin aceptación hasta completar dos conexiones, 24/24 transacciones, 605 filas verificadas, cierre/reapertura y limpieza limitada al RUN_ID.
