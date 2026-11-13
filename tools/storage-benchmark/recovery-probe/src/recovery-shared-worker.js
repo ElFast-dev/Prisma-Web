@@ -1,6 +1,6 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
 const RUN_ID = "prisma-sahpool-recovery-probe-v1";
-const BROKER_PROTOCOL = "recovery-fault-probe-3";
+const BROKER_PROTOCOL = "recovery-fault-probe-4";
 const NESTED_WORKER_AVAILABLE = typeof Worker === "function";
 
 const sessions = new Map();
@@ -21,6 +21,21 @@ let heartbeatTimer = null;
 let heartbeatSequence = 0;
 let activationSequence = 0;
 let activationAttempt = null;
+
+const RECOVERY_TRACE_LIMIT = 40;
+const recoveryTrace = [];
+let heartbeatTimerStartedAt = null;
+let lastHeartbeatSentAt = null;
+let lastHeartbeatAckAt = null;
+let lastHeartbeatId = null;
+let lastHeartbeatTimeoutAt = null;
+
+function traceRecovery(event, details = {}) {
+  recoveryTrace.push({ at: Date.now(), event, ...details });
+  if (recoveryTrace.length > RECOVERY_TRACE_LIMIT) {
+    recoveryTrace.splice(0, recoveryTrace.length - RECOVERY_TRACE_LIMIT);
+  }
+}
 
 function send(port, message, transfer = []) {
   try { port.postMessage(message, transfer); } catch { /* Client closed. */ }
@@ -49,6 +64,22 @@ function stateSnapshot(kind = "state") {
     databaseDiagnostics: owner?.databaseDiagnostics || null,
     ownerReady: Boolean(ownerClientId && owner?.role === "owner" && databaseWorkerId),
     handoffInProgress: handoffInProgress?.phase || null,
+    heartbeat: {
+      intervalMs: HEARTBEAT_INTERVAL_MS,
+      timeoutMs: HEARTBEAT_TIMEOUT_MS,
+      timerStartedAt: heartbeatTimerStartedAt,
+      lastSentAt: lastHeartbeatSentAt,
+      lastAckAt: lastHeartbeatAckAt,
+      lastHeartbeatId,
+      lastTimeoutAt: lastHeartbeatTimeoutAt,
+      pending: owner?.heartbeatPending ? {
+        heartbeatId: owner.heartbeatPending.heartbeatId,
+        sentAt: owner.heartbeatPending.sentAt,
+        ageMs: Math.max(0, Date.now() - owner.heartbeatPending.sentAt)
+      } : null,
+      terminationRequested: Boolean(owner?.terminationRequested)
+    },
+    recoveryTrace: recoveryTrace.slice(-RECOVERY_TRACE_LIMIT),
     activationTimeoutMs: ACTIVATION_TIMEOUT_MS,
     activationAttempt: activationAttempt ? {
       clientId: activationAttempt.clientId,
@@ -95,6 +126,11 @@ function requestActivationCandidateTermination(activationId) {
 
   attempt.terminationRequested = true;
   candidate.role = "activation-unresponsive";
+  traceRecovery("activation-timeout", {
+    clientId: candidate.clientId,
+    activationId,
+    timeoutMs: ACTIVATION_TIMEOUT_MS
+  });
   publishState();
 
   send(candidate.port, {
@@ -112,6 +148,10 @@ function completeActivationCandidateTermination(clientId, message) {
       !attempt.terminationRequested) return;
 
   if (attempt.timer) clearTimeout(attempt.timer);
+  traceRecovery("activation-candidate-terminated", {
+    clientId,
+    activationId: message.activationId
+  });
   const candidate = sessions.get(clientId);
   if (candidate) {
     candidate.role = "failed";
@@ -171,6 +211,16 @@ function requestOwnerTermination(owner, reason) {
 
   owner.terminationRequested = true;
   owner.role = "unresponsive";
+  lastHeartbeatTimeoutAt = Date.now();
+  traceRecovery("owner-termination-requested", {
+    clientId: owner.clientId,
+    databaseWorkerId,
+    reason,
+    heartbeatId: owner.heartbeatPending?.heartbeatId || null,
+    pendingAgeMs: owner.heartbeatPending
+      ? Date.now() - owner.heartbeatPending.sentAt
+      : null
+  });
   publishState();
 
   send(owner.port, {
@@ -186,6 +236,12 @@ function retireOwnerWorker(clientId, reason) {
   const failed = sessions.get(clientId);
   if (!failed || ownerClientId !== clientId) return;
 
+  traceRecovery("owner-worker-retired", {
+    clientId,
+    databaseWorkerId,
+    reason,
+    expectedRows: Number.isFinite(persistedTotalRows) ? persistedTotalRows : 0
+  });
   failed.role = "failed";
   failed.terminationRequested = false;
   failed.heartbeatPending = null;
@@ -233,6 +289,14 @@ function retireOwnerWorker(clientId, reason) {
 function startHeartbeatLoop() {
   if (heartbeatTimer !== null) return;
 
+  heartbeatTimerStartedAt = Date.now();
+  traceRecovery("heartbeat-loop-started", {
+    intervalMs: HEARTBEAT_INTERVAL_MS,
+    timeoutMs: HEARTBEAT_TIMEOUT_MS,
+    clientId: ownerClientId,
+    databaseWorkerId
+  });
+
   heartbeatTimer = setInterval(() => {
     const owner = ownerClientId ? sessions.get(ownerClientId) : null;
     if (!owner || owner.role !== "owner" || !databaseWorkerId || !owner.dbPort) return;
@@ -240,6 +304,12 @@ function startHeartbeatLoop() {
     const now = Date.now();
     if (owner.heartbeatPending) {
       if (now - owner.heartbeatPending.sentAt >= HEARTBEAT_TIMEOUT_MS) {
+        traceRecovery("heartbeat-timeout-detected", {
+          clientId: owner.clientId,
+          databaseWorkerId,
+          heartbeatId: owner.heartbeatPending.heartbeatId,
+          pendingAgeMs: now - owner.heartbeatPending.sentAt
+        });
         requestOwnerTermination(owner, "heartbeat-timeout");
       }
       return;
@@ -247,6 +317,13 @@ function startHeartbeatLoop() {
 
     const heartbeatId = "hb-" + String(++heartbeatSequence);
     owner.heartbeatPending = { heartbeatId, sentAt: now };
+    lastHeartbeatSentAt = now;
+    lastHeartbeatId = heartbeatId;
+    traceRecovery("heartbeat-sent", {
+      clientId: owner.clientId,
+      databaseWorkerId,
+      heartbeatId
+    });
 
     try {
       owner.dbPort.postMessage({ type: "heartbeat", heartbeatId });
@@ -278,6 +355,15 @@ function activateNextOwner({
     eligible[0];
 
   if (!candidate) {
+    traceRecovery("no-eligible-owner-candidate", {
+      excludeClientId,
+      activeSessions: [...sessions.values()].map((session) => ({
+        clientId: session.clientId,
+        role: session.role,
+        visibilityState: session.visibilityState || "unknown",
+        workerPortAttached: Boolean(session.dbPort)
+      }))
+    });
     publishState();
     return;
   }
@@ -285,6 +371,13 @@ function activateNextOwner({
   ownerClientId = candidate.clientId;
   candidate.role = "starting";
   const activationId = "activation-" + String(++activationSequence);
+  traceRecovery("owner-candidate-selected", {
+    clientId: candidate.clientId,
+    activationId,
+    expectExistingDb,
+    expectedMinRows,
+    visibilityState: candidate.visibilityState || "unknown"
+  });
   activationAttempt = {
     clientId: candidate.clientId,
     activationId,
@@ -450,6 +543,19 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
         owner.role === "owner") {
       owner.heartbeatPending = null;
       owner.lastHeartbeatAt = Date.now();
+      lastHeartbeatAckAt = owner.lastHeartbeatAt;
+      traceRecovery("heartbeat-ack", {
+        clientId: ownerClientIdForPort,
+        databaseWorkerId,
+        heartbeatId: message.heartbeatId
+      });
+    } else {
+      traceRecovery("heartbeat-ack-ignored", {
+        clientId: ownerClientIdForPort,
+        heartbeatId: message.heartbeatId,
+        currentOwnerClientId: ownerClientId,
+        ownerRole: owner.role
+      });
     }
     return;
   }
@@ -497,6 +603,12 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
         activationAttempt.terminationRequested) return;
 
     clearActivationAttempt(ownerClientIdForPort);
+    traceRecovery("owner-activation-acknowledged", {
+      clientId: ownerClientIdForPort,
+      activationId: message.activationId,
+      databaseWorkerId: message.dedicatedWorkerId,
+      totalRows: message.totalRows
+    });
     databaseWorkerId = message.dedicatedWorkerId;
     persistedTotalRows = Number.isFinite(message.totalRows)
       ? message.totalRows
@@ -899,6 +1011,12 @@ function handleClientMessage(port, message, dbPort) {
   }
 
   if (message.type === "unregister") {
+    traceRecovery("session-unregister-requested", {
+      clientId: session.clientId,
+      role: session.role,
+      visibilityState: session.visibilityState || "unknown",
+      lifecycleState: session.lifecycleState || "unknown"
+    });
     removeSession(session.clientId, "page-unload");
     return;
   }
@@ -910,6 +1028,11 @@ function handleClientMessage(port, message, dbPort) {
 
   if (message.type === "dbWorkerFailed" ||
       message.type === "dbWorkerTerminated") {
+    traceRecovery("owner-page-confirmed-worker-termination", {
+      clientId: session.clientId,
+      reason: message.reason || message.type,
+      wasCurrentOwner: ownerClientId === session.clientId
+    });
     if (ownerClientId === session.clientId) {
       retireOwnerWorker(
         session.clientId,
