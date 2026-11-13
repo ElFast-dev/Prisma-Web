@@ -1,5 +1,6 @@
 import sqlite3InitModule from "../node_modules/@sqlite.org/sqlite-wasm/dist/index.mjs";
 
+const VFS_NAME = "opfs-sahpool";
 const DB_DIRECTORY = "/prisma-sahpool-sharedworker-probe-v5";
 const DB_FILE = "/sharedworker-probe.sqlite3";
 const DEDICATED_WORKER_ID = crypto.randomUUID();
@@ -45,70 +46,56 @@ async function removeFailedV4TestDirectory() {
   }
 }
 
-async function ensureDatabase() {
-  if (db) return db;
+function poolSnapshot() {
+  if (!pool) return null;
 
-  // A previous owner can hand off its PoolUtil without deleting the database.
-  // The next elected Dedicated Worker reclaims the same SAHs with unpauseVfs().
-  if (pool && typeof pool.isPaused === "function" && pool.isPaused()) {
-    await pool.unpauseVfs();
-    db = new pool.OpfsSAHPoolDb(DB_FILE);
-    return db;
+  let fileNames = [];
+  try { fileNames = pool.getFileNames(); } catch {}
+
+  let databaseFileBytes = null;
+  const databaseFileFound = fileNames.includes(DB_FILE);
+  if (databaseFileFound) {
+    try { databaseFileBytes = pool.exportFile(DB_FILE).byteLength; }
+    catch (error) {
+      databaseFileBytes = "ERROR: " + (error?.message || String(error));
+    }
   }
 
-  if (pool && !db) {
-    db = new pool.OpfsSAHPoolDb(DB_FILE);
-    return db;
+  return {
+    vfsName: pool.vfsName,
+    directory: DB_DIRECTORY,
+    capacity: pool.getCapacity(),
+    allocatedFiles: pool.getFileCount(),
+    fileNames,
+    databaseFileFound,
+    databaseFileBytes,
+    vfsPaused: pool.isPaused()
+  };
+}
+
+function databaseSnapshot() {
+  const snapshot = poolSnapshot();
+  if (!snapshot) return null;
+
+  let totalRows = null;
+  let writesTableExists = false;
+
+  if (db) {
+    try { totalRows = countRows(); } catch (error) {
+      totalRows = "ERROR: " + (error?.message || String(error));
+    }
+    try {
+      writesTableExists = Number(db.selectValue(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='writes'"
+      )) === 1;
+    } catch {}
   }
 
-  if (!initialization) {
-    initialization = (async () => {
-      const apis = requiredOpfsApis();
-      const missing = Object.entries(apis)
-        .filter(([, available]) => !available)
-        .map(([name]) => name);
-
-      if (missing.length) {
-        throw new Error(
-          "El Dedicated Worker no expone las APIs OPFS requeridas: " +
-          missing.join(", ") + ". Diagnóstico: " + JSON.stringify(apis)
-        );
-      }
-
-      sqlite3 = await sqlite3InitModule();
-      removedFailedV4Directory = await removeFailedV4TestDirectory();
-
-      pool = await sqlite3.installOpfsSAHPoolVfs({
-        directory: DB_DIRECTORY,
-        initialCapacity: 6,
-        preserveOnInitFailure: true
-      });
-
-      db = new pool.OpfsSAHPoolDb(DB_FILE);
-      db.exec(
-        "PRAGMA foreign_keys = ON;" +
-        "PRAGMA synchronous = FULL;" +
-        "PRAGMA journal_mode = DELETE;" +
-        "CREATE TABLE IF NOT EXISTS writes (" +
-          "id TEXT PRIMARY KEY," +
-          "run_id TEXT NOT NULL," +
-          "client_id TEXT NOT NULL," +
-          "sequence INTEGER NOT NULL," +
-          "created_at INTEGER NOT NULL" +
-        ");" +
-        "CREATE INDEX IF NOT EXISTS idx_writes_run_client " +
-          "ON writes(run_id, client_id, sequence);"
-      );
-
-      return db;
-    })().catch((error) => {
-      initialization = null;
-      throw error;
-    });
-  }
-
-  await initialization;
-  return db;
+  return {
+    ...snapshot,
+    writesTableExists,
+    totalRows
+  };
 }
 
 function countRows() {
@@ -122,13 +109,131 @@ function clientRows(runId, clientId) {
   ));
 }
 
+async function installPoolIfNeeded() {
+  if (pool) return pool;
+
+  const apis = requiredOpfsApis();
+  const missing = Object.entries(apis)
+    .filter(([, available]) => !available)
+    .map(([name]) => name);
+
+  if (missing.length) {
+    throw new Error(
+      "El Dedicated Worker no expone las APIs OPFS requeridas: " +
+      missing.join(", ") + ". Diagnóstico: " + JSON.stringify(apis)
+    );
+  }
+
+  if (!initialization) {
+    initialization = (async () => {
+      sqlite3 = await sqlite3InitModule();
+      removedFailedV4Directory = await removeFailedV4TestDirectory();
+
+      // Match SQLite's official SAH-pool pause demo: the incoming Worker
+      // installs the same named VFS only after the previous owner paused it.
+      pool = await sqlite3.installOpfsSAHPoolVfs({
+        name: VFS_NAME,
+        directory: DB_DIRECTORY,
+        clearOnInit: false,
+        initialCapacity: 6,
+        preserveOnInitFailure: true
+      });
+
+      return pool;
+    })().catch((error) => {
+      initialization = null;
+      pool = null;
+      throw error;
+    });
+  }
+
+  await initialization;
+  return pool;
+}
+
+async function openDatabase({ expectExistingDb = false, expectedMinRows = 0 } = {}) {
+  await installPoolIfNeeded();
+
+  if (pool.isPaused()) {
+    await pool.unpauseVfs();
+  }
+
+  const beforeOpen = poolSnapshot();
+
+  // Do not silently create a fresh empty DB during a handoff. The incoming
+  // owner must find the exact persisted virtual filename in the SAH pool.
+  if (expectExistingDb && (
+    !beforeOpen?.databaseFileFound ||
+    !(Number(beforeOpen.databaseFileBytes) > 0)
+  )) {
+    throw new Error(
+      "Relevo cancelado: el nuevo Worker no encontró el archivo SQLite anterior. " +
+      "Diagnóstico del pool: " + JSON.stringify(beforeOpen)
+    );
+  }
+
+  db = new pool.OpfsSAHPoolDb(DB_FILE);
+  db.exec(
+    "PRAGMA foreign_keys = ON;" +
+    "PRAGMA synchronous = FULL;" +
+    "PRAGMA journal_mode = DELETE;" +
+    "CREATE TABLE IF NOT EXISTS writes (" +
+      "id TEXT PRIMARY KEY," +
+      "run_id TEXT NOT NULL," +
+      "client_id TEXT NOT NULL," +
+      "sequence INTEGER NOT NULL," +
+      "created_at INTEGER NOT NULL" +
+    ");" +
+    "CREATE INDEX IF NOT EXISTS idx_writes_run_client " +
+      "ON writes(run_id, client_id, sequence);"
+  );
+
+  const totalRows = countRows();
+
+  if (expectExistingDb && totalRows < expectedMinRows) {
+    const diagnostic = databaseSnapshot();
+    db.close();
+    db = null;
+    pool.pauseVfs();
+
+    throw new Error(
+      "Relevo cancelado: SQLite recuperó " + totalRows +
+      " registros, pero el propietario anterior confirmó " +
+      expectedMinRows + ". El VFS se pausó sin borrar los archivos. " +
+      "Diagnóstico: " + JSON.stringify(diagnostic)
+    );
+  }
+
+  return db;
+}
+
+async function ensureDatabase(options = {}) {
+  if (db) return db;
+
+  try {
+    return await openDatabase(options);
+  } catch (error) {
+    // Preserve the on-disk VFS. If activation is rejected, the old paused
+    // owner can reacquire it through unpauseVfs().
+    if (db) {
+      try { db.close(); } catch {}
+      db = null;
+    }
+    if (pool && !pool.isPaused()) {
+      try { pool.pauseVfs(); } catch {}
+    }
+    throw error;
+  }
+}
+
 async function handle(request) {
   const {
-    type, clientId, runId, requestId, brokerRequestId, controlId
+    type, clientId, runId, requestId, brokerRequestId, controlId,
+    expectExistingDb = false, expectedMinRows = 0
   } = request || {};
 
   if (type === "activate" || type === "status") {
-    await ensureDatabase();
+    await ensureDatabase({ expectExistingDb, expectedMinRows });
     return {
       kind: type === "activate" ? "activated" : "response",
       requestId,
@@ -140,6 +245,7 @@ async function handle(request) {
       clientRows: clientRows(runId, clientId),
       requiredOpfsApis: requiredOpfsApis(),
       removedFailedV4Directory,
+      databaseDiagnostics: databaseSnapshot(),
       vfsPaused: Boolean(pool?.isPaused?.())
     };
   }
@@ -175,7 +281,12 @@ async function handle(request) {
     }
 
     const totalRows = countRows();
-    send({ kind: "stats", runId, totalRows });
+    send({
+      kind: "stats",
+      runId,
+      totalRows,
+      databaseDiagnostics: databaseSnapshot()
+    });
 
     return {
       kind: "response",
@@ -186,7 +297,8 @@ async function handle(request) {
       type,
       inserted: count,
       clientRows: clientRows(runId, clientId),
-      totalRows
+      totalRows,
+      databaseDiagnostics: databaseSnapshot()
     };
   }
 
@@ -203,12 +315,14 @@ async function handle(request) {
       ok: true,
       type,
       totalRows: countRows(),
-      clientRows: clientRows(runId, clientId)
+      clientRows: clientRows(runId, clientId),
+      databaseDiagnostics: databaseSnapshot()
     };
   }
 
   if (type === "release") {
     const totalRows = db ? countRows() : null;
+    const beforeRelease = databaseSnapshot();
 
     if (db) {
       db.close();
@@ -216,7 +330,6 @@ async function handle(request) {
     }
 
     if (pool && !pool.isPaused()) {
-      // Releases every SyncAccessHandle but preserves the OPFS files.
       pool.pauseVfs();
     }
 
@@ -226,6 +339,7 @@ async function handle(request) {
       clientId,
       ok: true,
       totalRows,
+      databaseDiagnostics: beforeRelease,
       vfsPaused: Boolean(pool?.isPaused?.())
     };
   }
@@ -277,6 +391,7 @@ async function processRequest(request) {
       ok: false,
       error: error?.message || String(error),
       requiredOpfsApis: requiredOpfsApis(),
+      databaseDiagnostics: databaseSnapshot(),
       vfsPaused: Boolean(pool?.isPaused?.())
     });
   }
