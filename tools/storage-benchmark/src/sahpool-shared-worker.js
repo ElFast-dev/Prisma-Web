@@ -1,5 +1,6 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
 const RUN_ID = crypto.randomUUID();
+const NESTED_WORKER_AVAILABLE = typeof Worker === "function";
 const sessions = new Map();
 const portOwners = new Map();
 const pending = new Map();
@@ -22,6 +23,7 @@ function publishState() {
     kind: "state",
     workerId: SHARED_WORKER_ID,
     runId: RUN_ID,
+    nestedWorkerConstructor: NESTED_WORKER_AVAILABLE,
     connections: sessions.size,
     ownerClientId,
     databaseWorkerId,
@@ -63,13 +65,25 @@ function removeSession(clientId, reason) {
   try { session.dbPort?.close(); } catch {}
   try { session.port.close(); } catch {}
 
+  const wasOwner = ownerClientId === clientId;
   for (const [brokerRequestId, request] of pending) {
-    if (request.clientId === clientId) {
+    if (wasOwner || request.clientId === clientId) {
+      const target = sessions.get(request.clientId);
+      if (target) {
+        send(target.port, {
+          kind: "response",
+          requestId: request.requestId,
+          ok: false,
+          error: wasOwner
+            ? "La pestaña propietaria de SQLite se cerró durante la operación. Consulta el estado antes de reintentar."
+            : "La pestaña que originó la operación se cerró."
+        });
+      }
       pending.delete(brokerRequestId);
     }
   }
 
-  if (ownerClientId === clientId) activateNextOwner();
+  if (wasOwner) activateNextOwner();
   else publishState();
 }
 
