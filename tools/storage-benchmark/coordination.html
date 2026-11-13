@@ -117,6 +117,9 @@ function updateState(data) {
   $("owner").textContent = data.ownerClientId
     ? (data.ownerClientId === clientId ? "Esta pestaña" : "Otra pestaña")
     : "Pendiente";
+  if (data.requiredOpfsApis) {
+    $("opfs").textContent = JSON.stringify(data.requiredOpfsApis);
+  }
   if (data.ownerReady) {
     $("connectionStatus").textContent =
       "SharedWorker activo. SQLite tiene un único propietario.";
@@ -125,6 +128,10 @@ function updateState(data) {
     $("verify").disabled = false;
     $("status").disabled = false;
     $("cleanup").disabled = false;
+  } else {
+    $("insert").disabled = true;
+    $("verify").disabled = true;
+    $("cleanup").disabled = true;
   }
 }
 
@@ -329,11 +336,12 @@ $("cleanup").addEventListener("click", async () => {
 });
 
 window.addEventListener("pagehide", () => {
-  // Terminate the dedicated DB owner first so its SyncAccessHandles are released
-  // before the SharedWorker promotes a standby tab.
-  try { dbWorker?.terminate(); } catch {}
+  // Queue unregister, then terminate the Dedicated Worker synchronously.
+  // The SharedWorker processes the unregister after this pagehide task ends.
   try { port?.postMessage({ type: "unregister" }); } catch {}
-  try { port?.close(); } catch {}
+  try { dbWorker?.terminate(); } catch {}
+  // Do not close the shared port immediately: that could discard the queued
+  // unregister message. The browser closes it with the document context.
 });
 </script>
 </body>
