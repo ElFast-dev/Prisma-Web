@@ -1,5 +1,6 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
 const RUN_ID = "prisma-sahpool-sharedworker-probe-v5";
+const BROKER_PROTOCOL = "v8-broker-trace-1";
 const NESTED_WORKER_AVAILABLE = typeof Worker === "function";
 
 const sessions = new Map();
@@ -28,6 +29,7 @@ function publishState() {
     kind: "state",
     workerId: SHARED_WORKER_ID,
     runId: RUN_ID,
+    brokerProtocol: BROKER_PROTOCOL,
     nestedWorkerConstructor: NESTED_WORKER_AVAILABLE,
     connections: sessions.size,
     totalRows: persistedTotalRows,
@@ -207,6 +209,34 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
 
   if (message.kind === "dedicated-ready") return;
 
+  if (message.kind === "broker-trace") {
+    let tracedRequest = pending.get(message.brokerRequestId);
+    if (!tracedRequest && message.requestId != null) {
+      for (const candidate of pending.values()) {
+        if (candidate.requestId === message.requestId &&
+            candidate.clientId === message.clientId) {
+          tracedRequest = candidate;
+          break;
+        }
+      }
+    }
+
+    const target = tracedRequest
+      ? sessions.get(tracedRequest.clientId)
+      : sessions.get(ownerClientIdForPort);
+
+    if (target) {
+      send(target.port, {
+        kind: "broker-trace",
+        workerId: SHARED_WORKER_ID,
+        databaseWorkerId,
+        ...message,
+        matchedPendingRequest: Boolean(tracedRequest)
+      });
+    }
+    return;
+  }
+
   if (message.kind === "activated") {
     if (ownerClientId !== ownerClientIdForPort) return;
 
@@ -383,10 +413,40 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
   }
 
   if (message.kind === "response") {
-    const request = pending.get(message.brokerRequestId);
-    if (!request) return;
+    let matchedBrokerRequestId = message.brokerRequestId || null;
+    let request = matchedBrokerRequestId
+      ? pending.get(matchedBrokerRequestId)
+      : null;
 
-    pending.delete(message.brokerRequestId);
+    // Fallback correlation: tolerate a missing or changed brokerRequestId
+    // when the originating page requestId and clientId still match.
+    if (!request && message.requestId != null && message.clientId) {
+      for (const [candidateBrokerId, candidate] of pending) {
+        if (candidate.requestId === message.requestId &&
+            candidate.clientId === message.clientId) {
+          matchedBrokerRequestId = candidateBrokerId;
+          request = candidate;
+          break;
+        }
+      }
+    }
+
+    if (!request) {
+      const origin = message.clientId ? sessions.get(message.clientId) : null;
+      if (origin) {
+        send(origin.port, {
+          kind: "broker-orphan-response",
+          workerId: SHARED_WORKER_ID,
+          databaseWorkerId,
+          receivedBrokerRequestId: message.brokerRequestId || null,
+          receivedRequestId: message.requestId || null,
+          receivedClientId: message.clientId || null
+        });
+      }
+      return;
+    }
+
+    pending.delete(matchedBrokerRequestId);
     if (Number.isFinite(message.totalRows)) {
       persistedTotalRows = message.totalRows;
     }
@@ -398,8 +458,13 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
       send(target.port, {
         ...message,
         kind: "response",
+        requestId: request.requestId,
+        brokerRequestId: matchedBrokerRequestId,
         workerId: SHARED_WORKER_ID,
-        databaseWorkerId
+        databaseWorkerId,
+        brokerCorrelation: message.brokerRequestId === matchedBrokerRequestId
+          ? "brokerRequestId"
+          : "clientId+requestId"
       });
     }
   }
@@ -520,6 +585,24 @@ function handleClientMessage(port, message, dbPort) {
 
   if (message.type === "heartbeat") return;
 
+  if (message.type === "cancelRequest") {
+    for (const [brokerRequestId, request] of pending) {
+      if (request.clientId === session.clientId &&
+          request.requestId === message.requestId) {
+        pending.delete(brokerRequestId);
+        send(port, {
+          kind: "broker-trace",
+          stage: "request-cancelled-at-coordinator",
+          brokerRequestId,
+          requestId: request.requestId,
+          clientId: session.clientId,
+          operation: request.operation
+        });
+      }
+    }
+    return;
+  }
+
   if (message.type === "unregister") {
     removeSession(session.clientId, "page-unload");
     return;
@@ -554,9 +637,24 @@ function handleClientMessage(port, message, dbPort) {
 
     const brokerRequestId =
       session.clientId + ":" + String(++brokerSequence);
-    pending.set(brokerRequestId, {
+    const pendingRequest = {
       clientId: session.clientId,
-      requestId: message.requestId
+      requestId: message.requestId,
+      operation: message.operation,
+      createdAt: Date.now()
+    };
+    pending.set(brokerRequestId, pendingRequest);
+
+    send(port, {
+      kind: "broker-trace",
+      stage: "shared-forwarded",
+      brokerProtocol: BROKER_PROTOCOL,
+      brokerRequestId,
+      requestId: message.requestId,
+      clientId: session.clientId,
+      operation: message.operation,
+      ownerClientId: activeOwner.clientId,
+      databaseWorkerId
     });
 
     activeOwner.dbPort.postMessage({
