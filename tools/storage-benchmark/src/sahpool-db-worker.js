@@ -8,6 +8,7 @@ let sqlite3 = null;
 let pool = null;
 let db = null;
 let initialization = null;
+let removedFailedV4Directory = false;
 let port = null;
 let queue = Promise.resolve();
 
@@ -64,7 +65,7 @@ async function ensureDatabase() {
       }
 
       sqlite3 = await sqlite3InitModule();
-      const removedFailedV4Directory = await removeFailedV4TestDirectory();
+      removedFailedV4Directory = await removeFailedV4TestDirectory();
 
       pool = await sqlite3.installOpfsSAHPoolVfs({
         directory: DB_DIRECTORY,
