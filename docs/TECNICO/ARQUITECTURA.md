@@ -169,7 +169,7 @@ La elección definitiva se documentará cuando el prototipo demuestre una difere
 ## Comparativa de almacenamiento: resultado de investigación
 
 **Revisión documental:** 12 de noviembre de 2026.  
-**Estado:** recomendación técnica provisional; requiere benchmark en el Android objetivo antes de aprobarse. Dexie 4.4.7 es la versión estable publicada el 19 de octubre de 2026. SQLite core/WASM 3.55.0 debe verificarse en el paquete exacto antes de fijar dependencias; el proyecto SQLite/WASM mantiene su propio ciclo de versiones.
+**Estado:** evaluación empírica realizada en el Samsung Galaxy A03 y Brave Android. Dexie 4.4.7 y el paquete @sqlite.org/sqlite-wasm 3.54.1-build1 son las versiones usadas en las comparaciones; ninguna variante queda aún aprobada para producción.
 
 ### Candidata A — Dexie 4.4.7 sobre IndexedDB
 
@@ -221,7 +221,7 @@ Fuentes: [guía oficial de persistencia OPFS](https://sqlite.org/wasm/doc/tip/pe
 
 ### Recomendación provisional
 
-Para el primer diario local, **Dexie 4.4.7 sobre IndexedDB es la candidata preferente**, con transacciones y durabilidad estricta en las operaciones críticas. La prueba real del Galaxy A03 confirma IndexedDB y durabilidad estricta en Brave, pero todavía falta comparar el rendimiento de Dexie con SQLite/OPFS usando el modelo de datos real.
+Para el primer diario local, **SQLite WASM + OPFS pasa a ser la candidata principal por rendimiento**: la prueba en Brave del Galaxy A03 muestra una ventaja consistente de 2,70× a 4,40× en inserciones frente a Dexie. Dexie 4.4.7 sigue siendo la alternativa de menor complejidad y concurrencia natural mediante IndexedDB. La elección definitiva depende de resolver el acceso multi-pestaña y completar pruebas de recuperación.
 
 No se elige porque sea la alternativa más básica. Se elige provisionalmente porque combina una biblioteca madura, migraciones y transacciones, almacenamiento nativo del navegador y menos restricciones de despliegue/concurrencia que SQLite OPFS. No añade sincronización ni requiere servicios externos.
 
@@ -349,15 +349,15 @@ Los tres datasets se ejecutaron con tres rondas por motor, en Brave Android 1.99
 
 | Dataset | Dexie: inserción | SQLite SAH pool: inserción | SQLite más rápido |
 |---|---:|---:|---:|
-| 1.000 películas / 3.000 visionados | 993,1 ms | 359,5 ms | 2,76× |
-| 5.000 películas / 15.000 visionados | 5.320,9 ms | 1.293,0 ms | 4,12× |
-| 10.000 películas / 30.000 visionados | 10.578,7 ms | 2.441,5 ms | 4,33× |
+| 1.000 películas / 3.000 visionados | 988,8 ms | 366,0 ms | 2,70× |
+| 5.000 películas / 15.000 visionados | 5.051,3 ms | 1.324,0 ms | 3,81× |
+| 10.000 películas / 30.000 visionados | 10.459,6 ms | 2.376,1 ms | 4,40× |
 
-En la carga de 30.000 visionados: consulta por año 4,0 ms SQLite vs 17,8 ms Dexie; búsqueda por título 1,6 vs 2,0 ms; visionados por película 2,2 vs 3,0 ms; actualización de nota 12,7 vs 10,4 ms; rollback 12,8 vs 4,6 ms; reapertura y conteo 6,7 vs 207,5 ms.
+En el informe más reciente de 30.000 visionados: consulta por año 4,2 ms SQLite vs 11,9 ms Dexie; búsqueda por título 1,6 vs 1,9 ms; visionados por película 2,2 vs 2,6 ms; actualización de nota 8,8 vs 13,3 ms; rollback 9,5 vs 12,7 ms; reapertura y conteo 6,7 vs 175,4 ms. La apertura de DB fue 250,5 ms SQLite vs 58,9 ms Dexie; SQLite además tuvo 93,7 ms de inicialización WASM y 249,5 ms de VFS en la mediana de esa tanda. El tiempo total no se compara directamente porque el cronómetro no incluye la importación inicial de Dexie.
 
 Los tres informes indicaron integrityPassed = true: ambos motores conservaron todos los visionados, devolvieron los recuentos correctos al reabrir, actualizaron solo la nota destino y revirtieron sin dejar datos parciales.
 
-**No usar el tiempo total para comparar motores:** SQLite incluye inicialización Worker/WASM/VFS (aprox. 174–179 ms de módulo+VFS) mientras Dexie se importó antes del cronómetro. La inserción y las consultas son comparaciones más representativas de las operaciones medidas.
+**No usar el tiempo total para comparar motores:** SQLite incluye inicialización Worker/WASM/VFS, mientras Dexie se importó antes del cronómetro. La inserción, consultas y reapertura son comparaciones más representativas; las mediciones de actualización y rollback son cortas y variables.
 
 ### Implicación arquitectónica
 
@@ -367,4 +367,16 @@ Antes de decidir, probar en Brave Android:
 - Atomics.waitAsync(), Web Locks, SharedWorker y BroadcastChannel.
 - SQLite OPFS-WL (requiere Atomics.waitAsync()) como alternativa de concurrencia.
 - Posible actor único compartido para SAH pool, si SharedWorker es compatible y estable.
-- Limpieza efectiva de VFS: los informes antiguos no incluían el retorno de removeVfs(); la herramienta nueva lo registra y verifica que el directorio de prueba no quede.
+- Limpieza OPFS ya verificada en los informes repetidos: removeVfs() = true en las nueve rondas y el directorio de prueba estaba ausente después de 1k, 5k y 10k. El uso reportado por estimate() siguió subiendo; comprobar ahora si quedan bases IndexedDB del benchmark, sin interpretar todavía el delta como fuga.
+
+
+### Actualización de rendimiento y limpieza — segundo conjunto de informes
+
+Los informes repetidos en el Galaxy A03 confirman la ventaja de inserción de SQLite y la limpieza OPFS. El benchmark incorpora ahora una comprobación posterior de bases IndexedDB con el prefijo temporal de Dexie; debe ejecutarse una vez más para saber si el uso residual reportado tiene una relación con IndexedDB.
+
+La comparación de concurrencia debe centrarse en:
+1. **SharedWorker como único actor SQLite + SAH pool:** una sola conexión/instancia administra la base y las pestañas hablan con ella por puertos. Requiere probar disponibilidad, ciclo de vida y recuperación si el Worker termina.
+2. **OPFS-WL:** usa Web Locks y Atomics.waitAsync() para coordinar instancias; hay que comprobar SharedArrayBuffer y crossOriginIsolated en Brave, además de probar las cabeceras necesarias en el hosting candidato.
+3. **Dexie/IndexedDB:** mantiene una vía más simple para acceso desde varias pestañas, con transacciones gestionadas por el navegador.
+
+El resultado actual favorece SQLite por rendimiento, pero no autoriza a usar SAH pool directamente desde cada pestaña.
