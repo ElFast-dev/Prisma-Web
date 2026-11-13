@@ -20,7 +20,7 @@ El almacenamiento web está sujeto a cuota y políticas del navegador. Por defec
 
 La interfaz debe explicar los límites, detectar errores de cuota y ofrecer una copia manual recuperable. Una limpieza automática solo puede afectar recursos reconstruibles, nunca el diario.
 
-La elección concreta entre IndexedDB/Dexie y SQLite/OPFS está en [Arquitectura — comparativa de almacenamiento](ARQUITECTURA.md#comparativa-de-almacenamiento-resultado-de-investigacion). La sonda del Galaxy A03 confirmó ambas rutas base (IndexedDB y OPFS/Worker) en Brave; se preparó `tools/storage-benchmark/` para comparar Dexie 4.4.7 con SQLite WASM 3.54.1-build1 bajo la misma carga. Falta ejecutar el benchmark y resolver las limitaciones de concurrencia de SAH pool. No crear dos bases autoritativas.
+La elección concreta entre IndexedDB/Dexie y SQLite/OPFS está en [Arquitectura — comparativa de almacenamiento](ARQUITECTURA.md#comparativa-de-almacenamiento-resultado-de-investigacion). El benchmark real del Galaxy A03 confirma que SQLite SAH pool supera a Dexie en inserciones hasta 4,40×, pero SAH pool no debe abrirse desde varias pestañas sin coordinación. La limpieza OPFS está verificada; falta enumerar bases IndexedDB residuales y evaluar SharedWorker/OPFS-WL. No crear dos bases autoritativas.
 
 ### Durabilidad de escrituras
 
@@ -86,6 +86,6 @@ Fuentes: [MDN — OPFS y cuotas](https://developer.mozilla.org/en-US/docs/Web/AP
 
 ## Evidencia de rendimiento de almacenamiento
 
-El benchmark real del Galaxy A03 indicó que SQLite WASM/OPFS SAH pool inserta 3.000, 15.000 y 30.000 visionados entre 2,76× y 4,33× más rápido que Dexie 4.4.7 en los datasets sintéticos. Todos los resultados pasaron las comprobaciones de integridad. No es una selección final de motor: SAH pool no ofrece varias instancias multi-pestaña transparentes y aún falta comparar OPFS-WL/coordinación.
+El benchmark real del Galaxy A03 indicó que SQLite WASM/OPFS SAH pool inserta 3.000, 15.000 y 30.000 visionados entre 2,70× y 4,40× más rápido que Dexie 4.4.7 en los datasets sintéticos. Todos los resultados pasaron las comprobaciones de integridad. No es una selección final de motor: SAH pool no ofrece varias instancias multi-pestaña transparentes y aún falta evaluar OPFS-WL/SharedWorker.
 
-El benchmark indicó aumento progresivo del uso reportado por StorageManager.estimate(). Como ese valor no es una cuota garantizada y los informes iniciales no capturaban removeVfs(), no se declara fuga ni limpieza confirmada. La versión corregida del benchmark registra el retorno de eliminación y comprueba la presencia del directorio temporal.
+El uso reportado por StorageManager.estimate() aumentó después de las pruebas, pero los últimos informes confirman removeVfs() = true y ausencia del directorio OPFS temporal. No hay evidencia actual de residuos OPFS. Falta verificar si quedan bases IndexedDB con el prefijo Dexie; la herramienta ya incluye esa enumeración. El delta de estimate() sigue siendo solo una estimación del navegador y no demuestra por sí mismo una fuga.
