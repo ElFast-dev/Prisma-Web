@@ -10,7 +10,7 @@ import socket
 
 ROOT = Path.home() / "prisma-storage-benchmark"
 DEST = ROOT / "concurrency-auto-test"
-BASE = "https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/main/tools/storage-benchmark/concurrency-auto-test/"
+BASE = "https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/360eeb656eb412c0f72c0d3cbaab39e4301cd475/tools/storage-benchmark/concurrency-auto-test/"
 FILES = {
     "index.html": "02814721fbd8c9990655d83afcb508743289f496",
     "client.html": "4dce02a125e73c988778e9f453d433ae2a2f8a41",
@@ -45,7 +45,7 @@ for relative, expected_sha in FILES.items():
         stop("No se pudo descargar " + relative + ": " + str(error))
     actual_sha = git_blob_sha(data)
     if actual_sha != expected_sha:
-        stop("La verificación de integridad falló para " + relative + ".")
+        stop("La verificación de integridad falló para " + relative + ". SHA esperado=" + expected_sha + "; SHA descargado=" + actual_sha + ". No se ha modificado ningún archivo.")
     downloaded[relative] = data
 
 conflicts = []
