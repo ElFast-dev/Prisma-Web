@@ -1,6 +1,6 @@
 import sqlite3InitModule from "../node_modules/@sqlite.org/sqlite-wasm/dist/index.mjs";
 
-const DB_DIRECTORY = "/prisma-sahpool-sharedworker-probe-v3";
+const DB_DIRECTORY = "/prisma-sahpool-sharedworker-probe-v4";
 const DB_FILE = "/sharedworker-probe.sqlite3";
 const DEDICATED_WORKER_ID = crypto.randomUUID();
 
