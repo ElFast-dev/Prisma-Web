@@ -1,6 +1,6 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
 const RUN_ID = "prisma-sahpool-sharedworker-probe-v5";
-const BROKER_PROTOCOL = "v8-broker-trace-1";
+const BROKER_PROTOCOL = "v8-broker-trace-2";
 const NESTED_WORKER_AVAILABLE = typeof Worker === "function";
 
 const sessions = new Map();
@@ -221,6 +221,10 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
       }
     }
 
+    if (tracedRequest && typeof message.stage === "string") {
+      tracedRequest.stage = message.stage;
+    }
+
     const target = tracedRequest
       ? sessions.get(tracedRequest.clientId)
       : sessions.get(ownerClientIdForPort);
@@ -230,6 +234,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
         kind: "broker-trace",
         workerId: SHARED_WORKER_ID,
         databaseWorkerId,
+        brokerProtocol: BROKER_PROTOCOL,
         ...message,
         matchedPendingRequest: Boolean(tracedRequest)
       });
@@ -447,6 +452,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     }
 
     pending.delete(matchedBrokerRequestId);
+    if (request.watchdogTimer) clearTimeout(request.watchdogTimer);
     if (Number.isFinite(message.totalRows)) {
       persistedTotalRows = message.totalRows;
     }
@@ -590,13 +596,15 @@ function handleClientMessage(port, message, dbPort) {
       if (request.clientId === session.clientId &&
           request.requestId === message.requestId) {
         pending.delete(brokerRequestId);
+        if (request.watchdogTimer) clearTimeout(request.watchdogTimer);
         send(port, {
           kind: "broker-trace",
           stage: "request-cancelled-at-coordinator",
           brokerRequestId,
           requestId: request.requestId,
           clientId: session.clientId,
-          operation: request.operation
+          operation: request.operation,
+          lastStage: request.stage || "shared-received"
         });
       }
     }
@@ -621,14 +629,35 @@ function handleClientMessage(port, message, dbPort) {
   }
 
   if (message.type === "request") {
+    send(port, {
+      kind: "broker-trace",
+      stage: "shared-received",
+      brokerProtocol: BROKER_PROTOCOL,
+      requestId: message.requestId,
+      clientId: session.clientId,
+      operation: message.operation
+    });
+
     const activeOwner = ownerClientId
       ? sessions.get(ownerClientId)
       : null;
 
     if (!activeOwner || activeOwner.role !== "owner" || !databaseWorkerId) {
       send(port, {
+        kind: "broker-trace",
+        stage: "shared-rejected",
+        brokerProtocol: BROKER_PROTOCOL,
+        requestId: message.requestId,
+        clientId: session.clientId,
+        operation: message.operation,
+        reason: "no-active-owner",
+        activeOwnerRole: activeOwner?.role || null,
+        databaseWorkerId
+      });
+      send(port, {
         kind: "response",
         requestId: message.requestId,
+        clientId: session.clientId,
         ok: false,
         error: "SQLite está preparando o transfiriendo su propiedad. Espera a que indique «Propietaria activa»."
       });
@@ -641,9 +670,31 @@ function handleClientMessage(port, message, dbPort) {
       clientId: session.clientId,
       requestId: message.requestId,
       operation: message.operation,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      stage: "shared-received",
+      watchdogTimer: null
     };
     pending.set(brokerRequestId, pendingRequest);
+
+    pendingRequest.watchdogTimer = setTimeout(() => {
+      const stillPending = pending.get(brokerRequestId);
+      if (!stillPending) return;
+      const target = sessions.get(stillPending.clientId);
+      if (target) {
+        send(target.port, {
+          kind: "broker-watchdog",
+          brokerProtocol: BROKER_PROTOCOL,
+          brokerRequestId,
+          requestId: stillPending.requestId,
+          clientId: stillPending.clientId,
+          operation: stillPending.operation,
+          lastStage: stillPending.stage,
+          elapsedMs: Date.now() - stillPending.createdAt,
+          ownerClientId: activeOwner.clientId,
+          databaseWorkerId
+        });
+      }
+    }, 18000);
 
     send(port, {
       kind: "broker-trace",
@@ -657,14 +708,38 @@ function handleClientMessage(port, message, dbPort) {
       databaseWorkerId
     });
 
-    activeOwner.dbPort.postMessage({
-      type: message.operation,
-      clientId: session.clientId,
-      runId: RUN_ID,
-      requestId: message.requestId,
-      brokerRequestId,
-      count: message.count
-    });
+    try {
+      activeOwner.dbPort.postMessage({
+        type: message.operation,
+        clientId: session.clientId,
+        runId: RUN_ID,
+        requestId: message.requestId,
+        brokerRequestId,
+        count: message.count
+      });
+    } catch (error) {
+      pending.delete(brokerRequestId);
+      if (pendingRequest.watchdogTimer) clearTimeout(pendingRequest.watchdogTimer);
+      send(port, {
+        kind: "broker-trace",
+        stage: "shared-forward-failed",
+        brokerProtocol: BROKER_PROTOCOL,
+        brokerRequestId,
+        requestId: message.requestId,
+        clientId: session.clientId,
+        operation: message.operation,
+        error: error?.message || String(error)
+      });
+      send(port, {
+        kind: "response",
+        requestId: message.requestId,
+        clientId: session.clientId,
+        brokerRequestId,
+        ok: false,
+        error: "El coordinador no pudo enviar la operación al Dedicated Worker: " +
+          (error?.message || String(error))
+      });
+    }
   }
 }
 
