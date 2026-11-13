@@ -213,3 +213,22 @@ V7 añade estas verificaciones antes de aceptar al nuevo propietario:
 El informe de diagnóstico incluye nombre del VFS, directorio, capacidad, archivos virtuales, presencia y tamaño del archivo SQLite, existencia de la tabla y total de filas. No se permite insertar datos durante la validación del relevo.
 
 La nueva revisión usa identificadores de Worker `v7`, pero conserva el conjunto y directorio de datos sintéticos `v5`. No activa `clearOnInit` ni elimina el VFS. La única eliminación automática sigue siendo el directorio aislado de prueba V4.
+
+
+### Procedimiento V7 tras el resultado de V6
+
+La salida V6 mostró `pauseVfs()` exitoso, pero la nueva pestaña consultó cero filas. V6 no verificaba que el nuevo Worker hubiera recuperado el mismo archivo virtual ni comparaba el número de filas con el confirmado por el propietario saliente. Por ello V6 no se considera una transferencia satisfactoria.
+
+V7 añade una comprobación previa a la apertura: `PoolUtil.getFileNames()` debe contener `/sharedworker-probe.sqlite3`, y `exportFile()` debe confirmar un contenido no vacío. Después de abrir SQLite, el conteo debe ser como mínimo el que el propietario anterior informó antes de pausar. Si cualquiera de estas condiciones falla, el candidato no se convierte en propietario.
+
+En ese caso el SharedWorker intenta restaurar el propietario anterior usando su mismo `PoolUtil` pausado. La interfaz debe informar explícitamente `TRANSFERENCIA RECHAZADA; se conservó el propietario anterior` o `Se restauró el propietario anterior`, en lugar de presentar cero como éxito.
+
+El registro V7 debe incluir, antes y después del relevo:
+- total de filas;
+- `databaseFileFound`;
+- `databaseFileBytes`;
+- `fileNames`;
+- `writesTableExists`;
+- `vfsName` y `directory`.
+
+El test de V7 no inserta automáticamente ni limpia la base durante el handoff. Primero conectar una pestaña, consultar y anotar el total inicial; luego conectar la segunda, comprobar que ambas ven el mismo total, y solo entonces pulsar «Ceder propiedad». No cerrar el propietario manualmente hasta que V7 confirme transferencia completada o restauración del propietario anterior.
