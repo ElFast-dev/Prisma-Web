@@ -466,6 +466,11 @@ $("cleanup").addEventListener("click", async () => {
   }
 });
 
+// Connect automatically on initial load so the SharedWorker state is restored
+// in the UI without requiring a manual click. The button remains available
+// as a retry if this initial connection fails.
+connect();
+
 window.addEventListener("pagehide", () => {
   // Queue unregister, then terminate the Dedicated Worker synchronously.
   // The SharedWorker processes the unregister after this pagehide task ends.
