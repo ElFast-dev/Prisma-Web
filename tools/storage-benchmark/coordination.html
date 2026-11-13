@@ -218,7 +218,7 @@ function connect() {
     // inside SharedWorkerGlobalScope. Only the elected tab opens the SAH pool.
     dbWorker = new Worker("./src/sahpool-db-worker.js", {
       type: "module",
-      name: "prisma-sahpool-db-owner-candidate-v5-" + clientId
+      name: "prisma-sahpool-db-owner-candidate-v6-" + clientId
     });
 
     dbWorker.onerror = (event) => {
@@ -237,7 +237,7 @@ function connect() {
 
     shared = new SharedWorker("./src/sahpool-shared-worker.js", {
       type: "module",
-      name: "prisma-sahpool-sharedworker-probe-v5"
+      name: "prisma-sahpool-sharedworker-probe-v6"
     });
 
     port = shared.port;
