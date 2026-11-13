@@ -98,3 +98,18 @@ La siguiente revisión de la sonda añade un heartbeat independiente de las soli
 - Si la página propietaria está congelada y no puede confirmar la terminación, no se promueve un segundo propietario. Al cerrar la página, `unregister` permite la retirada y failover.
 
 Esta política evita abrir deliberadamente un segundo SAH pool mientras el Worker anterior podría seguir reteniendo SyncAccessHandles. El heartbeat puede detectar un Worker bloqueado o muerto, pero no constituye una prueba de almacenamiento ni de transacción; es un mecanismo de liveness del coordinador. La pausa de una pestaña puede retrasar la detección, por lo que se evalúa el caso de página congelada en un ensayo separado.
+
+## Observación de campo: heartbeat detecta Worker terminado (Galaxy A03 / Brave, 13-11-2026)
+
+Base aislada con 5 filas confirmadas. Había dos pestañas conectadas al SharedWorker `fc1576a1-eb57-4e0b-af25-8d94258fcf26`, protocolo `recovery-fault-probe-2`. El propietario tenía Dedicated Worker `43f9edf8-7bc6-41b4-a35e-bbdf90b5f8ad`.
+
+- 1:10:16 p. m.: la pestaña ejecutó `Worker.terminate()` sin notificar al SharedWorker.
+- 1:10:39 p. m.: el coordinador notificó `heartbeat-timeout` a la página propietaria.
+- La página propietaria recibió `terminate-unresponsive-worker`, terminó su Dedicated Worker y envió `dbWorkerTerminated`.
+- La página registró: «Dedicated Worker retirado por el coordinador. Filas confirmadas antes del relevo: 5».
+
+**Resultado parcial:** heartbeat y handshake de terminación/retirada observados correctamente. La detección ocurrió aproximadamente 23 s después de la terminación manual, dentro del margen configurado de 20 s más la cadencia de heartbeat. Esto demuestra que la página propietaria puede confirmar la terminación del Worker que ya no respondía y que el coordinador procesó esa confirmación.
+
+**Todavía no aceptado como recuperación completa:** la captura no muestra el estado posterior de la pestaña de reserva (nuevo rol propietario, nuevo Dedicated Worker ID, archivo encontrado y cinco filas recuperadas). Por tanto, la promoción y reapertura de SQLite siguen pendientes de confirmación en este ensayo. No interpretar el mensaje de retirada como prueba de que la reserva ya abrió la base.
+
+Siguiente comprobación: sin terminar más Workers, mirar la pestaña de reserva. Debe mostrar «Esta pestaña · PROPIETARIA ACTIVA», un Dedicated Worker ID nuevo, `/recovery-probe.sqlite3` encontrado y 5 filas. Si no ocurre, conservar la bitácora y no insertar datos.
