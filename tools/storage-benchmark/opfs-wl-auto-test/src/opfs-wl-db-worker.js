@@ -196,7 +196,7 @@ function seedDatabase() {
         "batch_no INTEGER NOT NULL," +
         "row_no INTEGER NOT NULL," +
         "created_at INTEGER NOT NULL" +
-      ")",
+      ");",
       "CREATE INDEX IF NOT EXISTS idx_writes_run_client " +
         "ON writes(run_id, client_id, batch_no)"
     ]);
