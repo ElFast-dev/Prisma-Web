@@ -5,7 +5,7 @@ Esta sonda es independiente de V8. Usa un VFS y un archivo SQLite propios:
 - Directorio OPFS: `/prisma-sahpool-recovery-probe-v1`
 - Archivo: `/recovery-probe.sqlite3`
 - RUN_ID: `prisma-sahpool-recovery-probe-v1`
-- Protocolo del coordinador: `recovery-fault-probe-1`
+- Protocolo del coordinador: `recovery-fault-probe-3`
 
 No accede a `/prisma-sahpool-sharedworker-probe-v5` ni a `/sharedworker-probe.sqlite3`. Tampoco borra el directorio V4 histórico.
 
@@ -113,3 +113,29 @@ Base aislada con 5 filas confirmadas. Había dos pestañas conectadas al SharedW
 **Todavía no aceptado como recuperación completa:** la captura no muestra el estado posterior de la pestaña de reserva (nuevo rol propietario, nuevo Dedicated Worker ID, archivo encontrado y cinco filas recuperadas). Por tanto, la promoción y reapertura de SQLite siguen pendientes de confirmación en este ensayo. No interpretar el mensaje de retirada como prueba de que la reserva ya abrió la base.
 
 Siguiente comprobación: sin terminar más Workers, mirar la pestaña de reserva. Debe mostrar «Esta pestaña · PROPIETARIA ACTIVA», un Dedicated Worker ID nuevo, `/recovery-probe.sqlite3` encontrado y 5 filas. Si no ocurre, conservar la bitácora y no insertar datos.
+
+
+## Instrumentación de ciclo de vida y watchdog de activación (recovery-fault-probe-3)
+
+Esta revisión añade observabilidad y una terminación segura de candidatos que no completan la activación. No cambia el RUN_ID, el directorio OPFS, el nombre del archivo SQLite ni las tablas.
+
+- El coordinador publica por pestaña el rol, `visibilityState`, `lifecycleState`, última señal de ciclo de vida y si el puerto del Dedicated Worker sigue adjunto. Que el puerto esté adjunto **no demuestra** que el Worker esté ejecutándose.
+- La página registra `visibilitychange`, `freeze`, `resume`, `pageshow` y `pagehide`. Volver a visible solicita una instantánea del coordinador, sin necesitar que SQLite tenga propietario activo.
+- «Actualizar estado compartido» envía `getState`; esta operación no consulta ni escribe SQLite.
+- La activación de un candidato tiene un límite de 30 s. Si no responde, el coordinador solicita a su página terminar el Dedicated Worker. Solo después de recibir `activationCandidateTerminated` retira ese candidato y considera otra sesión. Si la página está congelada y no confirma, la promoción permanece bloqueada deliberadamente.
+- Una pestaña cuyo Worker candidato fue terminado queda marcada como fallida y debe recargarse para volver a registrarse. No se crean Workers desde el SharedWorker.
+
+### Primera aceptación de recovery-fault-probe-3: observación sin escrituras
+
+Antes de volver a inyectar fallos:
+
+1. No pulses «Crear referencia», «Terminar Dedicated Worker», controles B/C ni limpieza.
+2. Mantén abiertas las pestañas existentes y anota sus IDs y roles.
+3. Pulsa «Actualizar estado compartido» en cada pestaña. Guarda las líneas de sesiones, incluyendo visibilidad y última señal.
+4. Cambia de Brave a otra aplicación y vuelve a Brave. No cierres las pestañas.
+5. Pulsa «Actualizar estado compartido» otra vez en ambas pestañas.
+6. Compara el SharedWorker ID, número de sesiones, `clientId`, roles, visibilidad, última señal y propietario SQLite.
+
+Esta aceptación solo caracteriza el ciclo de vida. No demuestra failover ni recuperación transaccional. Si una sesión aparece como `starting`, `activation-unresponsive` o `failed`, no pulses insertar ni repitas la terminación; conserva la bitácora.
+
+El watchdog de activación y los nuevos eventos de ciclo de vida todavía requieren aceptación funcional en Brave sobre el Galaxy A03. La implementación y el parseo sintáctico no se consideran una prueba real de navegador.
