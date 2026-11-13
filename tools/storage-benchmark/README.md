@@ -268,8 +268,8 @@ V8 no presupone que ese contenido exista. La siguiente ejecución debe crear un 
 ### Procedimiento de aceptación V8
 
 1. Cerrar todas las pestañas de versiones anteriores y actualizar los archivos V8.
-2. Conectar una pestaña y consultar el estado. El informe puede mostrar 0 porque el conjunto sintético anterior está vacío.
-3. Abrir una segunda pestaña y conectarla.
+2. Abrir la primera pestaña. La página crea automáticamente sus Workers y se registra en el SharedWorker; espera a que muestre el estado.
+3. Abrir la segunda pestaña. También se registrará automáticamente. El informe inicial puede mostrar 0 porque el conjunto sintético anterior estaba vacío; no significa que la conexión haya fallado.
 4. Insertar 25 filas desde cada pestaña. Verificar 50 filas en ambas y reabrir SQLite.
 5. Pulsar `Ceder propiedad a otra pestaña` desde la propietaria.
 6. En el registro, comprobar que el propietario saliente exporta una instantánea no vacía y que el entrante importa el mismo número de bytes.
