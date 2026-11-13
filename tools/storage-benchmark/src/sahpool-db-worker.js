@@ -100,11 +100,10 @@ async function ensureDatabase() {
   return db;
 }
 
-function countRows(runId) {
-  return Number(db.selectValue(
-    "SELECT COUNT(*) FROM writes WHERE run_id = ?",
-    [runId]
-  ));
+function countRows() {
+  // This VFS directory belongs exclusively to this probe. Count all rows
+  // so records written before a SharedWorker restart remain visible.
+  return Number(db.selectValue("SELECT COUNT(*) FROM writes"));
 }
 
 function clientRows(runId, clientId) {
@@ -127,7 +126,7 @@ async function handle(request) {
       brokerRequestId,
       clientId,
       ok: true,
-      totalRows: countRows(runId),
+      totalRows: countRows(),
       clientRows: clientRows(runId, clientId),
       requiredOpfsApis: requiredOpfsApis(),
       removedFailedV4Directory
@@ -164,7 +163,7 @@ async function handle(request) {
       insert.finalize();
     }
 
-    const totalRows = countRows(runId);
+    const totalRows = countRows();
     send({ kind: "stats", runId, totalRows });
 
     return {
@@ -192,7 +191,7 @@ async function handle(request) {
       clientId,
       ok: true,
       type,
-      totalRows: countRows(runId),
+      totalRows: countRows(),
       clientRows: clientRows(runId, clientId)
     };
   }
