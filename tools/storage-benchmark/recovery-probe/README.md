@@ -203,3 +203,24 @@ Los dos iframes son contextos de navegación independientes dentro de una única
 Un resultado APROBADO demostraría los escenarios A, B y C, la reapertura y la limpieza en el navegador y dispositivo que ejecutaron la prueba. No aprobaría por sí solo toda la arquitectura de almacenamiento de Prisma ni migraciones, cifrado, claves o restauración de respaldos.
 
 La herramienta es de prueba y no forma parte de la aplicación principal.
+
+## Aceptación real de Recovery AutoTest V1 (13-11-2026)
+
+El usuario ejecutó `tools/storage-benchmark/recovery-auto-test/` desde el navegador y aportó el informe completo con resultado general **APROBADO**.
+
+- RUN_ID: `prisma-sahpool-recovery-auto-75ca9da0-f0ab-428d-bd3a-3f31ea691429`.
+- Inicio: 13-11-2026, 3:51:01 p. m. (hora de Panamá). Finalización: 3:52:23 p. m.
+- Dos contextos iframe independientes conectados a un mismo SharedWorker, con Dedicated Workers separados.
+- Preparación: dos clientes registrados, archivo SQLite nuevo encontrado y 5 filas sintéticas confirmadas.
+- Ensayo A: terminación del Dedicated Worker propietario en reposo; heartbeat detectó la ausencia de ACK, la página confirmó la terminación y la reserva recuperó 5/5 filas.
+- Ensayo B: `BEGIN IMMEDIATE` e inserción real de cinco filas sin `COMMIT`; al terminar el Worker, el nuevo propietario recuperó solamente las cinco filas previamente confirmadas. Resultado: rollback correcto.
+- Ensayo C: cinco filas insertadas y `COMMIT` completado; el Worker retuvo deliberadamente la respuesta. Tras la terminación, el nuevo propietario recuperó las diez filas. Resultado: COMMIT conservado aunque se perdió el acuse.
+- Reapertura SQLite: diez filas conservadas.
+- Limpieza: `removeVfs()` completado para la carpeta OPFS exclusiva de este RUN_ID.
+- Resultado general reportado por la página: `APROBADO`.
+
+La inspección del código confirma que B ejecuta `BEGIN IMMEDIATE`, cinco INSERT y no ejecuta `COMMIT` antes de la terminación; C ejecuta `COMMIT` y después espera deliberadamente sin resolver la respuesta. La base de AutoTest utiliza el directorio `/prisma-sahpool-recovery-auto-75ca9da0-f0ab-428d-bd3a-3f31ea691429` y el archivo `/recovery-auto.sqlite3`, independiente de V4 y V8.
+
+El User-Agent incluido en el informe declara `Android 10` y `Chrome/157.0.0.0`; ese token de User-Agent no debe usarse por sí solo para determinar la versión instalada de Android o identificar la marca del navegador.
+
+**Alcance de la aceptación:** A, B, C, reapertura y limpieza aprobados en el navegador de la ejecución. Esto es evidencia funcional real de recuperación SQLite/OPFS y failover entre los dos contextos de prueba visibles. No valida el descarte real de pestañas por Android, la suspensión del SO, ni cierra los demás fundamentos de almacenamiento (migraciones, cifrado, claves, exportación/restauración y persistencia en el origen HTTPS definitivo). No afecta los 200 registros V8 ni la base de referencia de V4.
