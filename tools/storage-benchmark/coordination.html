@@ -115,6 +115,9 @@ function log(message) {
 function updateState(data) {
   $("datasetId").textContent = data.runId || "—";
   $("workerId").textContent = data.workerId || "—";
+  if (Number.isFinite(data.totalRows)) {
+    $("totalRows").textContent = String(data.totalRows);
+  }
   $("connections").textContent = String(data.connections ?? "—");
   $("dbWorkerId").textContent = data.databaseWorkerId || "Pendiente";
   if (typeof data.nestedWorkerConstructor === "boolean") {
