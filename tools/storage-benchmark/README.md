@@ -386,3 +386,27 @@ La pestaña propietaria informó `Bytes de instantánea importados: 0` al inicia
 **Estado de aceptación:** queda confirmada la ruta de escritura secundaria en v2. El relevo cooperativo con exportación/importación de instantánea bajo v2 sigue pendiente de una ejecución propia. También siguen vigentes los timeouts de ejecuciones anteriores; este éxito aislado no demuestra fiabilidad sostenida ni permite descartar fallos intermitentes.
 
 Siguiente prueba: con ambas pestañas conectadas y 150 filas confirmadas, realizar una cesión explícita de propiedad. Verificar que la instantánea se exporta e importa y que el nuevo propietario recupera 150; insertar una sola tanda desde el nuevo propietario y confirmar 175 tras reabrir; consultar 175 desde la pestaña anterior e insertar allí una sola tanda, confirmando 200 desde ambas pestañas. Ante cualquier timeout, consultar el total desde la propietaria antes de repetir una escritura.
+
+### Resultado observado: cesión de propiedad y escrituras a ambos lados con broker trace 2 (13-11-2026)
+
+Prueba real en Samsung Galaxy A03 / Brave. Antes del relevo había 150 filas. Las dos pestañas compartían el SharedWorker `9b684a43-c503-49a6-8fc8-a754a9d8004d`. La cesión cooperativa liberó el VFS del propietario saliente y produjo la siguiente evidencia:
+
+- Propietario saliente: Dedicated Worker `6e12676d-ed40-4309-9076-448dd498b245`.
+- Antes de ceder: total 150; archivo SQLite encontrado; tamaño 98.304 bytes; instantánea exportada de 98.304 bytes.
+- El propietario entrante recibió e importó 98.304 bytes.
+- Nuevo propietario: Dedicated Worker `1bec83b8-c7e5-4a02-883f-b9b9255c0ef5`.
+- El nuevo propietario confirmó que recuperó las 150 filas.
+
+Después de la cesión:
+1. El nuevo propietario insertó una tanda de 25: total 175.
+2. Desde el nuevo propietario, `reopenVerify` cerró y reabrió SQLite y conservó 175 filas.
+3. La pestaña anterior, ahora secundaria, consultó y recibió 175 filas.
+4. Desde esa pestaña secundaria se insertó una tanda de 25: total 200.
+5. La operación secundaria completó `shared-received`, `shared-forwarded`, `dedicated-received`, `dedicated-processing`, `dedicated-completed` y respuesta correlacionada por `brokerRequestId`.
+6. La pestaña secundaria ejecutó `reopenVerify` y recuperó 200 filas.
+
+La segunda captura muestra la pestaña anterior como «Otra pestaña», el nuevo propietario Dedicated Worker `1bec83b8-c7e5-4a02-883f-b9b9255c0ef5`, y el total compartido de 200. La pestaña propietaria informó 175 en la captura inmediatamente posterior a su primera tanda; la notificación posterior difundió 200 tras la escritura secundaria.
+
+**Estado de aceptación V8 con broker trace 2:** demostrados en el dispositivo de referencia la cesión cooperativa con instantánea binaria verificada, la escritura/reapertura del nuevo propietario y la consulta/escritura/reapertura desde la pestaña que dejó de ser propietaria. El mismo coordinador y un único Dedicated Worker SQLite administraron ambas pestañas. Esto valida el flujo funcional del relevo y el acceso de la pestaña secundaria en esta ejecución. No demuestra todavía solicitudes de escritura simultáneas, equidad bajo contención, ni recuperación durante una transacción interrumpida; los timeouts anteriores siguen siendo evidencia que debe considerarse al valorar fiabilidad sostenida.
+
+Siguiente fase: evaluar terminación abrupta del propietario durante reposo, durante escritura y durante `COMMIT`; terminación aislada del Dedicated Worker; suspensión/reanudación de una pestaña; bloqueo OPFS temporal; después, iniciar la prueba real de OPFS-WL con dos Dedicated Workers y Web Locks.
