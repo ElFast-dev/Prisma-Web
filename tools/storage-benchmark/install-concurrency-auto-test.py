@@ -17,7 +17,7 @@ FILES = {
     "src/auto-client.js": "7030668f7dd840f95ab258bfeb878705d2bb4a09",
     "src/auto-shared-worker.js": "f16e90076c793d027292cec86aa9198e47b9915b",
     "src/auto-db-worker.js": "72ffd800cb1489954841990cf843d161f10b50e4",
-    "README.md": "b741ada4971d80b79effa81b7d951cfb870ba43a",
+    "README.md": "b16ed5f4ed7915a3bbb9f5a08ae5d3178fc9f137",
 }
 
 def git_blob_sha(data):
