@@ -86,3 +86,43 @@ El benchmark alterna el orden Dexie/SQLite entre rondas para reducir el sesgo de
 No elegir SQLite solo porque una inserción masiva resulte más rápida. El diario de Prisma necesita buen rendimiento también en interacciones pequeñas, reapertura, migraciones, recuperación y varias pestañas. La decisión debe ponderar asimismo el tamaño WASM, memoria, complejidad del Worker, concurrencia y exportación/restauración.
 
 El informe es evidencia de prueba en el Galaxy A03 y Brave; no convierte automáticamente Dexie ni SQLite en decisiones aprobadas. La versión actual registra si `removeVfs()` confirmó la limpieza (`vfsRemoved`), si el directorio OPFS de prueba sigue existiendo (`opfsCleanup.exists`) y el delta de almacenamiento reportado (`storageDeltaBytes`) y las bases IndexedDB temporales restantes (`indexedDbCleanup.names`). La integridad de los datos y la limpieza se informan por separado. La limpieza completa queda verificada cuando el VFS confirma la eliminación, el directorio OPFS queda ausente y, si el navegador permite enumerarlas, no quedan bases IndexedDB con el prefijo del benchmark. Si `opfsCleanup.exists: true`, usa el botón de limpieza, no repitas el dataset grande y conserva el informe para revisar el residuo.
+
+## Prueba funcional: SharedWorker + SQLite SAH pool
+
+Esta prueba no vuelve a comparar rendimiento. Comprueba si dos pestañas del mismo origen comparten realmente un único SharedWorker que mantiene una sola conexión SQLite SAH pool.
+
+Archivos adicionales:
+
+- `coordination.html`
+- `serve-coordination.py`
+- `src/sahpool-shared-worker.js`
+
+Descárgalos desde la rama `main` y conserva la carpeta `node_modules` instalada para el benchmark. No requiere dependencias adicionales.
+
+Ejecuta desde `$HOME/prisma-storage-benchmark`:
+
+```sh
+python serve-coordination.py
+```
+
+Abre en Brave:
+
+`http://127.0.0.1:18767/coordination.html`
+
+Este servidor añade `Cross-Origin-Opener-Policy: same-origin` y `Cross-Origin-Embedder-Policy: require-corp` para que la ejecución también tenga aislamiento de origen. La prueba utiliza exclusivamente una base sintética con un directorio OPFS propio.
+
+Procedimiento:
+
+1. Abre exactamente la misma dirección en dos pestañas normales de Brave.
+2. Pulsa «Conectar al SharedWorker» en ambas.
+3. Comprueba que las dos muestran el mismo ID del Worker y que el contador llega a 2 conexiones.
+4. Pulsa una sola vez «Insertar 25 registros» en cada pestaña.
+5. Comprueba que ambas reciben el mismo total de 50 registros.
+6. Pulsa «Cerrar y reabrir SQLite» y verifica que siguen existiendo los 50 registros.
+7. Cuando ambas pestañas hayan terminado, pulsa «Eliminar la base sintética» desde una sola pestaña y conserva el resultado de `removeVfs()`.
+8. Detén el servidor con Ctrl+C.
+
+Si los IDs de Worker son distintos, no se ha demostrado que Brave comparta el SharedWorker. Si hay errores de escritura, discrepancias de conteo o fallos de reapertura, conserva el registro y no repitas la prueba con datos personales.
+
+Esta prueba valida el actor compartido y el acceso a SAH pool desde dos pestañas. No sustituye las pruebas posteriores de cierre abrupto del Worker, recuperación tras reiniciar Brave ni funcionamiento en el origen HTTPS definitivo.
+
