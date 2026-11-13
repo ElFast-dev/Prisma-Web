@@ -45,3 +45,30 @@ Si la prueba falla, conserva el informe y la página sin pulsar controles de lim
 ## Aislamiento
 
 No utiliza la base de Recovery AutoTest V1, la sonda histórica V4, los datos de V8 ni datos de la aplicación Prisma. No modificar ni borrar las herramientas o bases anteriores.
+
+## Resultado observado: primera aceptación de concurrencia (13-11-2026)
+
+Ejecución real comunicada desde el entorno de aceptación del proyecto el 13 de noviembre de 2026. El informe comenzó a las 16:52:35 y terminó a las 16:52:38 (hora de Panamá, UTC-5).
+
+- RUN_ID: `prisma-sahpool-concurrency-auto-4bf59119-ea0d-4df0-be6c-927e5fd85415`
+- Protocolo: `concurrency-auto-test-1`
+- Preparación: PASS; dos clientes conectados, un propietario SQLite y cinco filas iniciales.
+- Solicitudes: 24/24 respuestas; cliente A completó 12/12 y cliente B completó 12/12.
+- Recuento de A: 305 filas (cinco de referencia más 300 insertadas por A).
+- Recuento de B: 300 filas.
+- Recuento total SQLite: 605 filas.
+- Coordinación: PASS; se mantuvo un único propietario SQLite y el segundo cliente permaneció conectado como reserva.
+- Reapertura: PASS; después de cerrar y volver a abrir SQLite se conservaron las 605 filas.
+- Limpieza: PASS; se eliminó el directorio OPFS exclusivo de esta ejecución.
+
+Latencias informadas:
+- Cliente A: media 587 ms; percentil 95 de 1.065 ms; rango 105–1.065 ms.
+- Cliente B: media 636 ms; percentil 95 de 1.135 ms; rango 127–1.135 ms.
+
+El User-Agent informado fue `Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36`. Este texto no se toma como prueba independiente de la versión real de Android ni de la marca del navegador.
+
+**Conclusión de aceptación:** resultado general APROBADO para esta carga controlada. Quedó demostrado que dos clientes pudieron enviar solicitudes de escritura concurrentes al mismo coordinador, que el único propietario ejecutó las transacciones de forma serializada, que las 24 solicitudes recibieron respuesta y que las 605 filas se conservaron después de reabrir SQLite.
+
+**Límites:** no fueron dos escritores SQLite trabajando simultáneamente; las transacciones se serializaron dentro del único Dedicated Worker propietario. Esta ejecución no prueba equidad matemática bajo contención prolongada, carga sostenida, suspensión o descarte real de pestañas por Android, recuperación ante apagado del proceso, ni comportamiento de dos conexiones SQLite independientes. Tampoco aprueba OPFS-WL ni convierte SAH pool en la arquitectura definitiva de Prisma.
+
+La limpieza se limitó al directorio OPFS generado por este RUN_ID. La prueba informó que no modificó Recovery AutoTest V1, V4, V8 ni los datos de Prisma.
