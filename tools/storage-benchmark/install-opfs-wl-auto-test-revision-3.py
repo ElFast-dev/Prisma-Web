@@ -9,7 +9,7 @@ import os
 ROOT = Path.home() / "prisma-storage-benchmark"
 BASE = (
     "https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/"
-    "532e29b3059650a855b18e9840dedb8e16485bc2/tools/storage-benchmark/"
+    "0cadfb672655a6bb82b6da47540ee68a04589a8a/tools/storage-benchmark/"
 )
 
 FILES = {
@@ -18,7 +18,7 @@ FILES = {
             "dae96e4f1549844791dce4ac219606a5c1371085",
             "fef9b816b1380ff009aafc37a4ac3027a7b0fc9e",
         },
-        "target": "6cb7cbc2927397a58292e1b88b6d256aac3ae4a3",
+        "target": "704344f9302262b94d9d30e2419a2ffb5cd22323",
     },
 }
 
