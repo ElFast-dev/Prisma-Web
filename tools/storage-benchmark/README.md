@@ -300,3 +300,22 @@ Si la traza se detiene en `shared-forwarded`, revisar la entrega al Dedicated Wo
 
 La base V5 contiene datos sintéticos. Antes de cerrar ambas pestañas, verificar que no haya solicitudes en curso y que el total esté confirmado tras cierre/reapertura. Cerrar la última pestaña termina el contexto de Worker sin ejecutar una cesión cooperativa de SQLite; se registra como **terminación abrupta en reposo**, no como cierre limpio. Al abrir de nuevo, comprobar primero que se recupera el mismo total. No ejecutar limpieza ni habilitar nuevas escrituras hasta verificarlo.
 
+
+### Resultado observado: terminación en reposo y recuperación (Galaxy A03 / Brave)
+
+En la ejecución del 13 de noviembre de 2026 se cerraron las dos pestañas mientras la base estaba sin operaciones en curso, sin hacer una cesión cooperativa explícita. Al abrir de nuevo la sonda, se observó:
+
+- El ID del SharedWorker y el ID del Dedicated Worker cambiaron, lo que confirma nuevas instancias.
+- El archivo `/sharedworker-probe.sqlite3` apareció en el mismo directorio OPFS.
+- Tamaño informado por `exportFile()`: 90.112 bytes.
+- La tabla `writes` existía y SQLite recuperó las 100 filas.
+- Las APIs OPFS requeridas volvieron a estar disponibles.
+- Una consulta `status` atravesó `shared-forwarded`, `dedicated-received`, `dedicated-processing` y `dedicated-completed`; la respuesta fue correlacionada mediante `brokerRequestId` y devolvió 100 filas.
+
+Esto valida recuperación después de terminar ambas pestañas **estando en reposo** y la ruta completa de solicitud/respuesta desde la pestaña propietaria. No valida todavía cierre durante una transacción, caída durante `COMMIT`, terminación aislada del Dedicated Worker con la página abierta, ni solicitud originada en una pestaña secundaria después de esta recuperación.
+
+La primera consulta de la ejecución anterior había agotado el tiempo en el coordinador que seguía vivo después de recargar una página. Tras cerrar ambas pestañas, crear un SharedWorker nuevo y recuperar las 100 filas, la consulta desde la propietaria sí completó. El cambio de ID del SharedWorker y la posterior respuesta correcta son compatibles con reutilización de una instancia coordinadora anterior; no prueban por sí solos la causa exacta del primer timeout.
+
+La etiqueta «Protocolo del coordinador» de la interfaz se conserva ahora al recibir el mensaje `owner-ready`, que no incluye por sí mismo ese campo. Antes, ese mensaje podía sobrescribir visualmente el protocolo ya anunciado por `state` con el texto «Coordinador anterior o sin diagnóstico», aunque la traza posterior demostrara que el protocolo nuevo estaba activo.
+
+
