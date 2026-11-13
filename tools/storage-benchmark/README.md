@@ -364,6 +364,25 @@ Después se reinició la instancia y una nueva pestaña con el protocolo `v8-bro
 
 Los timeouts anteriores de `insertBatch` siguen siendo evidencia válida de un fallo intermitente o dependiente de la instancia. Una ejecución exitosa no los borra ni demuestra todavía fiabilidad sostenida. La siguiente prueba debe repetir, en una instancia nueva `v8-broker-trace-2`, primero una consulta secundaria y luego una sola escritura secundaria controlada, observando `shared-received`, `shared-forwarded`, `shared-rejected`, `shared-forward-failed`, `BROKER WATCHDOG` y las etapas del Dedicated Worker. Consultar el total desde la propietaria después de cualquier timeout; nunca reintentar a ciegas.
 
+### Resultado observado: escritura desde pestaña secundaria con broker trace 2 (13-11-2026)
 
+En una ejecución posterior del Galaxy A03 / Brave, las dos pestañas mostraron el mismo ID de SharedWorker `9b684a43-c503-49a6-8fc8-a754a9d8004d`, dos pestañas conectadas y un único Dedicated Worker SQLite propietario, con ID `6e12676d-ed40-4309-9076-448dd498b245`. La pestaña desde la que se originó la escritura mostraba «Otra pestaña»; la otra mostraba «Esta pestaña · PROPIETARIA ACTIVA». Ambas reflejaban el protocolo `v8-broker-trace-2`.
 
+Estado de partida y resultado:
+- Al iniciar la sesión, la pestaña propietaria recuperó 125 filas del archivo SQLite persistente de 90.112 bytes.
+- La pestaña secundaria consultó el estado y recibió 125 filas.
+- Desde esa pestaña secundaria se envió una única operación `insertBatch`, con requestId `9956e91d-e2b1-46fd-969d-2b4b6be7dfed-2`.
+- El SharedWorker registró `shared-received` y `shared-forwarded`; el brokerRequestId fue `9956e91d-e2b1-46fd-969d-2b4b6be7dfed:2`.
+- El Dedicated Worker registró, en orden, `dedicated-received`, `dedicated-processing` y `dedicated-completed`, todos con correlación correcta.
+- La respuesta volvió correlacionada mediante `brokerRequestId` y confirmó 150 filas. La pestaña secundaria mostró «Escritura confirmada. Total: 150».
+- Desde esa misma pestaña secundaria, `reopenVerify` cerró y reabrió SQLite y confirmó 150 filas.
+- Una consulta `status` posterior desde la pestaña secundaria volvió a confirmar 150.
+- La pestaña propietaria recibió la actualización compartida a 150 y su propia consulta `status` devolvió 150.
 
+Esto demuestra una escritura originada en una pestaña no propietaria y ejecutada por el único Dedicated Worker propietario bajo `v8-broker-trace-2`, con respuesta correctamente correlacionada, persistencia tras cierre/reapertura y consulta posterior desde la pestaña secundaria. No fue una escritura simultánea desde ambas pestañas: en esta ejecución solo se hizo una tanda desde la secundaria.
+
+La pestaña propietaria informó `Bytes de instantánea importados: 0` al iniciar. En este caso no se estaba realizando un relevo; el archivo existente se recuperó directamente desde OPFS. Ese contador de importación no indica una base vacía.
+
+**Estado de aceptación:** queda confirmada la ruta de escritura secundaria en v2. El relevo cooperativo con exportación/importación de instantánea bajo v2 sigue pendiente de una ejecución propia. También siguen vigentes los timeouts de ejecuciones anteriores; este éxito aislado no demuestra fiabilidad sostenida ni permite descartar fallos intermitentes.
+
+Siguiente prueba: con ambas pestañas conectadas y 150 filas confirmadas, realizar una cesión explícita de propiedad. Verificar que la instantánea se exporta e importa y que el nuevo propietario recupera 150; insertar una sola tanda desde el nuevo propietario y confirmar 175 tras reabrir; consultar 175 desde la pestaña anterior e insertar allí una sola tanda, confirmando 200 desde ambas pestañas. Ante cualquier timeout, consultar el total desde la propietaria antes de repetir una escritura.
