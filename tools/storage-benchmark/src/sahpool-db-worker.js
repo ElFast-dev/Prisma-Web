@@ -217,7 +217,7 @@ async function processRequest(request) {
     }
   } catch (error) {
     send({
-      kind: "response",
+      kind: request?.type === "activate" ? "activation-error" : "response",
       requestId: request?.requestId,
       brokerRequestId: request?.brokerRequestId,
       clientId: request?.clientId,
