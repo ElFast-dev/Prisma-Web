@@ -183,38 +183,55 @@ async function openDb() {
 
 function seedDatabase() {
   /*
-   * Commit the schema in autocommit mode before starting the seed transaction.
-   * This gives the next stage an explicit, independently verifiable schema
-   * boundary instead of combining DDL and seed rows in one transaction.
+   * Execute DDL directly on the open connection using one SQL string.
+   * Capture parsed statements and database identity before and after execution.
    */
-  retryBusy("schema", () => {
-    db.exec([
-      "CREATE TABLE IF NOT EXISTS writes (" +
-        "id TEXT PRIMARY KEY," +
-        "run_id TEXT NOT NULL," +
-        "client_id TEXT NOT NULL," +
-        "batch_no INTEGER NOT NULL," +
-        "row_no INTEGER NOT NULL," +
-        "created_at INTEGER NOT NULL" +
-      ");",
-      "CREATE INDEX IF NOT EXISTS idx_writes_run_client " +
-        "ON writes(run_id, client_id, batch_no)"
-    ]);
-  });
+  const schemaBefore = {
+    schemaVersion: db.selectValue("PRAGMA schema_version"),
+    filename: db.dbFilename("main"),
+    vfs: db.dbVfsName("main"),
+    readOnly: sqlite3.capi.sqlite3_db_readonly(db.pointer, "main"),
+    databaseList: db.selectArrays("PRAGMA database_list")
+  };
+  const preparedSchemaSql = [];
+  const ddlSql =
+    "CREATE TABLE IF NOT EXISTS writes (" +
+      "id TEXT PRIMARY KEY," +
+      "run_id TEXT NOT NULL," +
+      "client_id TEXT NOT NULL," +
+      "batch_no INTEGER NOT NULL," +
+      "row_no INTEGER NOT NULL," +
+      "created_at INTEGER NOT NULL" +
+    ");" +
+    "CREATE INDEX IF NOT EXISTS idx_writes_run_client " +
+      "ON writes(run_id, client_id, batch_no);";
 
+  db.exec(ddlSql, { saveSql: preparedSchemaSql });
+
+  const schemaAfter = {
+    schemaVersion: db.selectValue("PRAGMA schema_version"),
+    filename: db.dbFilename("main"),
+    vfs: db.dbVfsName("main"),
+    readOnly: sqlite3.capi.sqlite3_db_readonly(db.pointer, "main"),
+    databaseList: db.selectArrays("PRAGMA database_list")
+  };
   const schemaTables = db.selectValues(
     "SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name"
   );
   if (!schemaTables.includes("writes")) {
     throw new Error(
-      "El esquema no confirmó la tabla writes antes de insertar filas. " +
+      "db.exec terminó sin error, pero la tabla writes no aparece en sqlite_schema. " +
       "Diagnóstico: " + JSON.stringify({
-        filename: db.filename || filename,
-        schemaTables
+        schemaBefore,
+        schemaAfter,
+        preparedSchemaSql,
+        schemaTables,
+        pageCount: db.selectValue("PRAGMA page_count"),
+        totalChanges: db.changes(true),
+        dbPointer: db.pointer
       })
     );
   }
-
   retryBusy("seed", () => {
     db.transaction("IMMEDIATE", (tx) => {
       const insert = tx.prepare(
