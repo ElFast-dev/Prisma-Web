@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Prisma · Recovery AutoTest V1</title>
+<style>
+:root{color-scheme:dark;--bg:#171a20;--surface:#222831;--surface2:#29333e;--border:#3a4552;--text:#f0f0f0;--muted:#b5bec8;--accent:#70aee0;--ok:#8cc9a3;--warn:#f0c674;--bad:#f28b82}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
+main{width:min(820px,100%);margin:auto;padding:20px 15px 42px}
+h1{font-size:clamp(24px,6vw,34px);line-height:1.15;margin:8px 0}h2{font-size:18px;margin:0 0 10px}
+p{color:var(--muted);margin:8px 0}.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px;margin:13px 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.metric{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px;min-width:0}
+.metric span{display:block;font-size:12px;color:var(--muted)}.metric b{display:block;overflow-wrap:anywhere;font-size:14px;margin-top:3px}
+button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:14px 16px;min-height:50px;background:var(--accent);color:#10202d;cursor:pointer}
+button.secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.actions button{flex:1 1 180px}
+.note{background:#202933;border:1px solid var(--border);padding:12px 14px;border-radius:14px;color:var(--muted);margin:12px 0}
+.status{font-weight:750}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.steps{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.step{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:11px;background:var(--surface2);border:1px solid var(--border)}
+.step-mark{width:25px;height:25px;flex:0 0 25px;border-radius:50%;display:grid;place-items:center;background:#394552;color:var(--muted);font-weight:800;font-size:12px}
+.step.done .step-mark{background:#254b37;color:var(--ok)}.step.running .step-mark{background:#514528;color:var(--warn)}.step.failed .step-mark{background:#552e30;color:var(--bad)}
+.step strong{display:block}.step small{display:block;color:var(--muted);font-size:12px}
+.frames{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.frame-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:0}
+.frame-card b{display:block;font-size:12px;margin-bottom:7px}
+iframe{display:block;width:100%;height:58px;border:1px solid var(--border);border-radius:8px;background:#222831}
+.log{white-space:pre-wrap;overflow-wrap:anywhere;background:#11151a;border:1px solid var(--border);border-radius:12px;padding:12px;min-height:90px;max-height:240px;overflow:auto;font:12px/1.5 ui-monospace,monospace}
+textarea{width:100%;min-height:150px;resize:vertical;background:#11151a;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px;font:12px/1.5 ui-monospace,monospace}
+@media(max-width:480px){main{padding:16px 12px 34px}.frames{grid-template-columns:1fr}.actions button{flex-basis:100%}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p>PRISMA · HERRAMIENTA TÉCNICA INDEPENDIENTE</p>
+  <h1>Diagnóstico automático de recuperación</h1>
+  <p>SQLite WASM · OPFS SAH pool · SharedWorker · Dedicated Worker</p>
+</header>
+
+<div class="note">
+  <strong>Una sola acción.</strong> Esta herramienta crea dos contextos de prueba visibles dentro de esta página y ejecuta automáticamente las pruebas de terminación, rollback y COMMIT con acuse perdido. No tienes que abrir dos pestañas ni interpretar registros.
+  <br><br>
+  Utiliza un identificador y un directorio OPFS nuevos en cada ejecución. No toca la sonda V4, la base de V8 ni la aplicación Prisma. Mantén esta página abierta y en primer plano mientras se ejecuta.
+</div>
+
+<section class="panel">
+<h2>Entorno</h2>
+<div class="grid">
+  <div class="metric"><span>Origen seguro</span><b id="secure">—</b></div>
+  <div class="metric"><span>SharedWorker</span><b id="shared">—</b></div>
+  <div class="metric"><span>Dedicated Worker</span><b id="dedicated">—</b></div>
+  <div class="metric"><span>OPFS desde el navegador</span><b id="opfs">—</b></div>
+  <div class="metric"><span>Protocolo</span><b id="protocol">recovery-auto-test-1</b></div>
+  <div class="metric"><span>Identificador de ejecución</span><b id="runId">Se crea al iniciar</b></div>
+</div>
+<div class="actions">
+  <button id="start">EJECUTAR DIAGNÓSTICO COMPLETO</button>
+</div>
+<p id="overall" class="status warn">Preparado. No se ha iniciado ninguna prueba.</p>
+</section>
+
+<section class="panel">
+<h2>Progreso automático</h2>
+<ol class="steps">
+  <li class="step" id="step1"><span class="step-mark">1</span><div><strong>Comprobar el entorno</strong><small id="step1text">Compatibilidad y origen seguro.</small></div></li>
+  <li class="step" id="step2"><span class="step-mark">2</span><div><strong>Preparar dos clientes y cinco registros</strong><small id="step2text">Un propietario, una reserva y una base nueva.</small></div></li>
+  <li class="step" id="step3"><span class="step-mark">3</span><div><strong>Ensayo A · Terminación en reposo</strong><small id="step3text">Detener el propietario y recuperar cinco registros.</small></div></li>
+  <li class="step" id="step4"><span class="step-mark">4</span><div><strong>Ensayo B · Interrupción antes de COMMIT</strong><small id="step4text">Insertar cinco sin confirmar y comprobar rollback.</small></div></li>
+  <li class="step" id="step5"><span class="step-mark">5</span><div><strong>Ensayo C · COMMIT con acuse perdido</strong><small id="step5text">Confirmar cinco y comprobar que sobreviven diez registros.</small></div></li>
+  <li class="step" id="step6"><span class="step-mark">6</span><div><strong>Reapertura, informe y limpieza</strong><small id="step6text">Verificar persistencia y borrar solo la base temporal de esta ejecución.</small></div></li>
+</ol>
+</section>
+
+<section class="panel">
+<h2>Clientes de prueba</h2>
+<p>Son dos contextos independientes integrados en esta misma página. La herramienta los controla y los coordina; no necesitas interactuar con ellos.</p>
+<div class="frames">
+  <div class="frame-card"><b>CLIENTE A · PROPIETARIO / TERCER CANDIDATO</b><iframe id="frameA" title="Cliente A"></iframe></div>
+  <div class="frame-card"><b>CLIENTE B · RESERVA / CUARTO CANDIDATO</b><iframe id="frameB" title="Cliente B"></iframe></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>Resultado</h2>
+<p id="resultSummary" class="status warn">El informe aparecerá aquí al terminar.</p>
+<div id="log" class="log">Listo para iniciar. La prueba V4 y sus datos no serán utilizados.</div>
+<div class="actions">
+  <button id="copy" class="secondary" disabled>Copiar informe</button>
+</div>
+<textarea id="report" readonly placeholder="El informe detallado aparecerá aquí."></textarea>
+</section>
+
+<div class="note">
+  <strong>Alcance de esta prueba:</strong> automatiza la coordinación entre varios clientes, la terminación del Dedicated Worker, la recuperación del journal SQLite, el COMMIT terminado con respuesta retenida, la reapertura y la persistencia. No simula el descarte real de una pestaña por Android ni sustituye la aceptación de suspensión del sistema operativo.
+</div>
+</main>
+
+<script type="module">
+const APP = "prisma-recovery-auto-v1";
+const $ = (id) => document.getElementById(id);
+const frames = { A: $("frameA"), B: $("frameB") };
+const tokens = {};
+const currentClientIds = {};
+const history = [];
+const waiters = [];
+let runToken = null;
+let running = false;
+let reportLines = [];
+
+$("secure").textContent = String(isSecureContext);
+$("shared").textContent = typeof SharedWorker === "function" ? "Disponible" : "No disponible";
+$("dedicated").textContent = typeof Worker === "function" ? "Disponible" : "No disponible";
+$("opfs").textContent = typeof navigator.storage?.getDirectory === "function" ? "Disponible" : "No disponible";
+
+function stamp() {
+  return new Date().toLocaleTimeString();
+}
+
+function log(message) {
+  const line = "[" + stamp() + "] " + message;
+  const area = $("log");
+  area.textContent += "\n" + line;
+  area.scrollTop = area.scrollHeight;
+  reportLines.push(line);
+}
+
+function report(message) {
+  reportLines.push(message);
+  $("report").value = reportLines.join("\n");
+}
+
+function step(number, state, detail) {
+  const item = $("step" + number);
+  item.className = "step " + state;
+  item.querySelector(".step-mark").textContent =
+    state === "done" ? "✓" : state === "failed" ? "!" : String(number);
+  $("step" + number + "text").textContent = detail;
+}
+
+function check(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function receiveMessage(event) {
+  if (event.origin !== location.origin) return;
+  const message = event.data || {};
+  if (message.app !== APP || !message.runToken || message.runToken !== runToken) return;
+  const frame = frames[message.slot];
+  if (!frame || event.source !== frame.contentWindow) return;
+  if (tokens[message.slot] !== message.token) return;
+
+  history.push(message);
+  if (history.length > 1600) history.splice(0, history.length - 1600);
+
+  if (message.type === "client-error") {
+    log("ERROR " + message.label + ": " + (message.error || "fallo sin detalle"));
+  } else if (message.type === "broker-trace" &&
+             message.data?.stage === "fault-commit-completed-before-ack") {
+    log("COMMIT confirmado en SQLite; la respuesta individual quedó retenida.");
+  } else if (message.type === "termination-confirmed") {
+    log(message.label + ": terminación del Dedicated Worker confirmada al coordinador.");
+  } else if (message.type === "owner-retired") {
+    log(message.label + ": el coordinador retiró al propietario anterior.");
+  } else if (message.type === "owner-ready") {
+    log(message.label + ": propietario activo; SQLite recuperado con " +
+      String(message.data?.totalRows ?? "?") + " filas.");
+  } else if (message.type === "worker-killed") {
+    log(message.label + ": Dedicated Worker terminado sin avisar al coordinador.");
+  } else if (message.type === "registered") {
+    currentClientIds[message.slot] = message.clientId;
+    log(message.label + ": cliente conectado (" + message.clientId.slice(0, 12) + ").");
+  } else if (message.type === "stats") {
+    log(message.label + ": el coordinador observó " +
+      String(message.data?.totalRows ?? "?") + " filas.");
+  }
+
+  for (let i = waiters.length - 1; i >= 0; i -= 1) {
+    const waiter = waiters[i];
+    if (waiter.slot !== message.slot || waiter.type !== message.type) continue;
+    if (waiter.predicate && !waiter.predicate(message)) continue;
+    waiters.splice(i, 1);
+    clearTimeout(waiter.timer);
+    waiter.resolve(message);
+  }
+}
+
+window.addEventListener("message", receiveMessage);
+
+function waitForMessage(slot, type, predicate = null, timeoutMs = 30000) {
+  const existing = history.find((message) =>
+    message.slot === slot &&
+    message.token === tokens[slot] &&
+    message.type === type &&
+    (!predicate || predicate(message))
+  );
+  if (existing) return Promise.resolve(existing);
+
+  return new Promise((resolve, reject) => {
+    const waiter = { slot, type, predicate, resolve, timer: null };
+    waiter.timer = setTimeout(() => {
+      const index = waiters.indexOf(waiter);
+      if (index >= 0) waiters.splice(index, 1);
+      reject(new Error("Tiempo agotado esperando " + type + " del cliente " + slot + "."));
+    }, timeoutMs);
+    waiters.push(waiter);
+  });
+}
+
+function command(slot, payload) {
+  const frame = frames[slot];
+  if (!frame?.contentWindow) throw new Error("El cliente " + slot + " no está disponible.");
+  frame.contentWindow.postMessage({
+    app: APP,
+    runToken,
+    token: tokens[slot],
+    ...payload
+  }, location.origin);
+}
+
+async function loadClient(slot, label) {
+  const token = crypto.randomUUID();
+  tokens[slot] = token;
+  currentClientIds[slot] = null;
+  const registration = waitForMessage(
+    slot, "registered",
+    (message) => message.label === label && message.token === token,
+    25000
+  );
+  const url = new URL("./client.html", location.href);
+  url.searchParams.set("run", runToken);
+  url.searchParams.set("slot", slot);
+  url.searchParams.set("token", token);
+  url.searchParams.set("label", label);
+  frames[slot].src = url.href;
+  await registration;
+  return currentClientIds[slot];
+}
+
+async function restartClient(slot, label) {
+  const oldClientId = currentClientIds[slot];
+  const registered = waitForMessage(
+    slot,
+    "registered",
+    (message) => message.label === label && message.clientId !== oldClientId,
+    25000
+  );
+  command(slot, { command: "restart", label });
+  const result = await registered;
+  currentClientIds[slot] = result.clientId;
+  return result.clientId;
+}
+
+async function waitForRole(slot, expectedRole, expectedOwnerId, timeoutMs = 12000) {
+  return waitForMessage(slot, "state", (message) => {
+    const state = message.state;
+    if (!state || message.clientId !== currentClientIds[slot]) return false;
+    const own = state.sessions?.find((session) => session.clientId === currentClientIds[slot]);
+    return own?.role === expectedRole && state.ownerClientId === expectedOwnerId;
+  }, timeoutMs);
+}
+
+async function waitForOwner(slot, timeoutMs = 70000) {
+  return waitForMessage(
+    slot,
+    "owner-ready",
+    (message) => message.clientId === currentClientIds[slot],
+    timeoutMs
+  );
+}
+
+async function sendRequest(slot, operation, extra = {}, timeoutMs = 45000) {
+  const requestId = runToken + ":" + slot + ":" + crypto.randomUUID();
+  const response = waitForMessage(
+    slot,
+    "response",
+    (message) => message.requestId === requestId,
+    timeoutMs
+  );
+  command(slot, {
+    command: "request",
+    requestId,
+    operation,
+    ...extra
+  });
+  const message = await response;
+  check(message.data?.ok !== false, message.data?.error || "Falló " + operation + ".");
+  return message.data;
+}
+
+async function killAndPromote(ownerSlot, nextSlot, expectedRows) {
+  const terminated = waitForMessage(
+    ownerSlot, "termination-confirmed",
+    (message) => message.clientId === currentClientIds[ownerSlot],
+    70000
+  );
+  const retired = waitForMessage(
+    ownerSlot, "owner-retired",
+    (message) => message.clientId === currentClientIds[ownerSlot],
+    70000
+  );
+  const ready = waitForOwner(nextSlot, 80000);
+
+  command(ownerSlot, { command: "kill-worker" });
+  await waitForMessage(ownerSlot, "worker-killed", null, 5000);
+  await terminated;
+  await retired;
+  await ready;
+
+  const status = await sendRequest(nextSlot, "status");
+  check(Number(status.totalRows) === expectedRows,
+    "El nuevo propietario recuperó " + status.totalRows + " filas; se esperaban " + expectedRows + ".");
+  check(status.databaseDiagnostics?.databaseFileFound === true,
+    "El nuevo propietario no encontró el archivo SQLite anterior.");
+  check(Number(status.databaseDiagnostics?.databaseFileBytes) > 0,
+    "El archivo SQLite recuperado no tiene tamaño válido.");
+
+  return status;
+}
+
+async function ensureStandby(slot, ownerSlot) {
+  const ownerId = currentClientIds[ownerSlot];
+  await waitForRole(slot, "standby", ownerId, 15000);
+}
+
+async function runAll() {
+  if (running) return;
+  running = true;
+  $("start").disabled = true;
+  $("copy").disabled = true;
+  reportLines = [];
+  history.length = 0;
+  $("log").textContent = "Iniciando diagnóstico automático…";
+  $("report").value = "";
+  $("overall").textContent = "Ejecutando. Mantén esta página en primer plano.";
+  $("overall").className = "status warn";
+  $("resultSummary").textContent = "Prueba en curso.";
+  $("resultSummary").className = "status warn";
+
+  runToken = crypto.randomUUID();
+  const runIdText = "prisma-sahpool-recovery-auto-" + runToken;
+  $("runId").textContent = runIdText;
+  report("PRISMA · RECOVERY AUTOTEST V1");
+  report("RUN_ID: " + runIdText);
+  report("Inicio: " + new Date().toLocaleString());
+  report("Entorno: " + navigator.userAgent);
+  report("Alcance: SharedWorker + 2 contextos iframe visibles + Dedicated Workers + OPFS SAH pool.");
+  report("");
+
+  try {
+    step(1, "running", "Comprobando APIs del navegador.");
+    check(isSecureContext, "El origen no es seguro.");
+    check(typeof SharedWorker === "function", "SharedWorker no está disponible.");
+    check(typeof Worker === "function", "Dedicated Worker no está disponible.");
+    check(typeof MessageChannel === "function", "MessageChannel no está disponible.");
+    check(typeof navigator.storage?.getDirectory === "function", "OPFS no está disponible en la página.");
+    step(1, "done", "Origen seguro, Worker, SharedWorker y OPFS disponibles.");
+    log("Entorno compatible.");
+
+    step(2, "running", "Creando clientes independientes y base OPFS nueva.");
+    const ownerA = await loadClient("A", "Cliente A · propietario inicial");
+    await waitForOwner("A", 30000);
+    const standbyB = await loadClient("B", "Cliente B · primera reserva");
+    await waitForRole("B", "standby", ownerA, 15000);
+
+    const seed = await sendRequest("A", "insertBatch", { count: 5 });
+    check(Number(seed.totalRows) === 5, "No se pudieron crear exactamente cinco filas iniciales.");
+    const initialStatus = await sendRequest("A", "status");
+    check(Number(initialStatus.totalRows) === 5, "La referencia inicial no contiene cinco filas.");
+    check(initialStatus.databaseDiagnostics?.databaseFileFound === true,
+      "No se encontró el archivo SQLite recién creado.");
+    step(2, "done", "Dos clientes conectados; un propietario; cinco filas persistidas.");
+    log("Base inicial verificada: cinco filas.");
+    report("PREPARACIÓN: PASS · dos clientes · cinco filas · archivo SQLite encontrado.");
+
+    step(3, "running", "Terminando el propietario en reposo y esperando el failover.");
+    await killAndPromote("A", "B", 5);
+    step(3, "done", "El cliente B asumió la propiedad y recuperó 5/5 filas.");
+    report("ENSAYO A: PASS · Dedicated Worker terminado en reposo · reserva B recuperó 5/5.");
+
+    step(4, "running", "Preparando cinco filas no confirmadas y terminando el propietario.");
+    await restartClient("A", "Cliente C · reserva para rollback");
+    await ensureStandby("A", "B");
+
+    const prepared = await sendRequest("B", "faultPrepareUncommitted", { count: 5 });
+    check(prepared.transactionOpen === true, "SQLite no confirmó que la transacción quedó abierta.");
+    check(Number(prepared.totalBefore) === 5, "El total anterior a la transacción no era cinco.");
+    log("Transacción real abierta con cinco INSERT sin COMMIT.");
+    await killAndPromote("B", "A", 5);
+    step(4, "done", "El cliente C recuperó 5/5; las cinco filas no confirmadas fueron revertidas.");
+    report("ENSAYO B: PASS · BEGIN IMMEDIATE + 5 INSERT sin COMMIT · recuperación = 5/5 (rollback).");
+
+    step(5, "running", "Confirmando cinco filas y reteniendo deliberadamente el acuse.");
+    await restartClient("B", "Cliente D · reserva para COMMIT");
+    await ensureStandby("B", "A");
+
+    const commitRequestId = runToken + ":A:" + crypto.randomUUID();
+    const commitTrace = waitForMessage(
+      "A",
+      "broker-trace",
+      (message) => message.data?.stage === "fault-commit-completed-before-ack" &&
+        message.data?.requestId === commitRequestId,
+      20000
+    );
+    command("A", {
+      command: "request",
+      requestId: commitRequestId,
+      operation: "faultCommitBeforeAck",
+      count: 5
+    });
+    const committed = await commitTrace;
+    check(Number(committed.data?.totalRows) === 10,
+      "COMMIT no confirmó diez filas antes de retener la respuesta.");
+    log("COMMIT terminó correctamente; el worker retuvo la respuesta individual.");
+    await killAndPromote("A", "B", 10);
+    step(5, "done", "El cliente D recuperó 10/10 filas confirmadas aunque se perdió el acuse.");
+    report("ENSAYO C: PASS · COMMIT completado + respuesta retenida · recuperación = 10/10.");
+
+    step(6, "running", "Cerrando y reabriendo SQLite; limpiando únicamente esta ejecución.");
+    const reopened = await sendRequest("B", "reopenVerify");
+    check(Number(reopened.totalRows) === 10, "La reapertura SQLite no conservó diez filas.");
+    check(reopened.databaseDiagnostics?.databaseFileFound === true,
+      "El archivo no existe después de la reapertura.");
+    report("REAPERTURA: PASS · 10 filas después de cerrar y volver a abrir SQLite.");
+
+    const cleanup = await sendRequest("B", "cleanup", {}, 60000);
+    check(cleanup.ok === true, "La limpieza aislada no terminó correctamente.");
+    report("LIMPIEZA: PASS · VFS exclusivo de esta ejecución eliminado.");
+    command("A", { command: "dispose" });
+    command("B", { command: "dispose" });
+    await delay(250);
+
+    step(6, "done", "SQLite reabierto con diez filas; VFS temporal eliminado.");
+    report("");
+    report("RESULTADO GENERAL: APROBADO");
+    report("Las tres pruebas transaccionales y de failover pasaron en este navegador.");
+    report("La carpeta OPFS exclusiva de esta ejecución fue eliminada.");
+    report("No se modificaron la sonda V4, V8 ni los datos de Prisma.");
+    $("overall").textContent = "Todas las pruebas automáticas terminaron correctamente.";
+    $("overall").className = "status ok";
+    $("resultSummary").textContent = "APROBADO · A, B y C · recuperación 5 → 5 → 10 · reapertura y limpieza correctas.";
+    $("resultSummary").className = "status ok";
+    log("DIAGNÓSTICO COMPLETO: APROBADO.");
+  } catch (error) {
+    const detail = error?.message || String(error);
+    log("DIAGNÓSTICO INTERRUMPIDO: " + detail);
+    report("");
+    report("RESULTADO GENERAL: INCONCLUSO / FALLIDO");
+    report("Motivo: " + detail);
+    report("La base OPFS de esta ejecución no se eliminó automáticamente para conservar evidencia.");
+    report("Puedes copiar este informe y compartirlo; no ejecutes limpieza sobre V4 ni V8.");
+    step(1, $("step1").classList.contains("done") ? "done" : "failed",
+      $("step1text").textContent);
+    for (let i = 2; i <= 6; i += 1) {
+      if (!$("step" + i).classList.contains("done") &&
+          !$("step" + i).classList.contains("failed")) {
+        step(i, "failed", "La ejecución se detuvo antes de completar esta etapa.");
+        break;
+      }
+    }
+    $("overall").textContent = "La prueba no pudo completarse. El informe conserva el punto del fallo.";
+    $("overall").className = "status bad";
+    $("resultSummary").textContent = "INCONCLUSO · " + detail;
+    $("resultSummary").className = "status bad";
+    for (const slot of ["A", "B"]) {
+      try { command(slot, { command: "dispose" }); } catch {}
+    }
+  } finally {
+    $("report").value = reportLines.join("\n");
+    $("copy").disabled = false;
+    $("start").disabled = false;
+    $("start").textContent = "EJECUTAR NUEVA PRUEBA AISLADA";
+    running = false;
+  }
+}
+
+$("start").addEventListener("click", runAll);
+$("copy").addEventListener("click", async () => {
+  const value = $("report").value;
+  try {
+    await navigator.clipboard.writeText(value);
+    $("copy").textContent = "Informe copiado";
+  } catch {
+    $("report").focus();
+    $("report").select();
+    $("copy").textContent = "Selecciona y copia el informe";
+  }
+});
+</script>
+</body>
+</html>
