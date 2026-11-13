@@ -109,7 +109,7 @@ Abre en Brave:
 
 `http://127.0.0.1:18767/coordination.html`
 
-Este servidor añade `Cross-Origin-Opener-Policy: same-origin` y `Cross-Origin-Embedder-Policy: require-corp` para que la ejecución también tenga aislamiento de origen. La prueba utiliza exclusivamente una base sintética con un directorio OPFS propio.
+Este servidor no configura COOP/COEP deliberadamente: SAH pool + SharedWorker no necesita aislamiento de origen y así comprobamos que la arquitectura candidata no impone restricciones adicionales a los recursos externos de Prisma. La prueba utiliza exclusivamente una base sintética con un directorio OPFS propio.
 
 Procedimiento:
 
