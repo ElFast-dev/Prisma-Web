@@ -140,7 +140,7 @@ La ejecución anterior en Brave Android terminó con `Worker is not defined` al 
 
 El Dedicated Worker comprueba explícitamente `FileSystemHandle`, `FileSystemDirectoryHandle`, `FileSystemFileHandle.prototype.createSyncAccessHandle` y `navigator.storage.getDirectory`, e incluye el resultado en la respuesta de conexión. Así, un fallo de OPFS indica qué API falta en ese contexto.
 
-El archivo `coordination.html` usa un identificador de ejecución para que los restos de una ejecución interrumpida no se confundan con los 50 registros esperados en la siguiente. No activa `clearOnInit`, de modo que una promoción del Worker en espera no borra la base. La limpieza final elimina únicamente el VFS temporal de esta herramienta.
+El directorio y el archivo SQLite son estables durante todas las recargas de esta prueba. El identificador del conjunto de datos también es estable; el ID del SharedWorker sí cambia cuando su última pestaña se cierra y se crea una nueva instancia. El panel cuenta todos los registros de la base exclusiva de prueba, incluso si fueron escritos antes de reiniciar el SharedWorker. No se activa `clearOnInit`; por tanto, una inicialización, una promoción del Worker o una recarga no deben borrar la base. La limpieza final elimina únicamente el VFS temporal de esta herramienta.
 
 Esta separación respeta el modelo de permisos del navegador, pero todavía requiere validación real en Brave del Galaxy A03. La prueba de dos pestañas no valida por sí sola un cierre abrupto del proceso ni la recuperación tras reiniciar el navegador.
 
@@ -152,3 +152,12 @@ La ejecución en Brave confirmó que todas las APIs OPFS requeridas estaban pres
 La coordinación también promueve automáticamente el siguiente Dedicated Worker candidato cuando falla la inicialización del propietario. Las pestañas en espera muestran ahora un estado explícito y un propietario fallido termina su Dedicated Worker para liberar recursos.
 
 V5 utiliza un nombre nuevo de SharedWorker y el directorio OPFS `prisma-sahpool-sharedworker-probe-v5`, aislados de la ejecución fallida anterior. Cierra todas las pestañas de pruebas anteriores antes de actualizar los archivos y arrancar de nuevo.
+
+
+### Corrección de persistencia tras recargar (V5)
+
+La primera versión de la prueba generaba `RUN_ID` con `crypto.randomUUID()` dentro del SharedWorker y filtraba el conteo SQL por ese valor. Cuando el SharedWorker terminaba (por ejemplo, al cerrarse o recargarse su última pestaña), la instancia nueva generaba otro `RUN_ID`. Los registros anteriores seguían en OPFS, pero el filtro los ocultaba y la interfaz mostraba cero. No era un borrado de SQLite.
+
+Se corrigió usando un identificador estable `prisma-sahpool-sharedworker-probe-v5` para el conjunto de datos y contando todos los registros de la base exclusiva de la prueba. Los IDs del SharedWorker y Dedicated Worker siguen siendo IDs de instancia y pueden cambiar al recargar; eso no significa que se haya reiniciado la base.
+
+La persistencia del conjunto debe verificarse recargando la página y comprobando que el total continúa en 50. No pulses «Eliminar la base sintética» antes de esa comprobación.
