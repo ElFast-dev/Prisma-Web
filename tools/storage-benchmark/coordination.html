@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Prisma · Prueba SharedWorker + SQLite</title>
+<style>
+:root{color-scheme:dark;--bg:#171a20;--surface:#222831;--surface2:#29333e;--border:#3a4552;--text:#f0f0f0;--muted:#b5bec8;--accent:#70aee0;--ok:#8cc9a3;--warn:#f0c674;--bad:#f28b82}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
+main{width:min(760px,100%);margin:auto;padding:20px 15px 42px}
+h1{font-size:clamp(24px,6vw,34px);line-height:1.15;margin:8px 0}
+h2{font-size:18px;margin:0 0 10px}p{color:var(--muted);margin:8px 0}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px;margin:13px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.metric{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px;min-width:0}
+.metric span{display:block;font-size:12px;color:var(--muted)}
+.metric b{display:block;overflow-wrap:anywhere;font-size:14px;margin-top:3px}
+button{font:inherit;font-weight:650;border:0;border-radius:12px;padding:12px 14px;min-height:46px;background:var(--accent);color:#10202d;cursor:pointer}
+button.secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.actions button{flex:1 1 180px}
+.note{background:#202933;border:1px solid var(--border);padding:12px 14px;border-radius:14px;color:var(--muted);margin:14px 0}
+.status{font-weight:750}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.log{white-space:pre-wrap;overflow-wrap:anywhere;background:#11151a;border:1px solid var(--border);border-radius:12px;padding:12px;min-height:84px;max-height:260px;overflow:auto;font:12px/1.5 ui-monospace,monospace}
+@media(max-width:420px){main{padding:16px 12px 34px}.actions button{flex-basis:100%}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p>PRISMA · HERRAMIENTA TÉCNICA INDEPENDIENTE</p>
+  <h1>SQLite SAH pool + SharedWorker</h1>
+  <p>Prueba funcional de un único actor SQLite compartido por varias pestañas en Brave Android.</p>
+</header>
+
+<div class="note">
+  <strong>Solo datos sintéticos.</strong> Esta prueba crea y elimina una base con nombre exclusivo de la herramienta. No toca datos personales ni la aplicación Prisma.
+  Abre esta misma dirección en <strong>dos pestañas</strong> del mismo Brave y del mismo origen. No uses navegación privada.
+</div>
+
+<section class="panel">
+<h2>Requisitos del entorno</h2>
+<div class="grid">
+  <div class="metric"><span>Origen seguro</span><b id="secure">—</b></div>
+  <div class="metric"><span>crossOriginIsolated</span><b id="isolated">—</b></div>
+  <div class="metric"><span>SharedWorker</span><b id="shared">—</b></div>
+  <div class="metric"><span>OPFS</span><b id="opfs">—</b></div>
+  <div class="metric"><span>SharedArrayBuffer</span><b id="sab">—</b></div>
+  <div class="metric"><span>SQLite WASM</span><b id="sqlite">3.54.1-build1 (pendiente)</b></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>Conexión compartida</h2>
+<p>Ambas pestañas deben mostrar exactamente el mismo ID de Worker. Cuando las dos estén conectadas, el contador debe indicar 2 conexiones.</p>
+<div class="grid">
+  <div class="metric"><span>ID del SharedWorker</span><b id="workerId">Sin conectar</b></div>
+  <div class="metric"><span>Pestañas conectadas</span><b id="connections">0</b></div>
+  <div class="metric"><span>Identificador de esta pestaña</span><b id="clientId">—</b></div>
+  <div class="metric"><span>Registros en SQLite</span><b id="totalRows">—</b></div>
+</div>
+<div class="actions">
+  <button id="connect">Conectar al SharedWorker</button>
+  <button id="status" class="secondary" disabled>Consultar estado</button>
+</div>
+<p id="connectionStatus" class="status warn">Esperando conexión.</p>
+</section>
+
+<section class="panel">
+<h2>Escrituras desde las dos pestañas</h2>
+<p>Después de conectar ambas pestañas, pulsa «Insertar 25» una vez en cada una. El Worker ejecutará cada lote en una transacción SQLite y notificará el total a las dos pestañas.</p>
+<div class="actions">
+  <button id="insert" disabled>Insertar 25 registros</button>
+  <button id="verify" class="secondary" disabled>Cerrar y reabrir SQLite</button>
+</div>
+<p id="writeStatus" class="status warn">Pendiente.</p>
+<div class="note">Resultado esperado después de insertar desde ambas pestañas: mismo ID de Worker, 2 conexiones y 50 registros en total. La reapertura debe conservar los 50 registros.</div>
+</section>
+
+<section class="panel">
+<h2>Registro de actividad</h2>
+<div id="log" class="log" aria-live="polite">La prueba aún no ha comenzado.</div>
+<div class="actions">
+  <button id="cleanup" class="secondary" disabled>Eliminar la base sintética</button>
+</div>
+<p>Ejecuta la limpieza desde una sola pestaña cuando ambas hayan terminado. La eliminación afecta exclusivamente al VFS de prueba.</p>
+</section>
+</main>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const clientId = crypto.randomUUID();
+$("clientId").textContent = clientId.slice(0, 12);
+$("secure").textContent = String(isSecureContext);
+$("isolated").textContent = String(self.crossOriginIsolated === true);
+$("shared").textContent = typeof SharedWorker === "function" ? "Disponible" : "No disponible";
+$("opfs").textContent = typeof navigator.storage?.getDirectory === "function" ? "Disponible" : "No disponible";
+$("sab").textContent = typeof SharedArrayBuffer === "function" ? "Disponible" : "No disponible";
+
+let shared = null;
+let port = null;
+let requestCounter = 0;
+const pending = new Map();
+let insertedHere = false;
+
+function log(message) {
+  const stamp = new Date().toLocaleTimeString();
+  const area = $("log");
+  area.textContent += "\n[" + stamp + "] " + message;
+  area.scrollTop = area.scrollHeight;
+}
+
+function updateConnections(data) {
+  $("workerId").textContent = data.workerId || "—";
+  $("connections").textContent = String(data.connections ?? "—");
+}
+
+function request(type, extra = {}) {
+  if (!port) return Promise.reject(new Error("Primero conecta el SharedWorker."));
+  const requestId = String(++requestCounter) + "-" + clientId;
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pending.delete(requestId);
+      reject(new Error("Tiempo de espera agotado en la operación " + type));
+    }, 30000);
+    pending.set(requestId, {
+      resolve: (value) => { clearTimeout(timeout); resolve(value); },
+      reject: (error) => { clearTimeout(timeout); reject(error); }
+    });
+    port.postMessage({ requestId, type, clientId, ...extra });
+  });
+}
+
+function connect() {
+  if (port) return;
+  if (typeof SharedWorker !== "function") {
+    $("connectionStatus").textContent = "SharedWorker no está disponible.";
+    $("connectionStatus").className = "status bad";
+    return;
+  }
+  try {
+    shared = new SharedWorker("./src/sahpool-shared-worker.js", {
+      type: "module",
+      name: "prisma-sahpool-sharedworker-probe-v1"
+    });
+    port = shared.port;
+    port.onmessage = (event) => {
+      const message = event.data || {};
+      if (message.kind === "connections" || message.kind === "stats") {
+        updateConnections(message);
+        if (Number.isFinite(message.totalRows)) $("totalRows").textContent = String(message.totalRows);
+        return;
+      }
+      if (message.kind === "cleaned") {
+        log("El VFS sintético fue eliminado.");
+        return;
+      }
+      if (message.kind === "response") {
+        const waiter = pending.get(message.requestId);
+        if (waiter) {
+          pending.delete(message.requestId);
+          if (message.ok) waiter.resolve(message);
+          else waiter.reject(new Error(message.error || "Error del SharedWorker"));
+        }
+      }
+    };
+    port.start();
+    $("connect").disabled = true;
+    $("connectionStatus").textContent = "Conectando y abriendo SQLite…";
+    $("connectionStatus").className = "status warn";
+    request("hello").then((result) => {
+      updateConnections(result);
+      $("sqlite").textContent = "Inicializado correctamente";
+      $("connectionStatus").textContent = "Conexión activa.";
+      $("connectionStatus").className = "status ok";
+      $("status").disabled = false;
+      $("insert").disabled = false;
+      $("verify").disabled = false;
+      $("cleanup").disabled = false;
+      log("Conectado. Worker ID: " + result.workerId);
+      log("Conexiones simultáneas: " + result.connections);
+      log("Registros existentes: " + result.totalRows);
+      $("totalRows").textContent = String(result.totalRows);
+    }).catch((error) => {
+      $("connectionStatus").textContent = error.message;
+      $("connectionStatus").className = "status bad";
+      log("ERROR: " + error.message);
+    });
+  } catch (error) {
+    $("connectionStatus").textContent = error.message;
+    $("connectionStatus").className = "status bad";
+    log("No se pudo crear SharedWorker: " + error.message);
+  }
+}
+
+$("connect").addEventListener("click", connect);
+
+$("status").addEventListener("click", async () => {
+  try {
+    const result = await request("status");
+    updateConnections(result);
+    $("totalRows").textContent = String(result.totalRows);
+    log("Estado: " + result.totalRows + " registros; " + result.connections + " conexiones.");
+  } catch (error) { log("ERROR: " + error.message); }
+});
+
+$("insert").addEventListener("click", async () => {
+  if (insertedHere) {
+    log("Esta pestaña ya insertó su lote. No se repetirá.");
+    return;
+  }
+  $("insert").disabled = true;
+  try {
+    const result = await request("insertBatch", { count: 25 });
+    insertedHere = true;
+    $("totalRows").textContent = String(result.totalRows);
+    $("writeStatus").textContent = "Lote insertado: " + result.inserted + " registros desde esta pestaña.";
+    $("writeStatus").className = "status ok";
+    log("Lote confirmado. Total: " + result.totalRows + "; propios: " + result.clientRows + ".");
+  } catch (error) {
+    $("insert").disabled = false;
+    $("writeStatus").textContent = error.message;
+    $("writeStatus").className = "status bad";
+    log("ERROR de escritura: " + error.message);
+  }
+});
+
+$("verify").addEventListener("click", async () => {
+  $("verify").disabled = true;
+  try {
+    const result = await request("reopenVerify");
+    $("totalRows").textContent = String(result.totalRows);
+    $("writeStatus").textContent = "SQLite reabierto correctamente. Registros recuperados: " + result.totalRows + ".";
+    $("writeStatus").className = "status ok";
+    log("Cierre y reapertura correctos. Total persistido: " + result.totalRows + ".");
+  } catch (error) {
+    $("writeStatus").textContent = error.message;
+    $("writeStatus").className = "status bad";
+    log("ERROR al reabrir: " + error.message);
+  } finally {
+    $("verify").disabled = false;
+  }
+});
+
+$("cleanup").addEventListener("click", async () => {
+  if (!confirm("Eliminar únicamente la base sintética de esta prueba SharedWorker + SAH pool. ¿Continuar?")) return;
+  $("cleanup").disabled = true;
+  try {
+    const result = await request("cleanup");
+    $("totalRows").textContent = "0";
+    $("writeStatus").textContent = "VFS temporal eliminado. Resultado removeVfs(): " + result.removeVfsResult;
+    $("writeStatus").className = "status ok";
+    log("Limpieza completada. removeVfs(): " + result.removeVfsResult);
+  } catch (error) {
+    $("cleanup").disabled = false;
+    log("ERROR de limpieza: " + error.message);
+  }
+});
+</script>
+</body>
+</html>
