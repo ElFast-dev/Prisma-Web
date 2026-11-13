@@ -1,7 +1,7 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
-// Stable dataset identity across SharedWorker lifetimes and page reloads.
 const RUN_ID = "prisma-sahpool-sharedworker-probe-v5";
 const NESTED_WORKER_AVAILABLE = typeof Worker === "function";
+
 const sessions = new Map();
 const portOwners = new Map();
 const pending = new Map();
@@ -10,9 +10,11 @@ let ownerClientId = null;
 let databaseWorkerId = null;
 let persistedTotalRows = null;
 let brokerSequence = 0;
+let controlSequence = 0;
+let handoffInProgress = null;
 
 function send(port, message, transfer = []) {
-  try { port.postMessage(message, transfer); } catch { /* A client may have closed. */ }
+  try { port.postMessage(message, transfer); } catch { /* Client closed. */ }
 }
 
 function sessionFor(port) {
@@ -21,6 +23,7 @@ function sessionFor(port) {
 }
 
 function publishState() {
+  const owner = ownerClientId ? sessions.get(ownerClientId) : null;
   const state = {
     kind: "state",
     workerId: SHARED_WORKER_ID,
@@ -29,25 +32,30 @@ function publishState() {
     connections: sessions.size,
     totalRows: persistedTotalRows,
     ownerClientId,
+    ownerRole: owner?.role || null,
     databaseWorkerId,
-    requiredOpfsApis: ownerClientId
-      ? (sessions.get(ownerClientId)?.opfsApis || null)
-      : null,
-    removedFailedV4Directory: ownerClientId
-      ? (sessions.get(ownerClientId)?.removedFailedV4Directory ?? null)
-      : null,
-    ownerReady: Boolean(ownerClientId && databaseWorkerId)
+    requiredOpfsApis: owner?.opfsApis || null,
+    removedFailedV4Directory: owner?.removedFailedV4Directory ?? null,
+    ownerReady: Boolean(ownerClientId && owner?.role === "owner" && databaseWorkerId),
+    handoffInProgress: Boolean(handoffInProgress)
   };
   for (const session of sessions.values()) send(session.port, state);
 }
 
-function activateNextOwner() {
-  ownerClientId = null;
+function activateNextOwner({ excludeClientId = null, preferredClientId = null } = {}) {
   databaseWorkerId = null;
+  ownerClientId = null;
 
-  const candidate = [...sessions.values()].find(
-    (session) => session.dbPort && session.role !== "failed"
+  const eligible = [...sessions.values()].filter((session) =>
+    session.clientId !== excludeClientId &&
+    session.dbPort &&
+    (session.role === "standby" || session.role === "paused")
   );
+
+  const candidate =
+    eligible.find((session) => session.clientId === preferredClientId) ||
+    eligible[0];
+
   if (!candidate) {
     publishState();
     return;
@@ -67,13 +75,18 @@ function removeSession(clientId, reason) {
   const session = sessions.get(clientId);
   if (!session) return;
 
+  const wasOwner = ownerClientId === clientId;
+  const cancelledHandoff =
+    handoffInProgress &&
+    (handoffInProgress.fromClientId === clientId ||
+     handoffInProgress.toClientId === clientId);
+
   portOwners.delete(session.port);
   sessions.delete(clientId);
 
   try { session.dbPort?.close(); } catch {}
   try { session.port.close(); } catch {}
 
-  const wasOwner = ownerClientId === clientId;
   for (const [brokerRequestId, request] of pending) {
     if (wasOwner || request.clientId === clientId) {
       const target = sessions.get(request.clientId);
@@ -82,34 +95,79 @@ function removeSession(clientId, reason) {
           kind: "response",
           requestId: request.requestId,
           ok: false,
-          error: wasOwner
-            ? "La pestaña propietaria de SQLite se cerró durante la operación. Consulta el estado antes de reintentar."
-            : "La pestaña que originó la operación se cerró."
+          error: "El propietario o la pestaña que originó la operación se cerró. Consulta el estado antes de reintentar."
         });
       }
       pending.delete(brokerRequestId);
     }
   }
 
-  if (wasOwner) activateNextOwner();
-  else publishState();
+  if (cancelledHandoff) handoffInProgress = null;
+
+  if (wasOwner) {
+    databaseWorkerId = null;
+    activateNextOwner();
+  } else {
+    publishState();
+  }
+}
+
+function finishHandoff(ownerClientIdForPort, message) {
+  if (!handoffInProgress ||
+      handoffInProgress.fromClientId !== ownerClientIdForPort ||
+      ownerClientId !== ownerClientIdForPort) {
+    return;
+  }
+
+  const previousOwner = sessions.get(ownerClientIdForPort);
+  if (previousOwner) {
+    previousOwner.role = "paused";
+    previousOwner.databaseWorkerId = message.dedicatedWorkerId;
+  }
+
+  const targetClientId = handoffInProgress.toClientId;
+  handoffInProgress = null;
+  ownerClientId = null;
+  databaseWorkerId = null;
+
+  if (previousOwner) {
+    send(previousOwner.port, {
+      kind: "handoff-released",
+      totalRows: message.totalRows,
+      vfsPaused: message.vfsPaused === true
+    });
+  }
+
+  activateNextOwner({
+    excludeClientId: ownerClientIdForPort,
+    preferredClientId: targetClientId
+  });
 }
 
 function onDatabaseMessage(ownerClientIdForPort, message) {
   const owner = sessions.get(ownerClientIdForPort);
   if (!owner) return;
 
-  if (message.kind === "dedicated-ready") {
-    return;
-  }
+  if (message.kind === "dedicated-ready") return;
 
   if (message.kind === "activated") {
     if (ownerClientId !== ownerClientIdForPort) return;
+
     databaseWorkerId = message.dedicatedWorkerId;
-    persistedTotalRows = Number.isFinite(message.totalRows) ? message.totalRows : persistedTotalRows;
+    persistedTotalRows = Number.isFinite(message.totalRows)
+      ? message.totalRows
+      : persistedTotalRows;
     owner.role = "owner";
     owner.opfsApis = message.requiredOpfsApis || null;
     owner.removedFailedV4Directory = message.removedFailedV4Directory === true;
+    owner.databaseWorkerId = databaseWorkerId;
+
+    const completedHandoff =
+      handoffInProgress?.toClientId === ownerClientIdForPort
+        ? handoffInProgress
+        : null;
+    handoffInProgress = null;
+
     publishState();
     send(owner.port, {
       kind: "owner-ready",
@@ -120,6 +178,18 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
       removedFailedV4Directory: owner.removedFailedV4Directory,
       totalRows: message.totalRows
     });
+
+    if (completedHandoff) {
+      const previousOwner = sessions.get(completedHandoff.fromClientId);
+      if (previousOwner) {
+        send(previousOwner.port, {
+          kind: "handoff-complete",
+          newOwnerClientId: ownerClientIdForPort,
+          databaseWorkerId,
+          totalRows: message.totalRows
+        });
+      }
+    }
     return;
   }
 
@@ -128,26 +198,55 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
 
     owner.role = "failed";
     owner.opfsApis = message.requiredOpfsApis || null;
-    const failedPort = owner.port;
-
-    ownerClientId = null;
-    databaseWorkerId = null;
-
-    send(failedPort, {
+    send(owner.port, {
       kind: "error",
       error: message.error || "No se pudo inicializar SQLite en el Dedicated Worker.",
       requiredOpfsApis: owner.opfsApis,
       workerId: SHARED_WORKER_ID
     });
 
-    // Do not leave other tabs stuck in "registration sent". Elect the next
-    // healthy candidate; failed candidates are excluded from future elections.
-    activateNextOwner();
+    const failedHandoff =
+      handoffInProgress?.toClientId === ownerClientIdForPort
+        ? handoffInProgress
+        : null;
+    handoffInProgress = null;
+    ownerClientId = null;
+    databaseWorkerId = null;
+
+    activateNextOwner({
+      preferredClientId: failedHandoff?.fromClientId || null
+    });
+    return;
+  }
+
+  if (message.kind === "released") {
+    finishHandoff(ownerClientIdForPort, message);
+    return;
+  }
+
+  if (message.kind === "release-error") {
+    if (!handoffInProgress ||
+        handoffInProgress.fromClientId !== ownerClientIdForPort ||
+        ownerClientId !== ownerClientIdForPort) {
+      return;
+    }
+
+    owner.role = "owner";
+    databaseWorkerId = message.dedicatedWorkerId || owner.databaseWorkerId;
+    handoffInProgress = null;
+    publishState();
+    send(owner.port, {
+      kind: "handoff-error",
+      error: message.error || "SQLite no pudo liberar el VFS.",
+      vfsPaused: message.vfsPaused === true
+    });
     return;
   }
 
   if (message.kind === "stats") {
-    if (Number.isFinite(message.totalRows)) persistedTotalRows = message.totalRows;
+    if (Number.isFinite(message.totalRows)) {
+      persistedTotalRows = message.totalRows;
+    }
     for (const session of sessions.values()) {
       send(session.port, {
         kind: "stats",
@@ -164,14 +263,16 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     if (!request) return;
 
     pending.delete(message.brokerRequestId);
-    if (Number.isFinite(message.totalRows)) persistedTotalRows = message.totalRows;
+    if (Number.isFinite(message.totalRows)) {
+      persistedTotalRows = message.totalRows;
+    }
     const target = sessions.get(request.clientId);
     if (target) {
       send(target.port, {
         ...message,
         kind: "response",
         workerId: SHARED_WORKER_ID,
-        databaseWorkerId: databaseWorkerId
+        databaseWorkerId
       });
     }
   }
@@ -199,7 +300,10 @@ function registerSession(port, message, dbPort) {
     port,
     dbPort,
     role: "standby",
-    registeredAt: Date.now()
+    registeredAt: Date.now(),
+    opfsApis: null,
+    removedFailedV4Directory: null,
+    databaseWorkerId: null
   };
   sessions.set(clientId, session);
   portOwners.set(port, clientId);
@@ -217,6 +321,59 @@ function registerSession(port, message, dbPort) {
 
   publishState();
   if (!ownerClientId) activateNextOwner();
+}
+
+function beginHandoff(session) {
+  if (handoffInProgress) {
+    send(session.port, {
+      kind: "handoff-error",
+      error: "Ya hay una transferencia de propiedad en curso."
+    });
+    return;
+  }
+
+  if (ownerClientId !== session.clientId || session.role !== "owner" || !databaseWorkerId) {
+    send(session.port, {
+      kind: "handoff-error",
+      error: "Esta pestaña no es la propietaria activa de SQLite."
+    });
+    return;
+  }
+
+  const candidate = [...sessions.values()].find((other) =>
+    other.clientId !== session.clientId &&
+    other.dbPort &&
+    (other.role === "standby" || other.role === "paused")
+  );
+
+  if (!candidate) {
+    send(session.port, {
+      kind: "handoff-error",
+      error: "No hay otra pestaña conectada que pueda asumir la propiedad."
+    });
+    return;
+  }
+
+  const controlId = "handoff-" + String(++controlSequence);
+  handoffInProgress = {
+    controlId,
+    fromClientId: session.clientId,
+    toClientId: candidate.clientId
+  };
+
+  session.role = "releasing";
+  publishState();
+  send(session.port, {
+    kind: "handoff-started",
+    targetClientId: candidate.clientId
+  });
+
+  session.dbPort.postMessage({
+    type: "release",
+    controlId,
+    clientId: session.clientId,
+    runId: RUN_ID
+  });
 }
 
 function handleClientMessage(port, message, dbPort) {
@@ -238,6 +395,11 @@ function handleClientMessage(port, message, dbPort) {
     return;
   }
 
+  if (message.type === "handoff") {
+    beginHandoff(session);
+    return;
+  }
+
   if (message.type === "dbWorkerFailed") {
     if (ownerClientId === session.clientId) {
       removeSession(session.clientId, "database-worker-failed");
@@ -246,24 +408,16 @@ function handleClientMessage(port, message, dbPort) {
   }
 
   if (message.type === "request") {
-    if (!ownerClientId || !databaseWorkerId) {
-      send(port, {
-        kind: "response",
-        requestId: message.requestId,
-        ok: false,
-        error: "Todavía no hay un Dedicated Worker propietario de SQLite."
-      });
-      return;
-    }
+    const activeOwner = ownerClientId
+      ? sessions.get(ownerClientId)
+      : null;
 
-    const owner = sessions.get(ownerClientId);
-    if (!owner?.dbPort) {
-      activateNextOwner();
+    if (!activeOwner || activeOwner.role !== "owner" || !databaseWorkerId) {
       send(port, {
         kind: "response",
         requestId: message.requestId,
         ok: false,
-        error: "El propietario de SQLite no está disponible. Reintenta."
+        error: "SQLite está preparando o transfiriendo su propiedad. Espera a que indique «Propietaria activa»."
       });
       return;
     }
@@ -275,7 +429,7 @@ function handleClientMessage(port, message, dbPort) {
       requestId: message.requestId
     });
 
-    owner.dbPort.postMessage({
+    activeOwner.dbPort.postMessage({
       type: message.operation,
       clientId: session.clientId,
       runId: RUN_ID,
@@ -298,4 +452,3 @@ self.onconnect = (event) => {
   port.onmessageerror = () => {};
   port.start();
 };
-
