@@ -40,6 +40,10 @@ Mantén esa sesión abierta y abre en Brave: `http://127.0.0.1:18765/`. No abras
 
 Al terminar, usa «Limpiar datos de la sonda» para borrar únicamente la base, caché, Worker y carpeta OPFS con nombres propios de la herramienta. Detén el servidor con Ctrl+C.
 
+## APIs de coordinación multi-pestaña
+
+El informe registra SharedWorker, Web Locks, BroadcastChannel, Atomics.waitAsync, SharedArrayBuffer y crossOriginIsolated. Estos datos se usarán para evaluar SQLite con un actor compartido o OPFS-WL. Que una API aparezca disponible no demuestra que la estrategia concurrente funcione: requiere una prueba de dos pestañas en el origen HTTPS final.
+
 ## Limitaciones
 
 - La documentación de Brave menciona valores fijos de `StorageManager.estimate()` en escritorio; el resultado Android se debe leer de la prueba y no se considera cuota exacta.
