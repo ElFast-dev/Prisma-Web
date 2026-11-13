@@ -136,6 +136,10 @@ function updateState(data) {
     $("insert").disabled = true;
     $("verify").disabled = true;
     $("cleanup").disabled = true;
+    $("connectionStatus").textContent = data.ownerClientId
+      ? "Pestaña registrada; esperando que el propietario de SQLite termine de inicializar."
+      : "Pestaña registrada; esperando elección de propietario.";
+    $("connectionStatus").className = "status warn";
   }
 }
 
@@ -251,6 +255,12 @@ function connect() {
         if (message.requiredOpfsApis) {
           $("opfs").textContent = JSON.stringify(message.requiredOpfsApis);
           log("APIs OPFS: " + JSON.stringify(message.requiredOpfsApis));
+        }
+        // If this tab was the failed owner, terminate its Dedicated Worker
+        // so it releases any partially opened SyncAccessHandles.
+        if ($("owner").textContent === "Esta pestaña") {
+          try { dbWorker?.terminate(); } catch {}
+          dbWorker = null;
         }
       }
     };
