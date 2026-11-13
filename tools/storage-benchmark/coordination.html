@@ -36,7 +36,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 <div class="note">
   <strong>Solo datos sintéticos.</strong> Cada pestaña crea un Dedicated Worker; el SharedWorker elige uno como propietario de la base y reenvía todas las operaciones a ese único Worker. Los demás quedan en espera. No usa datos personales ni modifica Prisma.
-  Abre esta dirección en <strong>dos pestañas normales</strong> del mismo Brave.
+  El registro de actividad y los IDs de Worker se reinician al recargar; eso es normal. El ID del conjunto de prueba y los registros de SQLite deben permanecer. Abre esta dirección en <strong>dos pestañas normales</strong> del mismo Brave.
 </div>
 
 <section class="panel">
@@ -53,12 +53,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <section class="panel">
 <h2>Coordinación compartida</h2>
 <div class="grid">
-  <div class="metric"><span>ID SharedWorker (debe coincidir)</span><b id="workerId">Sin conectar</b></div>
+  <div class="metric"><span>ID estable del conjunto de prueba</span><b id="datasetId">—</b></div>
+  <div class="metric"><span>ID SharedWorker (debe coincidir mientras vive)</span><b id="workerId">Sin conectar</b></div>
   <div class="metric"><span>Pestañas conectadas</span><b id="connections">0</b></div>
   <div class="metric"><span>Esta pestaña</span><b id="clientId">—</b></div>
   <div class="metric"><span>Propietario de SQLite</span><b id="owner">Pendiente</b></div>
   <div class="metric"><span>ID Dedicated Worker SQLite</span><b id="dbWorkerId">Pendiente</b></div>
-  <div class="metric"><span>Registros de esta ejecución</span><b id="totalRows">—</b></div>
+  <div class="metric"><span>Registros persistidos en esta prueba</span><b id="totalRows">—</b></div>
 </div>
 <div class="actions">
   <button id="connect">Conectar y registrar</button>
@@ -112,6 +113,7 @@ function log(message) {
 }
 
 function updateState(data) {
+  $("datasetId").textContent = data.runId || "—";
   $("workerId").textContent = data.workerId || "—";
   $("connections").textContent = String(data.connections ?? "—");
   $("dbWorkerId").textContent = data.databaseWorkerId || "Pendiente";
@@ -222,6 +224,7 @@ function connect() {
         $("totalRows").textContent = String(message.totalRows ?? 0);
         updateState({
           workerId: message.workerId,
+          runId: message.runId,
           databaseWorkerId: message.databaseWorkerId,
           ownerClientId: clientId,
           connections: Number($("connections").textContent) || 1,
