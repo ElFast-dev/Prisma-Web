@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Cliente de prueba · Prisma AutoTest</title>
+<style>
+:root{color-scheme:dark;--bg:#222831;--border:#3a4552;--text:#f0f0f0;--muted:#b5bec8;--ok:#8cc9a3;--warn:#f0c674}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:13px/1.4 system-ui,sans-serif;padding:8px 10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}.muted{color:var(--muted)}strong{font-size:13px}span{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div class="row"><strong id="label">Cliente de prueba</strong><span id="status" class="muted">Conectando…</span></div>
+<div class="muted" id="details">Preparando sesión independiente y Dedicated Worker.</div>
+<script type="module" src="./src/auto-client.js"></script>
+</body>
+</html>

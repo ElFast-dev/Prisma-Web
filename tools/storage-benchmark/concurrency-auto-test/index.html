@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Prisma · Concurrency AutoTest V1</title>
+<style>
+:root{color-scheme:dark;--bg:#171a20;--surface:#222831;--surface2:#29333e;--border:#3a4552;--text:#f0f0f0;--muted:#b5bec8;--accent:#70aee0;--ok:#8cc9a3;--warn:#f0c674;--bad:#f28b82}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
+main{width:min(820px,100%);margin:auto;padding:20px 15px 42px}
+h1{font-size:clamp(24px,6vw,34px);line-height:1.15;margin:8px 0}h2{font-size:18px;margin:0 0 10px}
+p{color:var(--muted);margin:8px 0}.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px;margin:13px 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.metric{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px;min-width:0}
+.metric span{display:block;font-size:12px;color:var(--muted)}.metric b{display:block;overflow-wrap:anywhere;font-size:14px;margin-top:3px}
+button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:14px 16px;min-height:50px;background:var(--accent);color:#10202d;cursor:pointer}
+button.secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.actions button{flex:1 1 180px}
+.note{background:#202933;border:1px solid var(--border);padding:12px 14px;border-radius:14px;color:var(--muted);margin:12px 0}
+.status{font-weight:750}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.steps{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.step{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:11px;background:var(--surface2);border:1px solid var(--border)}
+.step-mark{width:25px;height:25px;flex:0 0 25px;border-radius:50%;display:grid;place-items:center;background:#394552;color:var(--muted);font-weight:800;font-size:12px}
+.step.done .step-mark{background:#254b37;color:var(--ok)}.step.running .step-mark{background:#514528;color:var(--warn)}.step.failed .step-mark{background:#552e30;color:var(--bad)}
+.frames{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.frame-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:0}
+.frame-card b{display:block;font-size:12px;margin-bottom:7px}
+iframe{display:block;width:100%;height:58px;border:1px solid var(--border);border-radius:8px;background:#222831}
+.log{white-space:pre-wrap;overflow-wrap:anywhere;background:#11151a;border:1px solid var(--border);border-radius:12px;padding:12px;min-height:90px;max-height:240px;overflow:auto;font:12px/1.5 ui-monospace,monospace}
+textarea{width:100%;min-height:150px;resize:vertical;background:#11151a;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px;font:12px/1.5 ui-monospace,monospace}
+@media(max-width:480px){main{padding:16px 12px 34px}.frames{grid-template-columns:1fr}.actions button{flex-basis:100%}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p>PRISMA · HERRAMIENTA TÉCNICA INDEPENDIENTE</p>
+  <h1>Prueba automática de escrituras simultáneas</h1>
+  <p>Dos clientes · SharedWorker · SQLite WASM · OPFS SAH pool</p>
+</header>
+<div class="note">
+  <strong>Una sola acción.</strong> Dos clientes independientes enviarán solicitudes de escritura al mismo tiempo. La herramienta comprobará que las 24 operaciones terminen, que ambos clientes reciban sus registros y que la base conserve todo después de cerrarla y abrirla de nuevo.
+  <br><br>
+  Cada ejecución crea un RUN_ID y un directorio OPFS exclusivos. No toca la Recovery AutoTest V1, la sonda V4, V8 ni los datos de Prisma. Mantén esta página abierta y en primer plano. No necesitas abrir pestañas adicionales.
+</div>
+<section class="panel">
+<h2>Entorno</h2>
+<div class="grid">
+  <div class="metric"><span>Origen seguro</span><b id="secure">—</b></div>
+  <div class="metric"><span>SharedWorker</span><b id="shared">—</b></div>
+  <div class="metric"><span>Dedicated Worker</span><b id="dedicated">—</b></div>
+  <div class="metric"><span>OPFS</span><b id="opfs">—</b></div>
+  <div class="metric"><span>Protocolo</span><b>concurrency-auto-test-1</b></div>
+  <div class="metric"><span>RUN_ID</span><b id="runId">Se crea al iniciar</b></div>
+</div>
+<div class="actions"><button id="start">EJECUTAR PRUEBA AUTOMÁTICA</button></div>
+<p id="overall" class="status warn">Preparado. Todavía no se ha iniciado.</p>
+</section>
+<section class="panel">
+<h2>Progreso</h2>
+<ol class="steps">
+  <li class="step" id="step1"><span class="step-mark">1</span><div><strong>Comprobar compatibilidad</strong><small id="step1text">Origen seguro y APIs necesarias.</small></div></li>
+  <li class="step" id="step2"><span class="step-mark">2</span><div><strong>Preparar dos clientes</strong><small id="step2text">Un propietario, una reserva y cinco filas iniciales.</small></div></li>
+  <li class="step" id="step3"><span class="step-mark">3</span><div><strong>Escrituras concurrentes</strong><small id="step3text">24 solicitudes: 12 por cliente, 25 registros por solicitud.</small></div></li>
+  <li class="step" id="step4"><span class="step-mark">4</span><div><strong>Reapertura y limpieza</strong><small id="step4text">605 filas esperadas; eliminar solo el directorio temporal al aprobar.</small></div></li>
+</ol>
+</section>
+<section class="panel">
+<h2>Clientes independientes</h2>
+<p>La página los crea y los coordina automáticamente.</p>
+<div class="frames">
+  <div class="frame-card"><b>CLIENTE A · PROPIETARIO INICIAL</b><iframe id="frameA" title="Cliente A"></iframe></div>
+  <div class="frame-card"><b>CLIENTE B · CLIENTE CONCURRENTE</b><iframe id="frameB" title="Cliente B"></iframe></div>
+</div>
+</section>
+<section class="panel">
+<h2>Resultado</h2>
+<p id="resultSummary" class="status warn">El resultado aparecerá aquí.</p>
+<div id="log" class="log">Listo para iniciar.</div>
+<div class="actions"><button id="copy" class="secondary" disabled>Copiar informe</button></div>
+<textarea id="report" readonly placeholder="El informe detallado aparecerá aquí."></textarea>
+</section>
+<div class="note">
+  <strong>Qué verifica y qué no:</strong> se envían 24 solicitudes desde dos conexiones distintas al mismo coordinador. El único propietario de SQLite procesa las transacciones en una cola secuencial; la prueba comprueba integridad, ausencia de pérdidas, respuesta de ambos clientes y equilibrio de finalización en esta carga controlada. No es una prueba de dos escritores SQLite ejecutando simultáneamente ni una garantía formal de equidad bajo cualquier carga.
+</div>
+</main>
+<script type="module">
+const APP = "prisma-concurrency-auto-v1";
+const $ = (id) => document.getElementById(id);
+const frames = { A: $("frameA"), B: $("frameB") };
+const tokens = {};
+const currentClientIds = {};
+const history = [];
+const waiters = [];
+let runToken = null;
+let running = false;
+let failedRun = false;
+let reportLines = [];
+
+$("secure").textContent = String(isSecureContext);
+$("shared").textContent = typeof SharedWorker === "function" ? "Disponible" : "No disponible";
+$("dedicated").textContent = typeof Worker === "function" ? "Disponible" : "No disponible";
+$("opfs").textContent = typeof navigator.storage?.getDirectory === "function" ? "Disponible" : "No disponible";
+
+function log(message) {
+  const line = "[" + new Date().toLocaleTimeString() + "] " + message;
+  const area = $("log");
+  area.textContent += "\n" + line;
+  area.scrollTop = area.scrollHeight;
+  reportLines.push(line);
+}
+function reportLine(message) {
+  reportLines.push(message);
+  $("report").value = reportLines.join("\n");
+}
+function step(number, state, detail) {
+  const item = $("step" + number);
+  item.className = "step " + state;
+  item.querySelector(".step-mark").textContent =
+    state === "done" ? "✓" : state === "failed" ? "!" : String(number);
+  $("step" + number + "text").textContent = detail;
+}
+function check(condition, message) {
+  if (!condition) throw new Error(message);
+}
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+function receiveMessage(event) {
+  if (event.origin !== location.origin) return;
+  const message = event.data || {};
+  if (message.app !== APP || message.runToken !== runToken) return;
+  const frame = frames[message.slot];
+  if (!frame || event.source !== frame.contentWindow) return;
+  if (tokens[message.slot] !== message.token) return;
+  history.push(message);
+  if (history.length > 2000) history.splice(0, history.length - 2000);
+
+  if (message.type === "client-error") {
+    log("ERROR " + message.label + ": " + (message.error || "fallo sin detalle"));
+  } else if (message.type === "registered") {
+    currentClientIds[message.slot] = message.clientId;
+    log(message.label + ": conectado (" + message.clientId.slice(0, 12) + ").");
+  } else if (message.type === "owner-ready") {
+    log(message.label + ": propietario SQLite activo.");
+  } else if (message.type === "stats") {
+    log(message.label + ": SQLite informa " + String(message.data?.totalRows ?? "?") + " filas.");
+  } else if (message.type === "response" && message.data?.ok === false) {
+    log(message.label + ": operación rechazada: " + (message.data.error || "sin detalle"));
+  }
+
+  for (let i = waiters.length - 1; i >= 0; i -= 1) {
+    const waiter = waiters[i];
+    if (waiter.slot !== message.slot || waiter.type !== message.type) continue;
+    if (waiter.predicate && !waiter.predicate(message)) continue;
+    waiters.splice(i, 1);
+    clearTimeout(waiter.timer);
+    waiter.resolve(message);
+  }
+}
+window.addEventListener("message", receiveMessage);
+
+function waitForMessage(slot, type, predicate = null, timeoutMs = 30000) {
+  const existing = history.find((message) =>
+    message.slot === slot && message.token === tokens[slot] &&
+    message.type === type && (!predicate || predicate(message))
+  );
+  if (existing) return Promise.resolve(existing);
+  return new Promise((resolve, reject) => {
+    const waiter = { slot, type, predicate, resolve, timer: null };
+    waiter.timer = setTimeout(() => {
+      const index = waiters.indexOf(waiter);
+      if (index >= 0) waiters.splice(index, 1);
+      reject(new Error("Tiempo agotado esperando " + type + " del cliente " + slot + "."));
+    }, timeoutMs);
+    waiters.push(waiter);
+  });
+}
+function command(slot, payload) {
+  const frame = frames[slot];
+  if (!frame?.contentWindow) throw new Error("El cliente " + slot + " no está disponible.");
+  frame.contentWindow.postMessage({ app: APP, runToken, token: tokens[slot], ...payload }, location.origin);
+}
+async function loadClient(slot, label) {
+  const token = crypto.randomUUID();
+  tokens[slot] = token;
+  currentClientIds[slot] = null;
+  const registered = waitForMessage(slot, "registered",
+    (message) => message.label === label, 25000);
+  const url = new URL("./client.html", location.href);
+  url.searchParams.set("run", runToken);
+  url.searchParams.set("slot", slot);
+  url.searchParams.set("token", token);
+  url.searchParams.set("label", label);
+  frames[slot].src = url.href;
+  const result = await registered;
+  return result.clientId;
+}
+async function waitForOwner(slot, timeoutMs = 40000) {
+  const message = await waitForMessage(slot, "owner-ready",
+    (item) => item.clientId === currentClientIds[slot], timeoutMs);
+  check(Boolean(message.clientId), "El cliente propietario no se identificó.");
+  return message;
+}
+async function waitForRole(slot, expectedRole, expectedOwnerId, timeoutMs = 20000) {
+  await waitForMessage(slot, "state", (message) => {
+    if (message.clientId !== currentClientIds[slot] || !message.state) return false;
+    const own = message.state.sessions?.find((session) =>
+      session.clientId === currentClientIds[slot]);
+    return own?.role === expectedRole && message.state.ownerClientId === expectedOwnerId;
+  }, timeoutMs);
+}
+async function sendRequest(slot, operation, extra = {}, timeoutMs = 60000) {
+  const requestId = runToken + ":" + slot + ":" + crypto.randomUUID();
+  const response = waitForMessage(slot, "response",
+    (message) => message.requestId === requestId, timeoutMs);
+  command(slot, { command: "request", requestId, operation, ...extra });
+  const message = await response;
+  check(message.data?.ok !== false, message.data?.error || ("Falló " + operation + "."));
+  return message.data;
+}
+function assertOneOwner(expectedOwnerId) {
+  const snapshot = history.slice().reverse().find((message) =>
+    message.type === "state" && message.state?.ownerClientId === expectedOwnerId &&
+    message.state?.ownerReady === true &&
+    message.state?.sessions?.some((session) => session.clientId === currentClientIds.A) &&
+    message.state?.sessions?.some((session) => session.clientId === currentClientIds.B)
+  );
+  check(Boolean(snapshot), "No se encontró una instantánea con ambos clientes y el propietario activo.");
+  const owners = snapshot.state.sessions.filter((session) => session.role === "owner");
+  check(owners.length === 1, "El coordinador informa " + owners.length + " propietarios; se esperaba uno.");
+  return snapshot.state;
+}
+function summarizeLatency(values) {
+  const sorted = values.slice().sort((a, b) => a - b);
+  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const p95 = sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)];
+  return { average: Math.round(average), p95: Math.round(p95), min: Math.round(sorted[0]), max: Math.round(sorted[sorted.length - 1]) };
+}
+async function runAll() {
+  if (running) return;
+  running = true;
+  $("start").disabled = true;
+  $("copy").disabled = true;
+  reportLines = [];
+  history.length = 0;
+  $("log").textContent = "Iniciando prueba automática…";
+  $("report").value = "";
+  $("overall").textContent = "Ejecutando. Mantén esta página en primer plano.";
+  $("overall").className = "status warn";
+  $("resultSummary").textContent = "Prueba en curso.";
+  $("resultSummary").className = "status warn";
+
+  runToken = crypto.randomUUID();
+  const runId = "prisma-sahpool-concurrency-auto-" + runToken;
+  $("runId").textContent = runId;
+  reportLine("PRISMA · CONCURRENCY AUTOTEST V1");
+  reportLine("RUN_ID: " + runId);
+  reportLine("Inicio: " + new Date().toLocaleString());
+  reportLine("Entorno (User-Agent): " + navigator.userAgent);
+  reportLine("Alcance: dos iframes independientes, dos conexiones SharedWorker, un propietario SQLite, OPFS SAH pool.");
+  reportLine("Carga: 12 solicitudes por cliente × 25 filas = 600 filas concurrentes; + 5 de referencia.");
+  reportLine("NOTA: el User-Agent no identifica por sí solo con certeza la versión de Android ni la marca del navegador.");
+  reportLine("");
+
+  try {
+    step(1, "running", "Comprobando APIs del navegador.");
+    check(isSecureContext, "El origen no es seguro.");
+    check(typeof SharedWorker === "function", "SharedWorker no está disponible.");
+    check(typeof Worker === "function", "Dedicated Worker no está disponible.");
+    check(typeof MessageChannel === "function", "MessageChannel no está disponible.");
+    check(typeof navigator.storage?.getDirectory === "function", "OPFS no está disponible.");
+    step(1, "done", "Origen seguro, SharedWorker, Dedicated Worker y OPFS disponibles.");
+    log("Entorno compatible.");
+
+    step(2, "running", "Creando los dos clientes y la base sintética.");
+    const ownerId = await loadClient("A", "Cliente A · propietario inicial");
+    await waitForOwner("A");
+    const standbyId = await loadClient("B", "Cliente B · cliente concurrente");
+    await waitForRole("B", "standby", ownerId);
+    check(standbyId !== ownerId, "Los clientes no tienen identificadores independientes.");
+    const seed = await sendRequest("A", "insertBatch", { count: 5 });
+    check(Number(seed.totalRows) === 5, "No se crearon las cinco filas de referencia.");
+    const initial = await sendRequest("A", "status");
+    check(Number(initial.totalRows) === 5 && initial.databaseDiagnostics?.databaseFileFound === true,
+      "La base inicial no se verificó correctamente.");
+    step(2, "done", "Dos clientes registrados; una sola instancia propietaria; cinco filas iniciales.");
+    reportLine("PREPARACIÓN: PASS · dos clientes · un propietario · 5 filas.");
+
+    step(3, "running", "Enviando 24 solicitudes concurrentes al mismo coordinador.");
+    const requestsPerClient = 12;
+    const rowsPerRequest = 25;
+    const timings = { A: [], B: [] };
+    const successes = { A: 0, B: 0 };
+    let completed = 0;
+    const jobs = [];
+    for (let i = 0; i < requestsPerClient; i += 1) {
+      for (const slot of ["A", "B"]) {
+        const startedAt = performance.now();
+        const job = sendRequest(slot, "insertBatch", { count: rowsPerRequest })
+          .then((data) => {
+            const elapsed = performance.now() - startedAt;
+            timings[slot].push(elapsed);
+            successes[slot] += 1;
+            completed += 1;
+            if (completed % 6 === 0 || completed === requestsPerClient * 2) {
+              $("step3text").textContent = "Respuestas recibidas: " + completed + "/24.";
+            }
+            check(Number(data.inserted) === rowsPerRequest,
+              "El cliente " + slot + " confirmó un lote de tamaño inesperado.");
+            return { slot, elapsed, data };
+          });
+        jobs.push(job);
+      }
+    }
+    const settled = await Promise.allSettled(jobs);
+    const rejected = settled.filter((item) => item.status === "rejected");
+    check(rejected.length === 0,
+      rejected.length + " de las 24 solicitudes fallaron. Primer error: " +
+      (rejected[0]?.reason?.message || String(rejected[0]?.reason || "")));
+    check(successes.A === requestsPerClient && successes.B === requestsPerClient,
+      "Los dos clientes no completaron el mismo número de solicitudes.");
+    const expectedA = 5 + requestsPerClient * rowsPerRequest;
+    const expectedB = requestsPerClient * rowsPerRequest;
+    const expectedTotal = expectedA + expectedB;
+    const statusA = await sendRequest("A", "status");
+    const statusB = await sendRequest("B", "status");
+    check(Number(statusA.totalRows) === expectedTotal,
+      "SQLite contiene " + statusA.totalRows + " filas; se esperaban " + expectedTotal + ".");
+    check(Number(statusA.clientRows) === expectedA,
+      "El cliente A tiene " + statusA.clientRows + " filas; se esperaban " + expectedA + ".");
+    check(Number(statusB.clientRows) === expectedB,
+      "El cliente B tiene " + statusB.clientRows + " filas; se esperaban " + expectedB + ".");
+    check(statusA.databaseDiagnostics?.databaseFileFound === true &&
+      Number(statusA.databaseDiagnostics?.databaseFileBytes) > 0,
+      "No se encontró un archivo SQLite válido tras la carga.");
+    const ownerState = assertOneOwner(ownerId);
+    check(ownerState.sessions.find((session) => session.clientId === standbyId)?.role === "standby",
+      "El cliente B dejó de estar en reserva durante la carga.");
+    const latencyA = summarizeLatency(timings.A);
+    const latencyB = summarizeLatency(timings.B);
+    step(3, "done", "24/24 solicitudes completadas; A=305 filas, B=300; sin errores.");
+    log("Carga terminada: 24/24 respuestas; total SQLite = " + expectedTotal + ".");
+    reportLine("ESCRITURAS CONCURRENTES: PASS · 24/24 solicitudes · A 12/12 · B 12/12.");
+    reportLine("FILAS: PASS · A=" + expectedA + " · B=" + expectedB + " · total=" + expectedTotal + ".");
+    reportLine("LATENCIA A: media " + latencyA.average + " ms · percentil 95 " + latencyA.p95 + " ms · rango " + latencyA.min + "–" + latencyA.max + " ms.");
+    reportLine("LATENCIA B: media " + latencyB.average + " ms · percentil 95 " + latencyB.p95 + " ms · rango " + latencyB.min + "–" + latencyB.max + " ms.");
+    reportLine("COORDINACIÓN: PASS · un solo propietario SQLite; el segundo cliente permaneció conectado como reserva.");
+
+    step(4, "running", "Cerrando y reabriendo SQLite; después se elimina solo esta base temporal.");
+    const reopened = await sendRequest("A", "reopenVerify");
+    check(Number(reopened.totalRows) === expectedTotal,
+      "Después de reabrir SQLite quedaron " + reopened.totalRows + " filas; se esperaban " + expectedTotal + ".");
+    check(reopened.databaseDiagnostics?.databaseFileFound === true,
+      "El archivo SQLite no está presente después de la reapertura.");
+    reportLine("REAPERTURA: PASS · " + expectedTotal + " filas conservadas después de cerrar y abrir SQLite.");
+    const cleanup = await sendRequest("A", "cleanup", {}, 60000);
+    check(cleanup.ok === true, "No se pudo limpiar el VFS exclusivo de esta ejecución.");
+    reportLine("LIMPIEZA: PASS · directorio OPFS exclusivo eliminado.");
+    command("A", { command: "dispose" });
+    command("B", { command: "dispose" });
+    await delay(250);
+
+    step(4, "done", "SQLite conservó las 605 filas; el VFS temporal se eliminó.");
+    reportLine("");
+    reportLine("RESULTADO GENERAL: APROBADO");
+    reportLine("No se modificaron la Recovery AutoTest V1, la sonda V4, V8 ni los datos de Prisma.");
+    reportLine("Alcance limitado a esta carga controlada y a las transacciones serializadas por el único propietario.");
+    $("overall").textContent = "La prueba terminó correctamente.";
+    $("overall").className = "status ok";
+    $("resultSummary").textContent = "APROBADO · 24/24 solicitudes · 605 filas · reapertura y limpieza correctas.";
+    $("resultSummary").className = "status ok";
+    log("PRUEBA DE CONCURRENCIA: APROBADA.");
+  } catch (error) {
+    const detail = error?.message || String(error);
+    log("PRUEBA INTERRUMPIDA: " + detail);
+    reportLine("");
+    reportLine("RESULTADO GENERAL: INCONCLUSO / FALLIDO");
+    reportLine("Motivo: " + detail);
+    reportLine("La base de esta ejecución no se eliminó; se conserva para diagnóstico.");
+    reportLine("No limpies manualmente la sonda V4, V8 ni otras carpetas OPFS.");
+    for (let i = 1; i <= 4; i += 1) {
+      if (!$("step" + i).classList.contains("done") &&
+          !$("step" + i).classList.contains("failed")) {
+        step(i, "failed", "La ejecución se detuvo antes de completar esta etapa.");
+        break;
+      }
+    }
+    $("overall").textContent = "La prueba no pudo completarse. Copia el informe y compártelo.";
+    $("overall").className = "status bad";
+    $("resultSummary").textContent = "INCONCLUSO · " + detail;
+    $("resultSummary").className = "status bad";
+    failedRun = true;
+  } finally {
+    $("report").value = reportLines.join("\n");
+    $("copy").disabled = false;
+    $("start").disabled = failedRun;
+    $("start").textContent = failedRun ? "RECARGA LA PÁGINA PARA REPETIR" : "EJECUTAR OTRA PRUEBA AISLADA";
+    running = false;
+  }
+}
+$("start").addEventListener("click", runAll);
+$("copy").addEventListener("click", async () => {
+  const value = $("report").value;
+  try {
+    await navigator.clipboard.writeText(value);
+    $("copy").textContent = "Informe copiado";
+  } catch {
+    $("report").focus();
+    $("report").select();
+    $("copy").textContent = "Selecciona y copia el informe";
+  }
+});
+</script>
+</body>
+</html>
