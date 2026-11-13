@@ -89,3 +89,54 @@ La prueba evalúa una carga controlada de 12 transacciones por Worker, no una ga
 El medidor de memoria solo utiliza las APIs que exponga el navegador. Si devuelve bytes, es una estimación del navegador y no una lectura completa de la RAM física del Galaxy A03. Si la API no está disponible, el informe lo indica.
 
 Una aprobación aquí no selecciona el almacenamiento definitivo de Prisma. Aún quedarían por evaluar rendimiento sostenido, memoria, contención prolongada, recuperación ante terminación o suspensión real de Android, migraciones, cifrado, claves, exportación/restauración y el origen HTTPS definitivo. La prueba no implementa la aplicación principal.
+
+
+## Primera ejecución observada y revisión diagnóstica 2 (13-11-2026)
+
+La primera ejecución en Brave terminó **NO APROBADA** durante la inicialización del primer Worker, antes de la carga de escritura:
+
+- RUN_ID: `prisma-opfs-wl-auto-6cc9edd7-5e0b-4621-a44b-aaa61c1dd2a3`
+- COOP: `same-origin`; COEP: `require-corp`; `crossOriginIsolated = true`.
+- `SharedArrayBuffer`, `Atomics.waitAsync`, Web Locks y OPFS: disponibles.
+- Error comunicado: `SQLite no devolvió una conexión válida.`
+- No se recibieron confirmaciones de las cinco filas iniciales, de transacciones ni de reapertura.
+- La página dejó la carpeta OPFS exclusiva de esa ejecución sin limpiar, tal como estaba previsto. **Conservarla para diagnóstico; no borrarla ni reutilizar su RUN_ID.**
+
+Diagnóstico de recursos externos bajo `require-corp`:
+- El póster de ejemplo no cargó en modo no-CORS.
+- El mismo recurso sí cargó con CORS: 500 × 750.
+- Esto demuestra que al menos ese recurso puede cargarse con CORS bajo la política probada; no demuestra compatibilidad de todas las imágenes o dominios externos.
+
+### Corrección de la herramienta, todavía no aceptada
+
+La revisión del código encontró una diferencia respecto a la prueba oficial de concurrencia de SQLite: V1 envolvía el constructor de la conexión en `sqlite3_js_retry_busy()`. La prueba oficial maneja los errores `SQLITE_BUSY` del constructor con un ciclo de apertura separado y utiliza `sqlite3_js_retry_busy()` para transacciones. La revisión 2 adapta ese flujo y usa la forma de nombre `file:<RUN_ID>/shared.sqlite3` que aparece en el ejemplo oficial.
+
+La revisión 2 también amplía el informe con:
+- tipo y mensaje original del error;
+- código SQLite y su nombre simbólico cuando esté disponible;
+- versión del núcleo SQLite;
+- lista de VFS registrados y presencia de `opfs-wl`;
+- estado de apertura y tipo del puntero de la conexión;
+- número de intentos de apertura y reintentos BUSY;
+- traza del error, limitada a 8.000 caracteres.
+
+**Esta corrección es una hipótesis de solución del defecto de la sonda, no una prueba de que la apertura ya funciona.** La compatibilidad de OPFS-WL en Brave sigue pendiente hasta completar una nueva ejecución real.
+
+Para actualizar los dos archivos de la herramienta sin sobrescribir modificaciones locales, ejecuta en Termux:
+
+```sh
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/6f05934c6125223f5d6e245bd23813498f893269/tools/storage-benchmark/install-opfs-wl-auto-test-revision-2.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+```
+
+El instalador acepta únicamente los SHA exactos de V1 o de la revisión 2; si encuentra otro contenido, cancela sin sobrescribirlo. No instala ni cambia SQLite WASM, no toca la carpeta OPFS de la ejecución fallida y no reinicia el servidor del puerto 18768. El puerto 18767 tampoco se modifica.
+
+Con el servidor del puerto 18768 todavía activo, recarga una vez:
+
+`http://127.0.0.1:18768/opfs-wl-auto-test/`
+
+Ejecuta una sola vez y comparte el informe completo. Si falla, conserva el nuevo RUN_ID y su carpeta. No pulses «Borrar datos del sitio» ni limpies manualmente OPFS.
+
+Fuente oficial de comparación:
+- Prueba de concurrencia SQLite con `OpfsWlDb` y reintento específico de apertura: https://wasm-testing.sqlite.org/tests/opfs/concurrency/worker.js
+- OO1 `OpfsWlDb` y constructor: https://sqlite.org/wasm/doc/trunk/api-oo1.md
+- `sqlite3_js_retry_busy()`: https://sqlite.org/wasm/doc/trunk/api-c-style.md
