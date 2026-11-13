@@ -126,3 +126,16 @@ Si los IDs de Worker son distintos, no se ha demostrado que Brave comparta el Sh
 
 Esta prueba valida el actor compartido y el acceso a SAH pool desde dos pestañas. No sustituye las pruebas posteriores de cierre abrupto del Worker, recuperación tras reiniciar Brave ni funcionamiento en el origen HTTPS definitivo.
 
+### Nota de arquitectura: SharedWorker y SyncAccessHandle
+
+`FileSystemSyncAccessHandle` y `createSyncAccessHandle()` están disponibles únicamente dentro de Dedicated Workers, no dentro de SharedWorkers. Por eso SQLite SAH pool no debe inicializarse directamente en el SharedWorker.
+
+La prueba está separada en dos niveles:
+
+- `src/sahpool-shared-worker.js`: SharedWorker coordinador; recibe conexiones de pestañas y reenvía las peticiones.
+- `src/sahpool-db-worker.js`: Dedicated Worker propietario único de SQLite WASM y OPFS SAH pool.
+- `coordination.html`: interfaz para verificar que ambas pestañas comparten el mismo SharedWorker y la misma instancia dedicada de SQLite.
+
+El Dedicated Worker comprueba explícitamente `FileSystemHandle`, `FileSystemDirectoryHandle`, `FileSystemFileHandle.prototype.createSyncAccessHandle` y `navigator.storage.getDirectory`, e incluye el resultado en la respuesta de conexión. Así, un fallo de OPFS indica qué API falta en ese contexto.
+
+Esta separación es necesaria por el modelo de permisos del navegador y no demuestra por sí sola que SharedWorker + Dedicated Worker sea viable en todos los navegadores. La prueba debe ejecutarse en el Brave del Galaxy A03.
