@@ -254,11 +254,15 @@ function connect() {
 
     dbWorker.onerror = (event) => {
       log("ERROR Dedicated Worker: " + (event.message || "fallo desconocido"));
+      try { dbWorker?.terminate(); } catch {}
+      dbWorker = null;
       port?.postMessage({ type: "dbWorkerFailed" });
     };
 
     dbWorker.onmessageerror = () => {
       log("ERROR: mensaje no deserializable del Dedicated Worker.");
+      try { dbWorker?.terminate(); } catch {}
+      dbWorker = null;
       port?.postMessage({ type: "dbWorkerFailed" });
     };
 
@@ -373,6 +377,22 @@ function connect() {
           "; brokerRequestId=" + String(message.brokerRequestId || "—") +
           "; correlación=" + String(message.matchedPendingRequest ?? "—") +
           "; protocolo=" + String(message.brokerProtocol || $("brokerProtocol").textContent));
+        return;
+      }
+
+      if (message.kind === "terminate-unresponsive-worker") {
+        log("HEARTBEAT: el propietario no respondió. Terminando su Dedicated Worker para liberar OPFS antes de promover la reserva. Motivo: " + String(message.reason));
+        try { dbWorker?.terminate(); } catch {}
+        dbWorker = null;
+        port?.postMessage({
+          type: "dbWorkerTerminated",
+          reason: message.reason || "heartbeat-timeout"
+        });
+        return;
+      }
+
+      if (message.kind === "owner-worker-retired") {
+        log("Dedicated Worker retirado por el coordinador. Filas confirmadas antes del relevo: " + String(message.expectedRows));
         return;
       }
 
