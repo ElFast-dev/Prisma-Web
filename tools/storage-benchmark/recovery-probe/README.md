@@ -85,3 +85,16 @@ No ejecutar escrituras mientras una recuperación esté en error. No repetir una
 ## Limpieza
 
 Solo después de completar los ensayos y guardar las evidencias, usa «Eliminar la base sintética» desde la pestaña propietaria. Esta operación elimina exclusivamente el VFS de recuperación V1.
+
+## Protocolo de liveness y detección de Dedicated Worker (recovery-fault-probe-2)
+
+La siguiente revisión de la sonda añade un heartbeat independiente de las solicitudes de aplicación:
+
+- El SharedWorker envía un ping cada 5 s al Dedicated Worker propietario.
+- El Dedicated Worker responde inmediatamente por su MessagePort, fuera de la cola SQL.
+- Si no hay ACK durante 20 s, el SharedWorker marca al propietario como no responsivo y pide a su página que termine su Worker local.
+- La página termina el Worker y confirma `dbWorkerTerminated`.
+- Solo después de esa confirmación el coordinador retira el puerto antiguo y promueve la pestaña de reserva, exigiendo el último total confirmado.
+- Si la página propietaria está congelada y no puede confirmar la terminación, no se promueve un segundo propietario. Al cerrar la página, `unregister` permite la retirada y failover.
+
+Esta política evita abrir deliberadamente un segundo SAH pool mientras el Worker anterior podría seguir reteniendo SyncAccessHandles. El heartbeat puede detectar un Worker bloqueado o muerto, pero no constituye una prueba de almacenamiento ni de transacción; es un mecanismo de liveness del coordinador. La pausa de una pestaña puede retrasar la detección, por lo que se evalúa el caso de página congelada en un ensayo separado.
