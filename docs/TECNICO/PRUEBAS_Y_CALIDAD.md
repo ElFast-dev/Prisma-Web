@@ -153,6 +153,16 @@ Instrucciones de ejecución en Termux: [tools/storage-benchmark/README.md](../..
 | 5k películas / 15k visionados | 5.320,9 ms | 1.293,0 ms | Correcta |
 | 10k películas / 30k visionados | 10.578,7 ms | 2.441,5 ms | Correcta |
 
-No interpretar el total del benchmark como comparación simétrica: SQLite incluye inicialización de Worker/WASM/VFS, Dexie ya está cargado antes de iniciar el cronómetro. Los informes antiguos tampoco registraron el retorno de removeVfs(); la versión actual de la herramienta lo comprueba.
+No interpretar el total del benchmark como comparación simétrica: SQLite incluye inicialización de Worker/WASM/VFS, Dexie ya está cargado antes de iniciar el cronómetro. Los informes más recientes confirman removeVfs() = true y ausencia del directorio OPFS temporal en los tres tamaños. La herramienta actual también enumera las bases IndexedDB de Dexie después de cada tanda; falta recibir esa comprobación.
 
 Próximas pruebas: OPFS-WL o actor único/SharedWorker, limpieza OPFS observada, funcionamiento con dos pestañas, tamaño del paquete y prueba de restauración de backup.
+
+
+### Últimos informes de limpieza (12-11-2026)
+
+La tanda repetida de 1k, 5k y 10k películas confirma:
+- removeVfs() = true para las nueve rondas de SQLite.
+- opfsCleanup.exists = false después de cada tanda.
+- integrityPassed = true para todas las cargas.
+
+La variación positiva de StorageManager.estimate().usage (aprox. +0,80 / +3,88 / +4,31 MB) no demuestra una fuga de OPFS, ya que el directorio del VFS fue eliminado. La versión actual enumera las bases Dexie del benchmark para verificar si IndexedDB retiene alguna; falta recibir un informe con ese campo.
