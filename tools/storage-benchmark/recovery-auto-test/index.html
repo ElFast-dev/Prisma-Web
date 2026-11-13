@@ -267,13 +267,30 @@ async function waitForRole(slot, expectedRole, expectedOwnerId, timeoutMs = 1200
   }, timeoutMs);
 }
 
+function assertSingleActiveOwner(slot) {
+  const expectedClientId = currentClientIds[slot];
+  const snapshotMessage = history.slice().reverse().find((message) =>
+    message.slot === slot &&
+    message.token === tokens[slot] &&
+    message.type === "state" &&
+    message.clientId === expectedClientId &&
+    message.state?.ownerClientId === expectedClientId &&
+    message.state?.ownerReady === true
+  );
+  check(Boolean(snapshotMessage), "No se recibió una instantánea que confirme al nuevo propietario.");
+  const owners = (snapshotMessage.state.sessions || []).filter((session) => session.role === "owner");
+  check(owners.length === 1, "El coordinador muestra " + owners.length + " propietarios activos; se esperaba exactamente uno.");
+}
+
 async function waitForOwner(slot, timeoutMs = 70000) {
-  return waitForMessage(
+  const message = await waitForMessage(
     slot,
     "owner-ready",
-    (message) => message.clientId === currentClientIds[slot],
+    (item) => item.clientId === currentClientIds[slot],
     timeoutMs
   );
+  assertSingleActiveOwner(slot);
+  return message;
 }
 
 async function sendRequest(slot, operation, extra = {}, timeoutMs = 45000) {
@@ -309,7 +326,12 @@ async function killAndPromote(ownerSlot, nextSlot, expectedRows) {
   const ready = waitForOwner(nextSlot, 80000);
 
   command(ownerSlot, { command: "kill-worker" });
-  await waitForMessage(ownerSlot, "worker-killed", null, 5000);
+  await waitForMessage(
+    ownerSlot,
+    "worker-killed",
+    (message) => message.clientId === currentClientIds[ownerSlot],
+    5000
+  );
   await terminated;
   await retired;
   await ready;
