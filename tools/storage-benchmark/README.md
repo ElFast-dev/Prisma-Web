@@ -114,7 +114,7 @@ Este servidor no configura COOP/COEP deliberadamente: SAH pool + SharedWorker no
 Procedimiento:
 
 1. Abre exactamente la misma dirección en dos pestañas normales de Brave.
-2. Pulsa «Conectar al SharedWorker» en ambas.
+2. Cada página inicia automáticamente su conexión al cargar. Espera a que ambas indiquen su estado; el botón de conexión queda disponible como reintento manual si el registro automático falla.
 3. Comprueba que las dos muestran el mismo ID del Worker y que el contador llega a 2 conexiones.
 4. Pulsa una sola vez «Insertar 25 registros» en cada pestaña.
 5. Comprueba que ambas reciben el mismo total de 50 registros.
