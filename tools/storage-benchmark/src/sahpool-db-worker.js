@@ -15,7 +15,7 @@ let queue = Promise.resolve();
 function send(payload) {
   if (!port) return;
   try { port.postMessage({ dedicatedWorkerId: DEDICATED_WORKER_ID, ...payload }); }
-  catch { /* The owner tab may have closed. */ }
+  catch { /* The coordinator/page may already be gone. */ }
 }
 
 function requiredOpfsApis() {
@@ -33,8 +33,6 @@ function requiredOpfsApis() {
 }
 
 async function removeFailedV4TestDirectory() {
-  // V4 opened its isolated synthetic database before failing in clientRows().
-  // Remove only that known test directory, after the user closes old V4 tabs.
   const root = await navigator.storage.getDirectory();
   try {
     await root.removeEntry("prisma-sahpool-sharedworker-probe-v4", {
@@ -49,6 +47,19 @@ async function removeFailedV4TestDirectory() {
 
 async function ensureDatabase() {
   if (db) return db;
+
+  // A previous owner can hand off its PoolUtil without deleting the database.
+  // The next elected Dedicated Worker reclaims the same SAHs with unpauseVfs().
+  if (pool && typeof pool.isPaused === "function" && pool.isPaused()) {
+    await pool.unpauseVfs();
+    db = new pool.OpfsSAHPoolDb(DB_FILE);
+    return db;
+  }
+
+  if (pool && !db) {
+    db = new pool.OpfsSAHPoolDb(DB_FILE);
+    return db;
+  }
 
   if (!initialization) {
     initialization = (async () => {
@@ -101,14 +112,10 @@ async function ensureDatabase() {
 }
 
 function countRows() {
-  // This VFS directory belongs exclusively to this probe. Count all rows
-  // so records written before a SharedWorker restart remain visible.
   return Number(db.selectValue("SELECT COUNT(*) FROM writes"));
 }
 
 function clientRows(runId, clientId) {
-  // selectValue() accepts one bind argument. Multiple SQL parameters
-  // must be passed together as an array; a third argument is the SQLITE_* type.
   return Number(db.selectValue(
     "SELECT COUNT(*) FROM writes WHERE run_id = ? AND client_id = ?",
     [runId, clientId]
@@ -116,7 +123,9 @@ function clientRows(runId, clientId) {
 }
 
 async function handle(request) {
-  const { type, clientId, runId, requestId, brokerRequestId } = request || {};
+  const {
+    type, clientId, runId, requestId, brokerRequestId, controlId
+  } = request || {};
 
   if (type === "activate" || type === "status") {
     await ensureDatabase();
@@ -124,12 +133,14 @@ async function handle(request) {
       kind: type === "activate" ? "activated" : "response",
       requestId,
       brokerRequestId,
+      controlId,
       clientId,
       ok: true,
       totalRows: countRows(),
       clientRows: clientRows(runId, clientId),
       requiredOpfsApis: requiredOpfsApis(),
-      removedFailedV4Directory
+      removedFailedV4Directory,
+      vfsPaused: Boolean(pool?.isPaused?.())
     };
   }
 
@@ -151,7 +162,7 @@ async function handle(request) {
       db.transaction("IMMEDIATE", () => {
         for (let i = 1; i <= count; i += 1) {
           insert.bind([
-            runId + ":" + clientId + ":" + i,
+            runId + ":" + clientId + ":" + Date.now() + ":" + i,
             runId,
             clientId,
             i,
@@ -196,6 +207,29 @@ async function handle(request) {
     };
   }
 
+  if (type === "release") {
+    const totalRows = db ? countRows() : null;
+
+    if (db) {
+      db.close();
+      db = null;
+    }
+
+    if (pool && !pool.isPaused()) {
+      // Releases every SyncAccessHandle but preserves the OPFS files.
+      pool.pauseVfs();
+    }
+
+    return {
+      kind: "released",
+      controlId,
+      clientId,
+      ok: true,
+      totalRows,
+      vfsPaused: Boolean(pool?.isPaused?.())
+    };
+  }
+
   if (type === "cleanup") {
     if (db) {
       db.close();
@@ -228,20 +262,22 @@ async function handle(request) {
 async function processRequest(request) {
   try {
     const result = await handle(request);
-    if (result.kind === "activated") {
-      send(result);
-    } else {
-      send(result);
-    }
+    send(result);
   } catch (error) {
     send({
-      kind: request?.type === "activate" ? "activation-error" : "response",
+      kind: request?.type === "activate"
+        ? "activation-error"
+        : request?.type === "release"
+          ? "release-error"
+          : "response",
       requestId: request?.requestId,
       brokerRequestId: request?.brokerRequestId,
+      controlId: request?.controlId,
       clientId: request?.clientId,
       ok: false,
       error: error?.message || String(error),
-      requiredOpfsApis: requiredOpfsApis()
+      requiredOpfsApis: requiredOpfsApis(),
+      vfsPaused: Boolean(pool?.isPaused?.())
     });
   }
 }
