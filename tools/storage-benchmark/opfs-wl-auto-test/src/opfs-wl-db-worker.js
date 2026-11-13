@@ -7,6 +7,7 @@ let clientId = null;
 let filename = null;
 let busyRetries = 0;
 let openAttempts = 0;
+let retryCallbackCalls = 0;
 let initialized = false;
 
 function send(type, extra = {}) {
@@ -23,9 +24,18 @@ function asNumber(value) {
 }
 
 function retryBusy(stage, callback) {
-  return sqlite3.capi.sqlite3_js_retry_busy(-1, callback, (attempt) => {
+  /*
+   * Use a positive, bounded attempt count. In the pinned SQLite JS helper
+   * implementation the loop is "for (n = 1; n <= maxTimes; ++n)".
+   * A negative maxTimes therefore skips the callback entirely.
+   */
+  const maxAttempts = 120;
+  return sqlite3.capi.sqlite3_js_retry_busy(maxAttempts, () => {
+    retryCallbackCalls += 1;
+    return callback();
+  }, (attempt) => {
     busyRetries += 1;
-    send("busy-retry", { stage, attempt, busyRetries });
+    send("busy-retry", { stage, attempt, busyRetries, maxAttempts });
   });
 }
 
