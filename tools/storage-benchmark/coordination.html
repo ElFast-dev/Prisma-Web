@@ -214,6 +214,7 @@ function request(operation, extra = {}) {
       operation,
       ...extra
     });
+    log("PAGE request-sent: operación=" + operation + "; requestId=" + requestId);
   });
 }
 
@@ -355,6 +356,14 @@ function connect() {
           "; brokerRequestId=" + String(message.brokerRequestId || "—") +
           "; correlación=" + String(message.matchedPendingRequest ?? "—") +
           "; protocolo=" + String(message.brokerProtocol || $("brokerProtocol").textContent));
+        return;
+      }
+
+      if (message.kind === "broker-watchdog") {
+        log("BROKER WATCHDOG: operación=" + String(message.operation) +
+          "; último salto=" + String(message.lastStage) +
+          "; transcurrido=" + String(message.elapsedMs) + " ms" +
+          "; brokerRequestId=" + String(message.brokerRequestId));
         return;
       }
 
