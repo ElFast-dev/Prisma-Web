@@ -21,7 +21,7 @@ FILES = {
 }
 
 def git_blob_sha(data):
-    header = b"blob " + str(len(data)).encode("ascii") + b"\\0"
+    header = b"blob " + str(len(data)).encode("ascii") + b"\0"
     return sha1(header + data).hexdigest()
 
 def stop(message):
