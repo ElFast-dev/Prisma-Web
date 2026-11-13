@@ -13,10 +13,14 @@ let removedFailedV4Directory = false;
 let port = null;
 let queue = Promise.resolve();
 
-function send(payload) {
+function send(payload, transfer = []) {
   if (!port) return;
-  try { port.postMessage({ dedicatedWorkerId: DEDICATED_WORKER_ID, ...payload }); }
-  catch { /* The coordinator/page may already be gone. */ }
+  try {
+    port.postMessage(
+      { dedicatedWorkerId: DEDICATED_WORKER_ID, ...payload },
+      transfer
+    );
+  } catch { /* The coordinator/page may already be gone. */ }
 }
 
 function requiredOpfsApis() {
@@ -69,6 +73,7 @@ function poolSnapshot() {
     fileNames,
     databaseFileFound,
     databaseFileBytes,
+    importedDatabaseBytes: importedDatabaseBytes || 0,
     vfsPaused: pool.isPaused()
   };
 }
@@ -151,11 +156,30 @@ async function installPoolIfNeeded() {
   return pool;
 }
 
-async function openDatabase({ expectExistingDb = false, expectedMinRows = 0 } = {}) {
+async function openDatabase({
+  expectExistingDb = false,
+  expectedMinRows = 0,
+  databaseImage = null
+} = {}) {
   await installPoolIfNeeded();
 
   if (pool.isPaused()) {
     await pool.unpauseVfs();
+  }
+
+  let importedDatabaseBytes = 0;
+  if (databaseImage) {
+    const image = databaseImage instanceof Uint8Array
+      ? databaseImage
+      : new Uint8Array(databaseImage);
+
+    if (!image.byteLength) {
+      throw new Error("La instantánea SQLite recibida está vacía.");
+    }
+
+    // importDb overwrites the named virtual SQLite database with the exact
+    // byte snapshot exported by the previous owner before its VFS was paused.
+    importedDatabaseBytes = pool.importDb(DB_FILE, image);
   }
 
   const beforeOpen = poolSnapshot();
@@ -229,11 +253,11 @@ async function ensureDatabase(options = {}) {
 async function handle(request) {
   const {
     type, clientId, runId, requestId, brokerRequestId, controlId,
-    expectExistingDb = false, expectedMinRows = 0
+    expectExistingDb = false, expectedMinRows = 0, databaseImage = null
   } = request || {};
 
   if (type === "activate" || type === "status") {
-    await ensureDatabase({ expectExistingDb, expectedMinRows });
+    await ensureDatabase({ expectExistingDb, expectedMinRows, databaseImage });
     return {
       kind: type === "activate" ? "activated" : "response",
       requestId,
@@ -322,14 +346,29 @@ async function handle(request) {
 
   if (type === "release") {
     const totalRows = db ? countRows() : null;
-    const beforeRelease = databaseSnapshot();
 
-    if (db) {
-      db.close();
-      db = null;
+    if (!db || !pool) {
+      throw new Error("No hay una conexión SQLite activa que pueda cederse.");
     }
 
-    if (pool && !pool.isPaused()) {
+    db.close();
+    db = null;
+
+    // Export only after closing the database so its journal is resolved.
+    // The coordinator keeps this snapshot until the incoming Worker verifies it.
+    const databaseBytes = pool.exportFile(DB_FILE);
+    if (!(databaseBytes instanceof Uint8Array) || !databaseBytes.byteLength) {
+      throw new Error("No se pudo exportar una instantánea SQLite válida.");
+    }
+
+    const databaseImage = databaseBytes.slice().buffer;
+    const beforeRelease = {
+      ...poolSnapshot(),
+      totalRows,
+      databaseImageBytes: databaseImage.byteLength
+    };
+
+    if (!pool.isPaused()) {
       pool.pauseVfs();
     }
 
@@ -339,6 +378,8 @@ async function handle(request) {
       clientId,
       ok: true,
       totalRows,
+      databaseImage,
+      databaseImageBytes: databaseImage.byteLength,
       databaseDiagnostics: beforeRelease,
       vfsPaused: Boolean(pool?.isPaused?.())
     };
@@ -376,7 +417,13 @@ async function handle(request) {
 async function processRequest(request) {
   try {
     const result = await handle(request);
-    send(result);
+    if (result?.kind === "released" && result.databaseImage instanceof ArrayBuffer) {
+      const image = result.databaseImage;
+      delete result.databaseImage;
+      send({ ...result, databaseImage: image }, [image]);
+    } else {
+      send(result);
+    }
   } catch (error) {
     send({
       kind: request?.type === "activate"
