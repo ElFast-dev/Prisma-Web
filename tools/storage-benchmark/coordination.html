@@ -44,8 +44,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="grid">
   <div class="metric"><span>Origen seguro</span><b id="secure">—</b></div>
   <div class="metric"><span>SharedWorker</span><b id="shared">—</b></div>
-  <div class="metric"><span>Worker dedicado</span><b id="dedicated">—</b></div>
-  <div class="metric"><span>OPFS en Dedicated Worker</span><b id="opfs">Pendiente</b></div>
+  <div class="metric"><span>Worker dedicado en esta pestaña</span><b id="dedicated">—</b></div>
+  <div class="metric"><span>Worker() dentro del SharedWorker</span><b id="nestedWorker">Pendiente</b></div>
+  <div class="metric"><span>OPFS en Dedicated Worker propietario</span><b id="opfs">Pendiente</b></div>
 </div>
 </section>
 
@@ -114,6 +115,9 @@ function updateState(data) {
   $("workerId").textContent = data.workerId || "—";
   $("connections").textContent = String(data.connections ?? "—");
   $("dbWorkerId").textContent = data.databaseWorkerId || "Pendiente";
+  if (typeof data.nestedWorkerConstructor === "boolean") {
+    $("nestedWorker").textContent = data.nestedWorkerConstructor ? "Disponible" : "No expuesto";
+  }
   $("owner").textContent = data.ownerClientId
     ? (data.ownerClientId === clientId ? "Esta pestaña" : "Otra pestaña")
     : "Pendiente";
@@ -244,6 +248,10 @@ function connect() {
         $("connectionStatus").textContent = message.error;
         $("connectionStatus").className = "status bad";
         log("ERROR: " + message.error);
+        if (message.requiredOpfsApis) {
+          $("opfs").textContent = JSON.stringify(message.requiredOpfsApis);
+          log("APIs OPFS: " + JSON.stringify(message.requiredOpfsApis));
+        }
       }
     };
 
