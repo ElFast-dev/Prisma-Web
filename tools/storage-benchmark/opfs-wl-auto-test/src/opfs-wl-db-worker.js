@@ -111,7 +111,47 @@ function readCounts() {
     B: asNumber(db.selectValue(
       "SELECT COUNT(*) FROM writes WHERE run_id = ? AND client_id = 'B'",
       runId
+    )),
+    tableTotal: asNumber(db.selectValue(
+      "SELECT COUNT(*) FROM writes"
     ))
+  };
+}
+
+function sqlLiteral(value) {
+  return "'" + String(value).replace(/'/g, "''") + "'";
+}
+
+function buildInsertSql(targetClient, batchNo, rowCount) {
+  const values = [];
+  for (let row = 1; row <= rowCount; row += 1) {
+    const id = targetClient === "REFERENCE"
+      ? runId + ":reference:" + row
+      : runId + ":" + targetClient + ":" + batchNo + ":" + row;
+    values.push("(" + [
+      sqlLiteral(id),
+      sqlLiteral(runId),
+      sqlLiteral(targetClient),
+      String(batchNo),
+      String(row),
+      String(Date.now())
+    ].join(", ") + ")");
+  }
+  return "INSERT INTO writes " +
+    "(id, run_id, client_id, batch_no, row_no, created_at) VALUES " +
+    values.join(", ") + ";";
+}
+
+function inspectWriteRows() {
+  return {
+    groups: db.selectArrays(
+      "SELECT quote(run_id), quote(client_id), COUNT(*) " +
+      "FROM writes GROUP BY run_id, client_id ORDER BY run_id, client_id"
+    ),
+    sample: db.selectArrays(
+      "SELECT quote(id), quote(run_id), quote(client_id), batch_no, row_no " +
+      "FROM writes ORDER BY rowid LIMIT 10"
+    )
   };
 }
 
@@ -183,84 +223,43 @@ async function openDb() {
 
 function seedDatabase() {
   /*
-   * Execute DDL directly on the open connection using one SQL string.
-   * Capture parsed statements and database identity before and after execution.
+   * Use one multi-row SQL INSERT rather than the prepared-statement loop.
+   * The report separates whole-table rows from rows matching this RUN_ID.
    */
-  const schemaBefore = {
-    schemaVersion: db.selectValue("PRAGMA schema_version"),
-    filename: db.dbFilename("main"),
-    vfs: db.dbVfsName("main"),
-    readOnly: sqlite3.capi.sqlite3_db_readonly(db.pointer, "main"),
-    databaseList: db.selectArrays("PRAGMA database_list")
-  };
-  const preparedSchemaSql = [];
-  const ddlSql =
-    "CREATE TABLE IF NOT EXISTS writes (" +
-      "id TEXT PRIMARY KEY," +
-      "run_id TEXT NOT NULL," +
-      "client_id TEXT NOT NULL," +
-      "batch_no INTEGER NOT NULL," +
-      "row_no INTEGER NOT NULL," +
-      "created_at INTEGER NOT NULL" +
-    ");" +
-    "CREATE INDEX IF NOT EXISTS idx_writes_run_client " +
-      "ON writes(run_id, client_id, batch_no);";
+  const seedSql = buildInsertSql("REFERENCE", 0, 5);
+  let executedSeedSql = [];
+  let changesInsideTransaction = null;
+  let totalChangesInsideTransaction = null;
 
-  db.exec(ddlSql, { saveSql: preparedSchemaSql });
-
-  const schemaAfter = {
-    schemaVersion: db.selectValue("PRAGMA schema_version"),
-    filename: db.dbFilename("main"),
-    vfs: db.dbVfsName("main"),
-    readOnly: sqlite3.capi.sqlite3_db_readonly(db.pointer, "main"),
-    databaseList: db.selectArrays("PRAGMA database_list")
-  };
-  const schemaTables = db.selectValues(
-    "SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name"
-  );
-  if (!schemaTables.includes("writes")) {
-    throw new Error(
-      "db.exec terminó sin error, pero la tabla writes no aparece en sqlite_schema. " +
-      "Diagnóstico: " + JSON.stringify({
-        schemaBefore,
-        schemaAfter,
-        preparedSchemaSql,
-        schemaTables,
-        pageCount: db.selectValue("PRAGMA page_count"),
-        totalChanges: db.changes(true),
-        dbPointer: db.pointer
-      })
-    );
-  }
   retryBusy("seed", () => {
+    executedSeedSql = [];
+    changesInsideTransaction = null;
+    totalChangesInsideTransaction = null;
     db.transaction("IMMEDIATE", (tx) => {
-      const insert = tx.prepare(
-        "INSERT INTO writes " +
-        "(id, run_id, client_id, batch_no, row_no, created_at) " +
-        "VALUES (?, ?, ?, ?, ?, ?)"
-      );
-      try {
-        for (let row = 1; row <= 5; row += 1) {
-          insert.bind([
-            runId + ":reference:" + row,
-            runId,
-            "REFERENCE",
-            0,
-            row,
-            Date.now()
-          ]).stepReset();
-        }
-      } finally {
-        insert.finalize();
+      tx.exec(seedSql, { saveSql: executedSeedSql });
+      changesInsideTransaction = tx.changes();
+      totalChangesInsideTransaction = tx.changes(true);
+      if (changesInsideTransaction !== 5) {
+        throw new Error(
+          "El INSERT de referencia reportó " + changesInsideTransaction +
+          " cambios; se esperaban cinco."
+        );
       }
     });
   });
 
   const seededCounts = readCounts();
-  if (seededCounts.total !== 5) {
+  if (seededCounts.total !== 5 || seededCounts.tableTotal !== 5) {
     throw new Error(
-      "El esquema existe, pero la siembra no dejó exactamente cinco filas. " +
-      "Conteos: " + JSON.stringify(seededCounts)
+      "La siembra no dejó cinco filas para este RUN_ID. " +
+      "Diagnóstico: " + JSON.stringify({
+        counts: seededCounts,
+        changesInsideTransaction,
+        totalChangesInsideTransaction,
+        totalChangesAfterCommit: db.changes(true),
+        executedSeedSql,
+        rows: inspectWriteRows()
+      })
     );
   }
 }
@@ -366,26 +365,17 @@ function runBatches() {
   for (let batch = 1; batch <= 12; batch += 1) {
     const started = performance.now();
 
+    let batchChanges = null;
     retryBusy("write-" + batch, () => {
+      batchChanges = null;
       db.transaction("IMMEDIATE", (tx) => {
-        const insert = tx.prepare(
-          "INSERT INTO writes " +
-          "(id, run_id, client_id, batch_no, row_no, created_at) " +
-          "VALUES (?, ?, ?, ?, ?, ?)"
-        );
-        try {
-          for (let row = 1; row <= 25; row += 1) {
-            insert.bind([
-              runId + ":" + clientId + ":" + batch + ":" + row,
-              runId,
-              clientId,
-              batch,
-              row,
-              Date.now()
-            ]).stepReset();
-          }
-        } finally {
-          insert.finalize();
+        tx.exec(buildInsertSql(clientId, batch, 25));
+        batchChanges = tx.changes();
+        if (batchChanges !== 25) {
+          throw new Error(
+            "La transacción " + batch + " de " + clientId +
+            " reportó " + batchChanges + " cambios; se esperaban 25."
+          );
         }
       });
     });
