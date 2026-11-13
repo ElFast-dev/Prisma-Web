@@ -465,3 +465,18 @@ Tras la aceptación real de Concurrency AutoTest V1, se añadió una sonda separ
 **Estado:** archivos creados y verificados en GitHub; comprobación sintáctica de JavaScript completada. Todavía no se ha instalado ni ejecutado en Brave y no existe resultado de aceptación. No declarar OPFS-WL compatible ni elegirla hasta recibir el informe real del Galaxy A03.
 
 La variante `require-corp` se prueba primero; `credentialless` queda disponible como comparación si las imágenes externas o la carga de recursos se ven afectadas. La herramienta no cambia la aplicación Prisma, las dependencias, sus versiones ni los datos de otras sondas.
+
+
+### OPFS-WL AutoTest: primera ejecución fallida y diagnóstico (13-11-2026)
+
+La primera ejecución real de `tools/storage-benchmark/opfs-wl-auto-test/` en Brave verificó COOP `same-origin`, COEP `require-corp`, `crossOriginIsolated`, SharedArrayBuffer, Atomics.waitAsync, Web Locks y OPFS. Sin embargo, falló al inicializar la primera conexión SQLite con el mensaje genérico `SQLite no devolvió una conexión válida`, antes de confirmar filas iniciales o empezar las transacciones. No se considera una prueba de escritura OPFS-WL ni una prueba de incompatibilidad del navegador.
+
+RUN_ID: `prisma-opfs-wl-auto-6cc9edd7-5e0b-4621-a44b-aaa61c1dd2a3`. La herramienta conservó la carpeta OPFS exclusiva de esa ejecución. No se debe borrar ni reutilizar.
+
+El diagnóstico de imágenes bajo COEP `require-corp` informó que un póster público de ejemplo falló sin CORS y cargó correctamente con CORS (500 × 750). Esto acredita el comportamiento de ese recurso y esos dos modos de carga, no de todas las imágenes externas de TMDB.
+
+Se identificó una diferencia en el código de la sonda respecto al ejemplo oficial SQLite: la primera versión envolvía el constructor de `OpfsWlDb` en `sqlite3_js_retry_busy()`; el ejemplo oficial trata por separado el posible `SQLITE_BUSY` del constructor y utiliza el helper para las operaciones SQL. Se preparó una revisión diagnóstica 2 con ese flujo, nombre de archivo URI `file:<RUN_ID>/shared.sqlite3` y detalles ampliados de errores, puntero, estado de apertura, VFS registrados, intentos y códigos SQLite.
+
+**Estado:** revisión de la herramienta preparada y documentada; aún no ejecutada en Brave. La hipótesis de corrección no es una aceptación. OPFS-WL continúa pendiente de una ejecución completa con dos conexiones, 24 transacciones, 605 filas, reapertura y limpieza verificada.
+
+Documentación: [opfs-wl-auto-test/README.md](opfs-wl-auto-test/README.md).
