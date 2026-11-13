@@ -130,12 +130,16 @@ Esta prueba valida el actor compartido y el acceso a SAH pool desde dos pestaña
 
 `FileSystemSyncAccessHandle` y `createSyncAccessHandle()` están disponibles únicamente dentro de Dedicated Workers, no dentro de SharedWorkers. Por eso SQLite SAH pool no debe inicializarse directamente en el SharedWorker.
 
-La prueba está separada en dos niveles:
+La prueba utiliza dos tipos de Worker, pero el SharedWorker no crea el Dedicated Worker (el constructor `Worker()` no está expuesto en su contexto):
 
-- `src/sahpool-shared-worker.js`: SharedWorker coordinador; recibe conexiones de pestañas y reenvía las peticiones.
-- `src/sahpool-db-worker.js`: Dedicated Worker propietario único de SQLite WASM y OPFS SAH pool.
-- `coordination.html`: interfaz para verificar que ambas pestañas comparten el mismo SharedWorker y la misma instancia dedicada de SQLite.
+- Cada pestaña crea un candidato `Dedicated Worker` desde su propio contexto de ventana.
+- `src/sahpool-shared-worker.js`: SharedWorker coordinador; elige un único candidato como propietario y reenvía a él las operaciones de todas las pestañas.
+- `src/sahpool-db-worker.js`: Dedicated Worker; solo inicializa SQLite WASM y OPFS SAH pool cuando el coordinador lo activa.
+- Las demás pestañas mantienen su candidato inactivo, listo para ser promovido tras un cierre normal del propietario.
+- `coordination.html`: permite verificar el ID común del SharedWorker, el ID del Dedicated Worker propietario, dos conexiones y las escrituras compartidas.
 
 El Dedicated Worker comprueba explícitamente `FileSystemHandle`, `FileSystemDirectoryHandle`, `FileSystemFileHandle.prototype.createSyncAccessHandle` y `navigator.storage.getDirectory`, e incluye el resultado en la respuesta de conexión. Así, un fallo de OPFS indica qué API falta en ese contexto.
 
-Esta separación es necesaria por el modelo de permisos del navegador y no demuestra por sí sola que SharedWorker + Dedicated Worker sea viable en todos los navegadores. La prueba debe ejecutarse en el Brave del Galaxy A03.
+El archivo `coordination.html` usa un identificador de ejecución para que los restos de una ejecución interrumpida no se confundan con los 50 registros esperados en la siguiente. No activa `clearOnInit`, de modo que una promoción del Worker en espera no borra la base. La limpieza final elimina únicamente el VFS temporal de esta herramienta.
+
+Esta separación respeta el modelo de permisos del navegador, pero todavía requiere validación real en Brave del Galaxy A03. La prueba de dos pestañas no valida por sí sola un cierre abrupto del proceso ni la recuperación tras reiniciar el navegador.
