@@ -1,6 +1,6 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
 const RUN_ID = "prisma-sahpool-recovery-probe-v1";
-const BROKER_PROTOCOL = "recovery-fault-probe-1";
+const BROKER_PROTOCOL = "recovery-fault-probe-2";
 const NESTED_WORKER_AVAILABLE = typeof Worker === "function";
 
 const sessions = new Map();
@@ -13,6 +13,11 @@ let persistedTotalRows = null;
 let brokerSequence = 0;
 let controlSequence = 0;
 let handoffInProgress = null;
+
+const HEARTBEAT_INTERVAL_MS = 5000;
+const HEARTBEAT_TIMEOUT_MS = 20000;
+let heartbeatTimer = null;
+let heartbeatSequence = 0;
 
 function send(port, message, transfer = []) {
   try { port.postMessage(message, transfer); } catch { /* Client closed. */ }
@@ -43,6 +48,96 @@ function publishState() {
     handoffInProgress: handoffInProgress?.phase || null
   };
   for (const session of sessions.values()) send(session.port, state);
+}
+
+function requestOwnerTermination(owner, reason) {
+  if (!owner || ownerClientId !== owner.clientId || owner.terminationRequested) return;
+
+  owner.terminationRequested = true;
+  owner.role = "unresponsive";
+  publishState();
+
+  send(owner.port, {
+    kind: "terminate-unresponsive-worker",
+    workerId: SHARED_WORKER_ID,
+    databaseWorkerId,
+    reason,
+    timeoutMs: HEARTBEAT_TIMEOUT_MS
+  });
+}
+
+function retireOwnerWorker(clientId, reason) {
+  const failed = sessions.get(clientId);
+  if (!failed || ownerClientId !== clientId) return;
+
+  failed.role = "failed";
+  failed.terminationRequested = false;
+  failed.heartbeatPending = null;
+  failed.databaseWorkerId = null;
+
+  try { failed.dbPort?.close(); } catch {}
+  failed.dbPort = null;
+
+  databaseWorkerId = null;
+  ownerClientId = null;
+
+  for (const [brokerRequestId, request] of pending) {
+    if (request.watchdogTimer) clearTimeout(request.watchdogTimer);
+    const target = sessions.get(request.clientId);
+    if (target) {
+      send(target.port, {
+        kind: "response",
+        requestId: request.requestId,
+        clientId: request.clientId,
+        brokerRequestId,
+        ok: false,
+        error: "El Dedicated Worker propietario dejó de responder. El coordinador está recuperando SQLite. Consulta el estado antes de reintentar."
+      });
+    }
+    pending.delete(brokerRequestId);
+  }
+
+  send(failed.port, {
+    kind: "owner-worker-retired",
+    reason,
+    expectedRows: Number.isFinite(persistedTotalRows) ? persistedTotalRows : 0
+  });
+
+  const expectedRows = Number.isFinite(persistedTotalRows)
+    ? persistedTotalRows
+    : 0;
+
+  activateNextOwner({
+    excludeClientId: clientId,
+    expectExistingDb: expectedRows > 0,
+    expectedMinRows: expectedRows
+  });
+}
+
+function startHeartbeatLoop() {
+  if (heartbeatTimer !== null) return;
+
+  heartbeatTimer = setInterval(() => {
+    const owner = ownerClientId ? sessions.get(ownerClientId) : null;
+    if (!owner || owner.role !== "owner" || !databaseWorkerId || !owner.dbPort) return;
+
+    const now = Date.now();
+    if (owner.heartbeatPending) {
+      if (now - owner.heartbeatPending.sentAt >= HEARTBEAT_TIMEOUT_MS) {
+        requestOwnerTermination(owner, "heartbeat-timeout");
+      }
+      return;
+    }
+
+    const heartbeatId = "hb-" + String(++heartbeatSequence);
+    owner.heartbeatPending = { heartbeatId, sentAt: now };
+
+    try {
+      owner.dbPort.postMessage({ type: "heartbeat", heartbeatId });
+    } catch {
+      requestOwnerTermination(owner, "heartbeat-post-failed");
+    }
+  }, HEARTBEAT_INTERVAL_MS);
 }
 
 function activateNextOwner({
@@ -214,6 +309,16 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
   const owner = sessions.get(ownerClientIdForPort);
   if (!owner) return;
 
+  if (message.kind === "heartbeat-ack") {
+    if (ownerClientId === ownerClientIdForPort &&
+        owner.heartbeatPending?.heartbeatId === message.heartbeatId &&
+        owner.role === "owner") {
+      owner.heartbeatPending = null;
+      owner.lastHeartbeatAt = Date.now();
+    }
+    return;
+  }
+
   if (message.kind === "dedicated-ready") return;
 
   if (message.kind === "broker-trace") {
@@ -257,6 +362,10 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
       ? message.totalRows
       : persistedTotalRows;
     owner.role = "owner";
+    owner.heartbeatPending = null;
+    owner.lastHeartbeatAt = Date.now();
+    owner.terminationRequested = false;
+    startHeartbeatLoop();
     owner.opfsApis = message.requiredOpfsApis || null;
     owner.removedFailedV4Directory = message.removedFailedV4Directory === true;
     owner.databaseWorkerId = databaseWorkerId;
@@ -506,6 +615,9 @@ function registerSession(port, message, dbPort) {
     dbPort,
     role: "standby",
     registeredAt: Date.now(),
+    heartbeatPending: null,
+    lastHeartbeatAt: null,
+    terminationRequested: false,
     opfsApis: null,
     removedFailedV4Directory: null,
     databaseWorkerId: null,
@@ -517,10 +629,10 @@ function registerSession(port, message, dbPort) {
   dbPort.onmessage = (event) => onDatabaseMessage(clientId, event.data || {});
   dbPort.onmessageerror = () => {
     if (ownerClientId === clientId) {
-      send(port, {
-        kind: "error",
-        error: "No se pudo deserializar un mensaje del Dedicated Worker SQLite."
-      });
+      requestOwnerTermination(
+        sessions.get(clientId),
+        "dedicated-messageerror"
+      );
     }
   };
   dbPort.start();
@@ -628,9 +740,13 @@ function handleClientMessage(port, message, dbPort) {
     return;
   }
 
-  if (message.type === "dbWorkerFailed") {
+  if (message.type === "dbWorkerFailed" ||
+      message.type === "dbWorkerTerminated") {
     if (ownerClientId === session.clientId) {
-      removeSession(session.clientId, "database-worker-failed");
+      retireOwnerWorker(
+        session.clientId,
+        message.type === "dbWorkerFailed" ? "dedicated-worker-error" : "owner-confirmed-termination"
+      );
     }
     return;
   }
@@ -703,6 +819,7 @@ function handleClientMessage(port, message, dbPort) {
       }
     }, 18000);
 
+    pendingRequest.stage = "shared-forwarded";
     send(port, {
       kind: "broker-trace",
       stage: "shared-forwarded",
