@@ -2,9 +2,15 @@
 
 Sonda técnica independiente para probar escrituras solicitadas por dos clientes al mismo tiempo y procesadas por el propietario único de SQLite WASM sobre OPFS SAH pool.
 
-## Ejecución
+## Instalación y ejecución
 
-Abrir:
+Desde Termux, ejecuta esta única línea. El instalador descarga los seis archivos, verifica sus huellas SHA-1 de Git y se detiene sin sobrescribir archivos locales distintos:
+
+```sh
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/main/tools/storage-benchmark/install-concurrency-auto-test.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+```
+
+No reinstala dependencias y no reinicia el servidor si ya está activo. Después abre:
 
 `http://127.0.0.1:18767/concurrency-auto-test/`
 
