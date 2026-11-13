@@ -125,7 +125,7 @@ La revisión 2 también amplía el informe con:
 Para actualizar los dos archivos de la herramienta sin sobrescribir modificaciones locales, ejecuta en Termux:
 
 ```sh
-python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/af4ed9a5ac65e3de44a3dcd387498f48cbd19bf9/tools/storage-benchmark/install-opfs-wl-auto-test-revision-2.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/a75cac6b1341b5fda43a45e239af949dc724d1e4/tools/storage-benchmark/install-opfs-wl-auto-test-revision-2.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
 ```
 
 El instalador acepta únicamente los SHA exactos de V1 o de la revisión 2; si encuentra otro contenido, cancela sin sobrescribirlo. No instala ni cambia SQLite WASM, no toca la carpeta OPFS de la ejecución fallida y no reinicia el servidor del puerto 18768. El puerto 18767 tampoco se modifica.
