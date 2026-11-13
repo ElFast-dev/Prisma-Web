@@ -539,3 +539,16 @@ Este enfoque permite distinguir mejor si el DDL se está preparando, sobre qué 
 Instalador: [install-opfs-wl-auto-test-revision-4.py](install-opfs-wl-auto-test-revision-4.py), fijado al commit `3fe38b4853a0c314810c7e979912714dfc7e6ee0`. Solo reemplaza el Worker de la sonda y no toca SQLite WASM, dependencias, HTML, servidores, puerto 18767, otras herramientas ni carpetas OPFS previas.
 
 **Estado vigente:** apertura de conexión OPFS-WL demostrada; creación y persistencia del esquema aún no demostradas. OPFS-WL continúa sin aceptación hasta completar los dos Workers, 24/24 transacciones, 605 filas, reapertura y limpieza limitada al RUN_ID.
+
+
+### OPFS-WL AutoTest: cuarta ejecución y revisión 5 (13-11-2026)
+
+La ejecución con revisión 4 confirmó que la tabla `writes` existía, pero terminó **NO APROBADA** porque `readCounts()` devolvió cero filas para el RUN_ID `prisma-opfs-wl-auto-3f8f81ea-5c11-4f93-b078-8ae9123068a9`. La conexión SQLite seguía abierta, con `OpfsWlDb` y VFS `opfs-wl` disponibles.
+
+**Corrección interpretativa:** ese campo `total` filtra por el RUN_ID actual y no equivale al total global de la tabla. El informe anterior no permite concluir que la tabla no contuviera filas con otro identificador. Se conserva el directorio OPFS de esa ejecución.
+
+La revisión 5 agrega recuento global de filas, agrupación por RUN_ID/cliente y muestra de filas. También cambia la ruta de inserción inicial y de los lotes a un `INSERT` SQL multirregistro mediante `tx.exec()` dentro de `transaction("IMMEDIATE", ...)`, y exige cinco o 25 cambios según la operación. Es una ruta alternativa para aislar la causa; no significa que los métodos preparados anteriores sean incompatibles ni que OPFS-WL esté aprobada.
+
+Instalador seguro: [install-opfs-wl-auto-test-revision-5.py](install-opfs-wl-auto-test-revision-5.py), fijado al commit `b4f3c9d62eb147cfd1d9e2f60428e7d7819d0e0d`. Modifica únicamente el Worker de la sonda, valida su SHA y el del servidor, y no toca SQLite WASM, dependencias, HTML, ningún servidor, la aplicación Prisma ni carpetas OPFS anteriores.
+
+**Estado vigente:** conexión OPFS-WL y creación de la tabla observadas; siembra de filas para el RUN_ID y carga concurrente aún no aceptadas. La revisión 5 requiere una ejecución real para continuar el diagnóstico. Mantener COEP `require-corp`, conservar los RUN_ID anteriores y ejecutar con el servidor 18768 activo, sin reiniciarlo.
