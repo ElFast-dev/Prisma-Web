@@ -209,7 +209,9 @@ function workerRequest(worker, clientId, type, payload = {}, responseType, timeo
 function onWorkerMessage(clientId, message) {
   const role = clientId;
   if (message.type === "error") {
+    const diagnostics = message.diagnostics || null;
     log("ERROR Worker " + role + " · " + message.stage + ": " + message.error);
+    reportLine("DIAGNÓSTICO WORKER " + role + ": " + JSON.stringify({ name: message.name, resultCode: message.resultCode, diagnostics, stack: message.stack || null }));
     const entries = [...pending[role].entries()];
     pending[role].clear();
     for (const [, item] of entries) {
@@ -221,7 +223,8 @@ function onWorkerMessage(clientId, message) {
   if (message.type === "ready") {
     $("worker" + role).textContent = "Conexión SQLite independiente activa";
     log("Worker " + role + " abrió su propia conexión OPFS-WL; filas visibles: " + message.counts.total + ".");
-    log("Worker " + role + " · SQLite " + message.sqliteCoreVersion + " · VFS opfs-wl disponible.");
+    log("Worker " + role + " · SQLite " + message.sqliteCoreVersion + " · VFS opfs-wl disponible · intentos apertura " + message.openAttempts + ".");
+    reportLine("CONEXIÓN " + role + ": " + JSON.stringify({ filename: message.filename, packageVersion: message.packageVersion, sqliteCoreVersion: message.sqliteCoreVersion, openAttempts: message.openAttempts, busyRetries: message.busyRetries }));
   } else if (message.type === "busy-retry") {
     $("retries").textContent = String(Number($("retries").textContent) + 1);
     if (message.attempt === 2 || message.attempt % 10 === 0) {
@@ -417,14 +420,14 @@ async function runTest() {
   $("retries").textContent = "0";
 
   runId = "prisma-opfs-wl-auto-" + crypto.randomUUID();
-  filename = "/" + runId + "/shared.sqlite3";
+  filename = "file:" + runId + "/shared.sqlite3";
   $("runId").textContent = "RUN_ID: " + runId;
   reportLine("PRISMA · OPFS-WL AUTOTEST V1");
   reportLine("RUN_ID: " + runId);
   reportLine("Inicio: " + localTime() + " (hora de Panamá).");
   reportLine("Entorno (User-Agent): " + navigator.userAgent);
   reportLine("COEP: " + coepMode + " · Dos Dedicated Workers y dos conexiones SQLite independientes.");
-  reportLine("Archivo OPFS exclusivo: " + filename);
+  reportLine("Archivo OPFS exclusivo (URI SQLite): " + filename);
 
   try {
     const environment = await checkEnvironment();
