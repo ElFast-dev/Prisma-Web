@@ -192,3 +192,6 @@ Procedimiento para probar el relevo controlado:
 La interfaz no debe mostrar `Esta pestaña · PROPIETARIA ACTIVA` hasta recibir la confirmación `activated` del Dedicated Worker. La selección inicial se muestra como `Preparando propiedad` y mantiene deshabilitadas las operaciones.
 
 No se debe cerrar manualmente la pestaña propietaria antes de completar la cesión. `pagehide` es un evento de ciclo de vida y no permite esperar de forma fiable a una operación asíncrona de liberación de OPFS; el relevo normal se prueba con la cesión cooperativa explícita. Los cierres abruptos se evalúan en una prueba aparte.
+
+
+La revisión de esta prueba controlada usa nombres nuevos de Worker con sufijo `v6`; el nombre del conjunto de datos y el directorio OPFS se mantienen en `v5` para conservar los registros sintéticos existentes. Esto separa el código del coordinador de la identidad de los datos.
