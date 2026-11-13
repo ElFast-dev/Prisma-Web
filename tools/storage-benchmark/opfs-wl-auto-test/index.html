@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Prisma · OPFS-WL AutoTest V1</title>
+<style>
+:root{color-scheme:dark;--bg:#171a20;--panel:#222831;--panel2:#29333e;--line:#3a4552;--text:#f0f0f0;--muted:#b5bec8;--accent:#70aee0;--good:#8cc9a3;--warn:#f0c674;--bad:#f28b82}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
+main{width:min(860px,100%);margin:auto;padding:20px 15px 44px}
+h1{font-size:clamp(24px,6vw,34px);line-height:1.15;margin:8px 0}
+h2{font-size:18px;margin:0 0 10px}
+h3{font-size:14px;margin:0 0 8px}
+p{color:var(--muted);margin:8px 0}
+a{color:var(--accent);overflow-wrap:anywhere}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px;margin:13px 0}
+.note{background:#202933;border:1px solid var(--line);padding:12px 14px;border-radius:14px;color:var(--muted);margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.metric{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.metric span{display:block;font-size:12px;color:var(--muted)}
+.metric b{display:block;overflow-wrap:anywhere;font-size:14px;margin-top:3px}
+.status{font-weight:750}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:13px 16px;min-height:48px;background:var(--accent);color:#10202d;cursor:pointer}
+button.secondary{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
+button.danger{background:#552e30;border:1px solid #7c4548;color:#ffe0df}
+button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.actions button{flex:1 1 180px}
+.mode{display:inline-block;padding:7px 10px;margin:3px 5px 3px 0;border:1px solid var(--line);border-radius:999px;text-decoration:none}
+.mode.active{background:#30495d;border-color:#547b9b;color:#fff}
+.mini{font-size:12px;color:var(--muted)}
+.log{white-space:pre-wrap;overflow-wrap:anywhere;background:#11151a;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:90px;max-height:250px;overflow:auto;font:12px/1.5 ui-monospace,monospace}
+textarea{width:100%;min-height:180px;resize:vertical;background:#11151a;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:12px/1.5 ui-monospace,monospace}
+.images{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.image-test{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.image-test img{display:block;width:100%;max-width:180px;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:#11151a;margin:8px auto}
+.image-test .result{font-size:12px;color:var(--muted);text-align:center}
+img.failed{opacity:.2}
+footer{font-size:12px;color:var(--muted);margin-top:18px}
+@media(max-width:500px){main{padding:16px 12px 34px}.images{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.actions button{flex-basis:100%}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p>PRISMA · SONDA TÉCNICA INDEPENDIENTE</p>
+  <h1>OPFS-WL AutoTest V1</h1>
+  <p>Dos Dedicated Workers · Dos conexiones SQLite independientes · OPFS · Web Locks</p>
+</header>
+
+<div class="note">
+  <strong>Esta prueba es distinta de Concurrency AutoTest.</strong> Aquí cada cliente abre su propia conexión SQLite al mismo archivo OPFS. No hay SharedWorker ni propietario único. SQLite y OPFS-WL deben coordinar los bloqueos entre los dos Workers.
+  <br><br>
+  Se utiliza una base sintética exclusiva para esta ejecución. Si alguna comprobación falla, la carpeta se conserva para investigar. La limpieza automática solo se realiza después de verificar las escrituras y la reapertura desde ambos Workers.
+</div>
+
+<section class="panel">
+<h2>Política de aislamiento</h2>
+<p>OPFS-WL necesita aislamiento de origen. Se prueban dos opciones de COEP sin modificar el servidor de Concurrency AutoTest.</p>
+<a class="mode" id="requireMode" href="?coep=require-corp">require-corp</a>
+<a class="mode" id="credentialMode" href="?coep=credentialless">credentialless</a>
+<p id="modeHelp" class="mini">COOP: same-origin · COEP: require-corp</p>
+</section>
+
+<section class="panel">
+<h2>Compatibilidad del navegador</h2>
+<div class="grid">
+  <div class="metric"><span>crossOriginIsolated</span><b id="isolated">—</b></div>
+  <div class="metric"><span>SharedArrayBuffer</span><b id="sab">—</b></div>
+  <div class="metric"><span>Atomics.waitAsync</span><b id="waitAsync">—</b></div>
+  <div class="metric"><span>Web Locks</span><b id="locks">—</b></div>
+  <div class="metric"><span>Dedicated Worker</span><b id="worker">—</b></div>
+  <div class="metric"><span>OPFS</span><b id="opfs">—</b></div>
+  <div class="metric"><span>COOP recibido</span><b id="coopHeader">—</b></div>
+  <div class="metric"><span>COEP recibido</span><b id="coepHeader">—</b></div>
+</div>
+<p id="environmentStatus" class="status warn">Comprobando entorno…</p>
+</section>
+
+<section class="panel">
+<h2>Imágenes externas de TMDB</h2>
+<p>Solo se solicita un póster público de ejemplo. No se consulta la API ni se envía historial, perfil, calificaciones o listas de Prisma. Las imágenes se prueban en dos modos de carga.</p>
+<div class="images">
+  <div class="image-test">
+    <h3>Imagen normal · no-CORS</h3>
+    <img id="imageNoCors" alt="Póster de ejemplo de TMDB en modo no-CORS">
+    <div id="imageNoCorsResult" class="result">Comprobando…</div>
+  </div>
+  <div class="image-test">
+    <h3>Imagen con CORS</h3>
+    <img id="imageCors" alt="Póster de ejemplo de TMDB en modo CORS">
+    <div id="imageCorsResult" class="result">Comprobando…</div>
+  </div>
+</div>
+<p class="mini">Si una imagen no carga, el resultado significa «bloqueada por la política o no disponible»; no presupone cuál de las dos causas fue. Compara require-corp con credentialless.</p>
+</section>
+
+<section class="panel">
+<h2>Preparación de la prueba</h2>
+<div class="grid">
+  <div class="metric"><span>Paquete SQLite fijado</span><b>@sqlite.org/sqlite-wasm 3.54.1-build1</b></div>
+  <div class="metric"><span>VFS requerido</span><b>opfs-wl</b></div>
+  <div class="metric"><span>Clientes</span><b>2 Dedicated Workers</b></div>
+  <div class="metric"><span>Carga</span><b>24 transacciones × 25 filas</b></div>
+  <div class="metric"><span>Filas iniciales</span><b>5 sintéticas</b></div>
+  <div class="metric"><span>Total esperado</span><b>605 filas</b></div>
+</div>
+<p id="runId" class="mini">RUN_ID: se crea al iniciar.</p>
+<div class="actions">
+  <button id="start">EJECUTAR PRUEBA OPFS-WL</button>
+  <button id="stop" class="danger" disabled>DETENER Y CONSERVAR DATOS</button>
+</div>
+<p id="overall" class="status warn">Preparado. Aún no se ha iniciado la prueba.</p>
+</section>
+
+<section class="panel">
+<h2>Resultado de cada conexión</h2>
+<div class="grid">
+  <div class="metric"><span>Worker A</span><b id="workerA">Sin iniciar</b></div>
+  <div class="metric"><span>Worker B</span><b id="workerB">Sin iniciar</b></div>
+  <div class="metric"><span>Filas A</span><b id="rowsA">—</b></div>
+  <div class="metric"><span>Filas B</span><b id="rowsB">—</b></div>
+  <div class="metric"><span>Total SQLite</span><b id="rowsTotal">—</b></div>
+  <div class="metric"><span>Reintentos por bloqueo</span><b id="retries">0</b></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>Registro de la ejecución</h2>
+<div id="log" class="log">Listo para iniciar. Mantén esta página en primer plano.</div>
+<div class="actions"><button id="copy" class="secondary" disabled>Copiar informe completo</button></div>
+<textarea id="report" readonly placeholder="El informe completo aparecerá aquí al terminar o detener la prueba."></textarea>
+</section>
+
+<div class="note">
+  <strong>Memoria y alcance.</strong> La página intenta medir la memoria del navegador solo si la API está disponible. El dato, si aparece, es una estimación del navegador, no una medición completa de la RAM física de 4 GB del teléfono. La prueba no demuestra suspensión o descarte real de procesos por Android ni aprueba todavía el almacenamiento definitivo de Prisma.
+</div>
+
+<footer>
+  SQLite OPFS-WL usa Web Locks y requiere Atomics.waitAsync. Las transacciones deben ser breves y la aplicación debe tolerar SQLITE_BUSY. Esta herramienta no toca SAH pool, Recovery AutoTest, V4, V8 ni datos de Prisma.
+</footer>
+</main>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const coepMode = params.get("coep") === "credentialless" ? "credentialless" : "require-corp";
+const posterUrl = "https://image.tmdb.org/t/p/w500/1E5baAaEse26fej7uHcjOgEE2t2.jpg";
+const workers = { A: null, B: null };
+const pending = { A: new Map(), B: new Map() };
+const completed = [];
+const latencies = { A: [], B: [] };
+const results = {};
+let runId = null;
+let filename = null;
+let reportLines = [];
+let running = false;
+let stopped = false;
+let timeoutHandle = null;
+let memoryBefore = null;
+let memoryAfter = null;
+
+function localTime() {
+  return new Date().toLocaleString("es-PA", { timeZone: "America/Panama" });
+}
+function log(message) {
+  const line = "[" + localTime() + "] " + message;
+  const area = $("log");
+  area.textContent += "\n" + line;
+  area.scrollTop = area.scrollHeight;
+  reportLines.push(line);
+}
+function reportLine(message) {
+  reportLines.push(message);
+  $("report").value = reportLines.join("\n");
+}
+function setStatus(message, kind = "warn") {
+  $("overall").textContent = message;
+  $("overall").className = "status " + kind;
+}
+function check(condition, message) {
+  if (!condition) throw new Error(message);
+}
+function percentile(values, p) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.max(0, Math.ceil(sorted.length * p) - 1)];
+}
+function mean(values) {
+  return values.length ? Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2)) : null;
+}
+function markMetric(id, value, good = null) {
+  $(id).textContent = value;
+  if (good === true) $(id).className = "good";
+  else if (good === false) $(id).className = "bad";
+}
+function workerRequest(worker, clientId, type, payload = {}, responseType, timeoutMs = 45000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      pending[clientId].delete(responseType);
+      reject(new Error("Tiempo agotado esperando " + responseType + " del Worker " + clientId + "."));
+    }, timeoutMs);
+    pending[clientId].set(responseType, { resolve, reject, timer });
+    worker.postMessage({ type, ...payload });
+  });
+}
+function onWorkerMessage(clientId, message) {
+  const role = clientId;
+  if (message.type === "error") {
+    log("ERROR Worker " + role + " · " + message.stage + ": " + message.error);
+    const entries = [...pending[role].entries()];
+    pending[role].clear();
+    for (const [, item] of entries) {
+      clearTimeout(item.timer);
+      item.reject(new Error(message.error || "Error de Worker."));
+    }
+    return;
+  }
+  if (message.type === "ready") {
+    $("worker" + role).textContent = "Conexión SQLite independiente activa";
+    log("Worker " + role + " abrió su propia conexión OPFS-WL; filas visibles: " + message.counts.total + ".");
+    log("Worker " + role + " · SQLite " + message.sqliteCoreVersion + " · VFS opfs-wl disponible.");
+  } else if (message.type === "busy-retry") {
+    $("retries").textContent = String(Number($("retries").textContent) + 1);
+    if (message.attempt === 2 || message.attempt % 10 === 0) {
+      log("Worker " + role + " esperó por SQLITE_BUSY · intento " + message.attempt + ".");
+    }
+  } else if (message.type === "batch-complete") {
+    latencies[role].push(message.latencyMs);
+    completed.push({ clientId: role, batch: message.batch });
+    log("Worker " + role + " · transacción " + message.batch + "/12 confirmada · " + message.latencyMs + " ms.");
+  } else if (message.type === "writes-done") {
+    results[role] = message;
+    log("Worker " + role + " terminó 12/12 transacciones y 300 inserciones.");
+  } else if (message.type === "verified") {
+    $("rowsA").textContent = String(message.counts.A);
+    $("rowsB").textContent = String(message.counts.B);
+    $("rowsTotal").textContent = String(message.counts.total);
+    log("Worker " + role + " verificó la base compartida: total " + message.counts.total + ".");
+  } else if (message.type === "reopened") {
+    log("Worker " + role + " cerró y reabrió su conexión: " + message.counts.total + " filas.");
+  } else if (message.type === "closed") {
+    log("Worker " + role + " cerró su conexión SQLite.");
+  }
+
+  const waiter = pending[role].get(message.type);
+  if (waiter) {
+    pending[role].delete(message.type);
+    clearTimeout(waiter.timer);
+    waiter.resolve(message);
+  }
+}
+function createWorker(clientId) {
+  const url = new URL("./src/opfs-wl-db-worker.js", location.href);
+  url.searchParams.set("coep", coepMode);
+  const worker = new Worker(url, {
+    type: "module",
+    name: "Prisma-OPFS-WL-" + clientId
+  });
+  worker.addEventListener("message", (event) => onWorkerMessage(clientId, event.data || {}));
+  worker.addEventListener("error", (event) => {
+    const error = new Error(event.message || "Error no controlado del Worker " + clientId + ".");
+    for (const [, item] of pending[clientId]) {
+      clearTimeout(item.timer);
+      item.reject(error);
+    }
+    pending[clientId].clear();
+  });
+  workers[clientId] = worker;
+  return worker;
+}
+function terminateWorkers() {
+  for (const key of ["A", "B"]) {
+    if (workers[key]) {
+      workers[key].terminate();
+      workers[key] = null;
+    }
+    for (const [, item] of pending[key]) {
+      clearTimeout(item.timer);
+      item.reject(new Error("Worker detenido."));
+    }
+    pending[key].clear();
+  }
+}
+async function memoryEstimate() {
+  try {
+    if (typeof performance.measureUserAgentSpecificMemory === "function") {
+      const info = await performance.measureUserAgentSpecificMemory();
+      return { method: "measureUserAgentSpecificMemory", bytes: info.bytes };
+    }
+  } catch (error) {
+    return { method: "measureUserAgentSpecificMemory", error: error?.message || String(error) };
+  }
+  const heap = performance.memory?.usedJSHeapSize;
+  if (Number.isFinite(heap)) {
+    return { method: "performance.memory.usedJSHeapSize", bytes: heap };
+  }
+  return { method: "no disponible en este navegador" };
+}
+async function testPoster(imgId, resultId, cors) {
+  const image = $(imgId);
+  $(resultId).textContent = "Comprobando…";
+  image.removeAttribute("src");
+  image.classList.remove("failed");
+  if (cors) image.crossOrigin = "anonymous";
+  else image.removeAttribute("crossorigin");
+  image.referrerPolicy = "no-referrer";
+  const url = new URL(posterUrl);
+  url.searchParams.set("prisma_coep_probe", Date.now() + "-" + (cors ? "cors" : "no-cors"));
+  const outcome = await new Promise((resolve) => {
+    const timer = setTimeout(() => resolve({ ok: false, reason: "tiempo agotado" }), 15000);
+    image.onload = () => {
+      clearTimeout(timer);
+      resolve({ ok: true, width: image.naturalWidth, height: image.naturalHeight });
+    };
+    image.onerror = () => {
+      clearTimeout(timer);
+      resolve({ ok: false, reason: "bloqueada por la política o no disponible" });
+    };
+    image.src = url.toString();
+  });
+  $(resultId).textContent = outcome.ok
+    ? "Cargada · " + outcome.width + "×" + outcome.height
+    : "No cargó · " + outcome.reason;
+  image.classList.toggle("failed", !outcome.ok);
+  return { mode: cors ? "CORS" : "no-CORS", ...outcome };
+}
+async function checkEnvironment() {
+  const response = await fetch(location.href, { cache: "no-store" });
+  const coop = response.headers.get("Cross-Origin-Opener-Policy") || "(ausente)";
+  const coep = response.headers.get("Cross-Origin-Embedder-Policy") || "(ausente)";
+  const values = {
+    isolated: window.crossOriginIsolated === true,
+    sab: typeof SharedArrayBuffer === "function",
+    waitAsync: typeof Atomics.waitAsync === "function",
+    locks: !!navigator.locks,
+    worker: typeof Worker === "function",
+    opfs: typeof navigator.storage?.getDirectory === "function",
+    coop,
+    coep
+  };
+  markMetric("isolated", values.isolated ? "Sí" : "No", values.isolated);
+  markMetric("sab", values.sab ? "Disponible" : "No disponible", values.sab);
+  markMetric("waitAsync", values.waitAsync ? "Disponible" : "No disponible", values.waitAsync);
+  markMetric("locks", values.locks ? "Disponible" : "No disponible", values.locks);
+  markMetric("worker", values.worker ? "Disponible" : "No disponible", values.worker);
+  markMetric("opfs", values.opfs ? "Disponible" : "No disponible", values.opfs);
+  markMetric("coopHeader", coop, coop === "same-origin");
+  markMetric("coepHeader", coep, coep === coepMode);
+  $("modeHelp").textContent = "COOP: " + coop + " · COEP: " + coep;
+  const valid = values.isolated && values.sab && values.waitAsync &&
+    values.locks && values.worker && values.opfs &&
+    coop === "same-origin" && coep === coepMode;
+  $("environmentStatus").textContent = valid
+    ? "Entorno aislado y APIs necesarias disponibles."
+    : "Falta algún requisito de OPFS-WL. No inicies la prueba de SQLite.";
+  $("environmentStatus").className = "status " + (valid ? "good" : "bad");
+  reportLine("COOP: " + coop + " · COEP: " + coep + " · crossOriginIsolated: " + values.isolated);
+  reportLine("SharedArrayBuffer: " + values.sab + " · Atomics.waitAsync: " + values.waitAsync +
+    " · Web Locks: " + values.locks + " · OPFS: " + values.opfs);
+  return { valid, ...values };
+}
+async function cleanupOwnDirectory() {
+  check(runId && /^prisma-opfs-wl-auto-[0-9a-f-]{36}$/i.test(runId),
+    "No se autorizó limpiar: RUN_ID no válido.");
+  const root = await navigator.storage.getDirectory();
+  await root.removeEntry(runId, { recursive: true });
+  let stillExists = false;
+  try {
+    await root.getDirectoryHandle(runId);
+    stillExists = true;
+  } catch (error) {
+    if (error?.name !== "NotFoundError") throw error;
+  }
+  check(!stillExists, "El directorio OPFS de esta ejecución todavía existe.");
+}
+function finishReport(passed, message) {
+  const lines = [
+    "",
+    "RESULTADO GENERAL: " + (passed ? "APROBADO" : "NO APROBADO"),
+    message,
+    "Política COEP probada: " + coepMode,
+    "No se modificaron SAH pool, Recovery AutoTest, V4, V8 ni datos de Prisma."
+  ];
+  for (const line of lines) reportLine(line);
+  $("copy").disabled = false;
+  setStatus(message, passed ? "good" : "bad");
+}
+function maxConsecutiveRun(order) {
+  let max = 0, current = 0, previous = null;
+  for (const item of order) {
+    current = item === previous ? current + 1 : 1;
+    previous = item;
+    max = Math.max(max, current);
+  }
+  return max;
+}
+async function runTest() {
+  if (running) return;
+  running = true;
+  stopped = false;
+  $("start").disabled = true;
+  $("stop").disabled = false;
+  $("copy").disabled = true;
+  $("log").textContent = "";
+  $("report").value = "";
+  reportLines = [];
+  completed.length = 0;
+  latencies.A = [];
+  latencies.B = [];
+  for (const key of ["A", "B"]) results[key] = null;
+  $("rowsA").textContent = "—";
+  $("rowsB").textContent = "—";
+  $("rowsTotal").textContent = "—";
+  $("retries").textContent = "0";
+
+  runId = "prisma-opfs-wl-auto-" + crypto.randomUUID();
+  filename = "/" + runId + "/shared.sqlite3";
+  $("runId").textContent = "RUN_ID: " + runId;
+  reportLine("PRISMA · OPFS-WL AUTOTEST V1");
+  reportLine("RUN_ID: " + runId);
+  reportLine("Inicio: " + localTime() + " (hora de Panamá).");
+  reportLine("Entorno (User-Agent): " + navigator.userAgent);
+  reportLine("COEP: " + coepMode + " · Dos Dedicated Workers y dos conexiones SQLite independientes.");
+  reportLine("Archivo OPFS exclusivo: " + filename);
+
+  try {
+    const environment = await checkEnvironment();
+    check(environment.valid,
+      "El servidor no entregó COOP/COEP correctamente o falta alguna API requerida. " +
+      "No se inicializó SQLite.");
+    memoryBefore = await memoryEstimate();
+    log("Entorno compatible con OPFS-WL.");
+
+    const imageResults = await Promise.all([
+      testPoster("imageNoCors", "imageNoCorsResult", false),
+      testPoster("imageCors", "imageCorsResult", true)
+    ]);
+    reportLine("TMDB imagen pública: " + JSON.stringify(imageResults));
+    log("Diagnóstico de imágenes externas terminado.");
+
+    const workerA = createWorker("A");
+    const readyA = await workerRequest(workerA, "A", "init", {
+      runId,
+      clientId: "A",
+      filename
+    }, "ready", 60000);
+    check(readyA.counts.total === 5, "El cliente A no preparó exactamente cinco filas.");
+    log("Preparación A: base creada y cinco filas de referencia confirmadas.");
+
+    const workerB = createWorker("B");
+    const readyB = await workerRequest(workerB, "B", "init", {
+      runId,
+      clientId: "B",
+      filename
+    }, "ready", 60000);
+    check(readyB.counts.total === 5, "El cliente B no vio las cinco filas de referencia.");
+    check(readyA.sqliteCoreVersion === readyB.sqliteCoreVersion,
+      "Los dos Workers informaron versiones distintas del núcleo SQLite.");
+
+    reportLine("SQLite núcleo: " + readyA.sqliteCoreVersion + " · paquete 3.54.1-build1.");
+    reportLine("Propietarios/Workers SQLite independientes: 2.");
+    log("PREPARACIÓN: PASS · dos conexiones independientes · cinco filas iniciales.");
+
+    setStatus("Ejecutando 24 transacciones en dos conexiones SQLite independientes…", "warn");
+    const runStarted = performance.now();
+    timeoutHandle = setTimeout(() => {
+      log("AVISO: la carga sigue activa después de 120 segundos. No se limpiarán los datos.");
+      setStatus("La prueba tarda más de lo esperado. Puedes detenerla y conservar el directorio.", "warn");
+    }, 120000);
+
+    const aDonePromise = workerRequest(workerA, "A", "start", {}, "writes-done", 180000);
+    const bDonePromise = workerRequest(workerB, "B", "start", {}, "writes-done", 180000);
+    const [doneA, doneB] = await Promise.all([aDonePromise, bDonePromise]);
+    clearTimeout(timeoutHandle);
+    timeoutHandle = null;
+    const runElapsed = Number((performance.now() - runStarted).toFixed(2));
+
+    check(doneA.batchesCompleted === 12 && doneB.batchesCompleted === 12,
+      "No completaron las 12 transacciones de ambos clientes.");
+    check(doneA.rowsInserted === 300 && doneB.rowsInserted === 300,
+      "El número de inserciones por cliente no coincide con lo esperado.");
+
+    log("CARGA: PASS · A 12/12, B 12/12 · dos conexiones independientes.");
+    reportLine("Duración total de las 24 transacciones: " + runElapsed + " ms.");
+    reportLine("Reintentos BUSY: A=" + doneA.busyRetries + " · B=" + doneB.busyRetries + ".");
+
+    const [verifyA, verifyB] = await Promise.all([
+      workerRequest(workerA, "A", "verify", {}, "verified", 60000),
+      workerRequest(workerB, "B", "verify", {}, "verified", 60000)
+    ]);
+    for (const verification of [verifyA, verifyB]) {
+      check(verification.counts.A === 305 &&
+        verification.counts.B === 300 &&
+        verification.counts.total === 605,
+        "Una conexión no observó los recuentos esperados: " + JSON.stringify(verification.counts));
+    }
+    log("RECUENTOS: PASS · A=305 · B=300 · total=605 vistos desde ambos Workers.");
+
+    const [reopenedA, reopenedB] = await Promise.all([
+      workerRequest(workerA, "A", "reopen", {}, "reopened", 60000),
+      workerRequest(workerB, "B", "reopen", {}, "reopened", 60000)
+    ]);
+    for (const reopened of [reopenedA, reopenedB]) {
+      check(reopened.counts.A === 305 &&
+        reopened.counts.B === 300 &&
+        reopened.counts.total === 605,
+        "La reapertura desde un Worker no conservó los 605 registros: " +
+        JSON.stringify(reopened.counts));
+    }
+    log("REAPERTURA: PASS · ambas conexiones cerraron y abrieron SQLite; 605 filas conservadas.");
+
+    const [closedA, closedB] = await Promise.all([
+      workerRequest(workerA, "A", "close", {}, "closed", 30000),
+      workerRequest(workerB, "B", "close", {}, "closed", 30000)
+    ]);
+    check(closedA.closed && closedB.closed, "No se confirmaron los cierres de ambas conexiones.");
+    terminateWorkers();
+
+    memoryAfter = await memoryEstimate();
+    reportLine("Memoria antes: " + JSON.stringify(memoryBefore));
+    reportLine("Memoria después: " + JSON.stringify(memoryAfter));
+    reportLine("User-Agent: " + navigator.userAgent +
+      " (no se usa para inferir con certeza Android ni la marca del navegador).");
+    reportLine("Latencia A: media " + mean(latencies.A) + " ms · P95 " +
+      percentile(latencies.A, 0.95) + " ms · min " +
+      Math.min(...latencies.A) + " ms · max " + Math.max(...latencies.A) + " ms.");
+    reportLine("Latencia B: media " + mean(latencies.B) + " ms · P95 " +
+      percentile(latencies.B, 0.95) + " ms · min " +
+      Math.min(...latencies.B) + " ms · max " + Math.max(...latencies.B) + " ms.");
+    reportLine("Secuencia observada de confirmación: " +
+      completed.map((item) => item.clientId + item.batch).join(" → "));
+    reportLine("Máximo de transacciones consecutivas del mismo cliente: " +
+      maxConsecutiveRun(completed.map((item) => item.clientId)) + ".");
+
+    await cleanupOwnDirectory();
+    log("LIMPIEZA: PASS · directorio OPFS exclusivo eliminado tras cerrar las dos conexiones.");
+    reportLine("LIMPIEZA: PASS · solo se eliminó " + runId + ".");
+    finishReport(true,
+      "OPFS-WL aprobó esta carga: dos conexiones independientes completaron 24/24 transacciones, conservaron 605 filas y reabrieron SQLite correctamente.");
+  } catch (error) {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+    timeoutHandle = null;
+    log("PRUEBA DETENIDA: " + (error?.message || String(error)));
+    reportLine("ERROR: " + (error?.message || String(error)));
+    reportLine("La carpeta temporal no se limpiará automáticamente para conservar la evidencia de esta ejecución.");
+    terminateWorkers();
+    finishReport(false,
+      "La prueba no se puede declarar aprobada. Conserva el informe completo y el directorio temporal para revisar el error.");
+  } finally {
+    running = false;
+    $("start").disabled = false;
+    $("stop").disabled = true;
+  }
+}
+function stopAndPreserve() {
+  if (!running) return;
+  stopped = true;
+  if (timeoutHandle) clearTimeout(timeoutHandle);
+  timeoutHandle = null;
+  log("El usuario detuvo la prueba. Las conexiones se terminaron y no se eliminará el directorio OPFS.");
+  reportLine("DETENCIÓN MANUAL: la carpeta OPFS " + (runId || "(RUN_ID no creado)") +
+    " se conserva para diagnóstico.");
+  terminateWorkers();
+  finishReport(false, "Prueba detenida manualmente; datos temporales conservados.");
+  running = false;
+  $("start").disabled = false;
+  $("stop").disabled = true;
+}
+$("start").addEventListener("click", runTest);
+$("stop").addEventListener("click", stopAndPreserve);
+$("copy").addEventListener("click", async () => {
+  $("report").value = reportLines.join("\n");
+  try {
+    await navigator.clipboard.writeText($("report").value);
+    $("copy").textContent = "Informe copiado";
+  } catch {
+    $("report").focus();
+    $("report").select();
+    $("copy").textContent = "Selecciona y copia el informe";
+  }
+});
+$("requireMode").classList.toggle("active", coepMode === "require-corp");
+$("credentialMode").classList.toggle("active", coepMode === "credentialless");
+(async () => {
+  const environment = await checkEnvironment().catch((error) => {
+    $("environmentStatus").textContent = "No se pudo comprobar el servidor: " + error.message;
+    $("environmentStatus").className = "status bad";
+    return null;
+  });
+  const imageResults = await Promise.all([
+    testPoster("imageNoCors", "imageNoCorsResult", false),
+    testPoster("imageCors", "imageCorsResult", true)
+  ]);
+  reportLine("TMDB imagen pública: " + JSON.stringify(imageResults));
+  if (environment?.valid) {
+    log("Entorno listo. Revisa también el resultado de las dos imágenes de TMDB.");
+  }
+})();
+</script>
+</body>
+</html>
