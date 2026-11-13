@@ -1,183 +1,88 @@
-import sqlite3InitModule from "../node_modules/@sqlite.org/sqlite-wasm/dist/index.mjs";
-
-const WORKER_ID = crypto.randomUUID();
-const DB_DIRECTORY = "/prisma-sahpool-sharedworker-probe-v1";
-const DB_FILE = "/sharedworker-probe.sqlite3";
+const SHARED_WORKER_ID = crypto.randomUUID();
 const ports = new Set();
+const pending = new Map();
 
-let sqlite3 = null;
-let pool = null;
-let db = null;
-let initialization = null;
+let databaseWorker = null;
+let databaseWorkerFailure = null;
 
-function post(port, payload) {
-  try { port.postMessage(payload); } catch { /* A client may have closed. */ }
+function send(port, message) {
+  try { port.postMessage(message); } catch { /* The tab may have closed. */ }
 }
 
-function broadcast(payload) {
-  for (const port of ports) post(port, payload);
+function broadcast(message) {
+  for (const port of ports) send(port, message);
 }
 
-function connectionSnapshot() {
-  return {
-    workerId: WORKER_ID,
-    connections: ports.size,
-    crossOriginIsolated: self.crossOriginIsolated === true
-  };
-}
-
-async function ensureDatabase() {
-  if (db) return db;
-  if (!initialization) {
-    initialization = (async () => {
-      sqlite3 = await sqlite3InitModule();
-
-      pool = await sqlite3.installOpfsSAHPoolVfs({
-        directory: DB_DIRECTORY,
-        initialCapacity: 6,
-        clearOnInit: true,
-        preserveOnInitFailure: true
-      });
-
-      db = new pool.OpfsSAHPoolDb(DB_FILE);
-      db.exec(
-        "PRAGMA foreign_keys = ON;" +
-        "PRAGMA synchronous = FULL;" +
-        "PRAGMA journal_mode = DELETE;" +
-        "CREATE TABLE IF NOT EXISTS writes (" +
-          "id TEXT PRIMARY KEY," +
-          "client_id TEXT NOT NULL," +
-          "sequence INTEGER NOT NULL," +
-          "created_at INTEGER NOT NULL" +
-        ");" +
-        "CREATE INDEX IF NOT EXISTS idx_writes_client " +
-          "ON writes(client_id, sequence);"
-      );
-      return db;
-    })().catch((error) => {
-      initialization = null;
-      throw error;
+function failPending(error) {
+  for (const [requestId, owner] of pending) {
+    send(owner, {
+      kind: "response",
+      requestId,
+      ok: false,
+      workerId: SHARED_WORKER_ID,
+      error
     });
   }
-  await initialization;
-  return db;
+  pending.clear();
 }
 
-function countRows() {
-  return Number(db.selectValue("SELECT COUNT(*) FROM writes"));
-}
+function startDatabaseWorker() {
+  if (databaseWorker) return databaseWorker;
+  if (databaseWorkerFailure) throw new Error(databaseWorkerFailure);
 
-function clientRows(clientId) {
-  return Number(db.selectValue(
-    "SELECT COUNT(*) FROM writes WHERE client_id = ?",
-    clientId
-  ));
-}
-
-async function handle(port, message) {
-  const { requestId, type, clientId } = message || {};
-  try {
-    if (type === "hello" || type === "status") {
-      await ensureDatabase();
-      post(port, {
-        kind: "response", requestId, ok: true, type,
-        workerId: WORKER_ID,
-        connections: ports.size,
-        crossOriginIsolated: self.crossOriginIsolated === true,
-        totalRows: countRows(),
-        clientRows: clientRows(clientId)
-      });
-      return;
+  // SyncAccessHandle is available only in Dedicated Workers. This SharedWorker
+  // coordinates tabs and forwards all SQLite operations to one dedicated owner.
+  databaseWorker = new Worker(
+    new URL("./sahpool-db-worker.js", import.meta.url),
+    {
+      type: "module",
+      name: "prisma-sahpool-database-owner-v2"
     }
+  );
 
-    if (type === "insertBatch") {
-      await ensureDatabase();
-      const count = Math.max(1, Math.min(100, Number(message.count) || 25));
-      const insert = db.prepare(
-        "INSERT INTO writes (id, client_id, sequence, created_at) VALUES (?, ?, ?, ?)"
-      );
-      try {
-        db.transaction("IMMEDIATE", () => {
-          for (let i = 1; i <= count; i += 1) {
-            insert.bind([
-              clientId + ":" + i,
-              clientId,
-              i,
-              Date.now()
-            ]).stepReset();
-          }
-        });
-      } finally {
-        insert.finalize();
-      }
+  databaseWorker.onmessage = (event) => {
+    const message = event.data || {};
 
-      const totalRows = countRows();
-      const ownRows = clientRows(clientId);
+    if (message.kind === "stats") {
       broadcast({
-        kind: "stats",
-        workerId: WORKER_ID,
-        connections: ports.size,
-        totalRows
-      });
-      post(port, {
-        kind: "response", requestId, ok: true, type,
-        workerId: WORKER_ID,
-        connections: ports.size,
-        inserted: count,
-        clientRows: ownRows,
-        totalRows
-      });
-      return;
-    }
-
-    if (type === "reopenVerify") {
-      await ensureDatabase();
-      db.close();
-      db = new pool.OpfsSAHPoolDb(DB_FILE);
-      const totalRows = countRows();
-      post(port, {
-        kind: "response", requestId, ok: true, type,
-        workerId: WORKER_ID,
-        connections: ports.size,
-        totalRows,
-        clientRows: clientRows(clientId)
-      });
-      return;
-    }
-
-    if (type === "cleanup") {
-      if (db) {
-        db.close();
-        db = null;
-      }
-      let removeVfsResult = null;
-      if (pool) {
-        removeVfsResult = await pool.removeVfs();
-        pool = null;
-      }
-      sqlite3 = null;
-      initialization = null;
-      post(port, {
-        kind: "response", requestId, ok: true, type,
-        workerId: WORKER_ID,
-        removeVfsResult
-      });
-      broadcast({
-        kind: "cleaned",
-        workerId: WORKER_ID,
+        ...message,
+        workerId: SHARED_WORKER_ID,
         connections: ports.size
       });
       return;
     }
 
-    throw new Error("Operación desconocida: " + String(type));
-  } catch (error) {
-    post(port, {
-      kind: "response", requestId, ok: false, type,
-      workerId: WORKER_ID,
-      error: error?.message || String(error)
+    if (message.kind === "response") {
+      const owner = pending.get(message.requestId);
+      if (!owner) return;
+
+      pending.delete(message.requestId);
+      send(owner, {
+        ...message,
+        workerId: SHARED_WORKER_ID,
+        connections: ports.size
+      });
+    }
+  };
+
+  databaseWorker.onerror = (event) => {
+    const detail = event.message || "Error desconocido en el Dedicated Worker SQLite.";
+    databaseWorkerFailure = detail;
+    databaseWorker?.terminate();
+    databaseWorker = null;
+    failPending("Fallo del Dedicated Worker SQLite: " + detail);
+    broadcast({
+      kind: "fatal",
+      workerId: SHARED_WORKER_ID,
+      error: detail
     });
-  }
+  };
+
+  databaseWorker.onmessageerror = () => {
+    failPending("No se pudo deserializar una respuesta del Dedicated Worker SQLite.");
+  };
+
+  return databaseWorker;
 }
 
 self.onconnect = (event) => {
@@ -185,12 +90,50 @@ self.onconnect = (event) => {
   ports.add(port);
 
   port.onmessage = (messageEvent) => {
-    handle(port, messageEvent.data);
+    const request = messageEvent.data || {};
+    const requestId = request.requestId;
+
+    if (typeof requestId !== "string" || !requestId) {
+      send(port, {
+        kind: "response",
+        ok: false,
+        workerId: SHARED_WORKER_ID,
+        error: "Solicitud sin requestId."
+      });
+      return;
+    }
+
+    if (pending.has(requestId)) {
+      send(port, {
+        kind: "response",
+        requestId,
+        ok: false,
+        workerId: SHARED_WORKER_ID,
+        error: "requestId duplicado."
+      });
+      return;
+    }
+
+    try {
+      const owner = startDatabaseWorker();
+      pending.set(requestId, port);
+      owner.postMessage(request);
+    } catch (error) {
+      send(port, {
+        kind: "response",
+        requestId,
+        ok: false,
+        workerId: SHARED_WORKER_ID,
+        error: error?.message || String(error)
+      });
+    }
   };
+
   port.start();
 
   broadcast({
     kind: "connections",
-    ...connectionSnapshot()
+    workerId: SHARED_WORKER_ID,
+    connections: ports.size
   });
 };
