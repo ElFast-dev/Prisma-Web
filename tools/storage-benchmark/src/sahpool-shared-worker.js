@@ -39,7 +39,9 @@ function activateNextOwner() {
   ownerClientId = null;
   databaseWorkerId = null;
 
-  const candidate = [...sessions.values()].find((session) => session.dbPort);
+  const candidate = [...sessions.values()].find(
+    (session) => session.dbPort && session.role !== "failed"
+  );
   if (!candidate) {
     publishState();
     return;
@@ -113,15 +115,24 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
 
   if (message.kind === "activation-error") {
     if (ownerClientId !== ownerClientIdForPort) return;
+
     owner.role = "failed";
+    owner.opfsApis = message.requiredOpfsApis || null;
+    const failedPort = owner.port;
+
+    ownerClientId = null;
     databaseWorkerId = null;
-    publishState();
-    send(owner.port, {
+
+    send(failedPort, {
       kind: "error",
       error: message.error || "No se pudo inicializar SQLite en el Dedicated Worker.",
-      requiredOpfsApis: message.requiredOpfsApis || null,
+      requiredOpfsApis: owner.opfsApis,
       workerId: SHARED_WORKER_ID
     });
+
+    // Do not leave other tabs stuck in "registration sent". Elect the next
+    // healthy candidate; failed candidates are excluded from future elections.
+    activateNextOwner();
     return;
   }
 
