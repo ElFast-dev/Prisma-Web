@@ -251,3 +251,29 @@ SQLite documenta que `exportFile()` devuelve los bytes de un archivo virtual del
 La instantánea queda temporalmente en memoria del SharedWorker únicamente durante el relevo. No es una copia de seguridad persistente de Prisma ni sustituye el sistema de exportación/restauración del producto.
 
 V8 usa nuevos nombres de instancias de Worker, pero conserva el directorio y conjunto sintético V5. No activa `clearOnInit`, no invoca `removeVfs()` y no elimina la base al iniciar.
+
+
+### Resultado de la lectura V7: conjunto sintético vacío
+
+El informe recibido tras V7 mostró:
+- archivo virtual `/sharedworker-probe.sqlite3` presente;
+- tamaño de 32768 bytes;
+- tabla `writes` presente;
+- `COUNT(*) = 0`.
+
+Por tanto, los 175 registros sintéticos informados en V6 ya no estaban en el archivo SQLite que V7 abrió. No es una cuestión de un filtro por `run_id`, porque V7 cuenta todas las filas de `writes`. El informe no permite identificar con certeza en qué paso anterior se vaciaron, así que no debe afirmarse que sigan recuperables. Son datos sintéticos de la herramienta, no datos personales de Prisma.
+
+V8 no presupone que ese contenido exista. La siguiente ejecución debe crear un nuevo conjunto de referencia (25 + 25 = 50) y comprobarlo antes de transferir.
+
+### Procedimiento de aceptación V8
+
+1. Cerrar todas las pestañas de versiones anteriores y actualizar los archivos V8.
+2. Conectar una pestaña y consultar el estado. El informe puede mostrar 0 porque el conjunto sintético anterior está vacío.
+3. Abrir una segunda pestaña y conectarla.
+4. Insertar 25 filas desde cada pestaña. Verificar 50 filas en ambas y reabrir SQLite.
+5. Pulsar `Ceder propiedad a otra pestaña` desde la propietaria.
+6. En el registro, comprobar que el propietario saliente exporta una instantánea no vacía y que el entrante importa el mismo número de bytes.
+7. Confirmar que el nuevo propietario recupera 50 filas. No aceptar el relevo si el número es menor.
+8. Consultar estado y reabrir SQLite en el nuevo propietario. Solo después se puede insertar otra tanda.
+
+No cerrar la pestaña propietaria ni eliminar la base sintética antes de recibir la confirmación. Si el relevo falla, conservar ambos registros y diagnósticos.
