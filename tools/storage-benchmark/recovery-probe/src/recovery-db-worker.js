@@ -609,6 +609,14 @@ self.addEventListener("message", (event) => {
   port.onmessage = (messageEvent) => {
     const request = messageEvent.data;
 
+    if (request?.type === "heartbeat") {
+      send({
+        kind: "heartbeat-ack",
+        heartbeatId: request.heartbeatId || null
+      });
+      return;
+    }
+
     if (request?.brokerRequestId) {
       send({
         kind: "broker-trace",
