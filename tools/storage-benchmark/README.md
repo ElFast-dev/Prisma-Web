@@ -274,6 +274,10 @@ V8 no presupone que ese contenido exista. La siguiente ejecución debe crear un 
 5. Pulsar `Ceder propiedad a otra pestaña` desde la propietaria.
 6. En el registro, comprobar que el propietario saliente exporta una instantánea no vacía y que el entrante importa el mismo número de bytes.
 7. Confirmar que el nuevo propietario recupera 50 filas. No aceptar el relevo si el número es menor.
-8. Consultar estado y reabrir SQLite en el nuevo propietario. Solo después se puede insertar otra tanda.
+8. Consultar estado y reabrir SQLite en el nuevo propietario. En este momento el total debe seguir en 50.
+9. Sin cerrar ninguna pestaña, pulsar «Insertar 25 registros» una vez desde la nueva pestaña propietaria. El total debe pasar de 50 a 75. Volver a pulsar «Cerrar y reabrir SQLite» desde esa pestaña y confirmar 75.
+10. En la pestaña anterior (ahora no propietaria), pulsar «Consultar estado» y confirmar que ve 75. Después pulsar «Insertar 25 registros» una sola vez desde esa pestaña. El SharedWorker debe reenviar la solicitud al Dedicated Worker propietario y el total compartido debe pasar a 100.
+11. Comprobar ambas interfaces: mismo ID de SharedWorker mientras ambas sigan conectadas, mismo ID Dedicated Worker propietario, propietario indicado en la pestaña nueva, «Otra pestaña» en la anterior y total 100 en ambas. Consultar estado desde la pestaña nueva y reabrir SQLite; debe conservar 100.
+12. Guardar los registros de ambas pestañas y los diagnósticos antes de limpiar. No repetir tandas si los totales ya coinciden.
 
-No cerrar la pestaña propietaria ni eliminar la base sintética antes de recibir la confirmación. Si el relevo falla, conservar ambos registros y diagnósticos.
+No cerrar ninguna pestaña ni eliminar la base sintética antes de recibir y registrar todas las confirmaciones. Si el relevo falla, conservar ambos registros y diagnósticos.
