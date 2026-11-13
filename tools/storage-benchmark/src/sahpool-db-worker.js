@@ -51,7 +51,7 @@ async function removeFailedV4TestDirectory() {
   }
 }
 
-function poolSnapshot() {
+function poolSnapshot({ exportDatabaseFile = true } = {}) {
   if (!pool) return null;
 
   let fileNames = [];
@@ -59,7 +59,7 @@ function poolSnapshot() {
 
   let databaseFileBytes = null;
   const databaseFileFound = fileNames.includes(DB_FILE);
-  if (databaseFileFound) {
+  if (databaseFileFound && exportDatabaseFile) {
     try { databaseFileBytes = pool.exportFile(DB_FILE).byteLength; }
     catch (error) {
       databaseFileBytes = "ERROR: " + (error?.message || String(error));
@@ -79,8 +79,8 @@ function poolSnapshot() {
   };
 }
 
-function databaseSnapshot() {
-  const snapshot = poolSnapshot();
+function databaseSnapshot({ exportDatabaseFile = true } = {}) {
+  const snapshot = poolSnapshot({ exportDatabaseFile });
   if (!snapshot) return null;
 
   let totalRows = null;
@@ -323,7 +323,7 @@ async function handle(request) {
       inserted: count,
       clientRows: clientRows(runId, clientId),
       totalRows,
-      databaseDiagnostics: databaseSnapshot()
+      databaseDiagnostics: databaseSnapshot({ exportDatabaseFile: false })
     };
   }
 
@@ -341,7 +341,7 @@ async function handle(request) {
       type,
       totalRows: countRows(),
       clientRows: clientRows(runId, clientId),
-      databaseDiagnostics: databaseSnapshot()
+      databaseDiagnostics: databaseSnapshot({ exportDatabaseFile: false })
     };
   }
 
@@ -364,8 +364,9 @@ async function handle(request) {
 
     const databaseImage = databaseBytes.slice().buffer;
     const beforeRelease = {
-      ...poolSnapshot(),
+      ...poolSnapshot({ exportDatabaseFile: false }),
       totalRows,
+      databaseFileBytes: databaseImage.byteLength,
       databaseImageBytes: databaseImage.byteLength
     };
 
