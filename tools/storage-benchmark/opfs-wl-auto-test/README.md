@@ -140,3 +140,45 @@ Fuente oficial de comparación:
 - Prueba de concurrencia SQLite con `OpfsWlDb` y reintento específico de apertura: https://wasm-testing.sqlite.org/tests/opfs/concurrency/worker.js
 - OO1 `OpfsWlDb` y constructor: https://sqlite.org/wasm/doc/trunk/api-oo1.md
 - `sqlite3_js_retry_busy()`: https://sqlite.org/wasm/doc/trunk/api-c-style.md
+
+
+## Segunda ejecución observada y revisión de inicialización 3 (13-11-2026)
+
+La revisión 2 corrigió la apertura del constructor: en esta ejecución, el Worker A abrió una conexión SQLite real y válida. La prueba todavía terminó **NO APROBADA**, esta vez al verificar la tabla de escritura:
+
+- RUN_ID: `prisma-opfs-wl-auto-7639517d-9ebf-4c96-be3b-eb83142243af`
+- COOP: `same-origin`; COEP: `require-corp`; `crossOriginIsolated = true`.
+- `SharedArrayBuffer`, `Atomics.waitAsync`, Web Locks y OPFS: disponibles.
+- SQLite informó versión del núcleo `3.54.1`; constructor `OpfsWlDb` disponible y VFS `opfs-wl` registrado.
+- La conexión del Worker A tenía `dbIsOpen = true` y un puntero SQLite de tipo number.
+- Error: `SQLITE_ERROR: no such table: writes`, durante `readCounts()` en la inicialización.
+- No hay confirmación de cinco filas iniciales, escrituras concurrentes, recuentos finales, reapertura ni limpieza.
+
+El flujo de la página espera a que A envíe `ready` antes de crear e inicializar B. Por ello, esta traza no respalda atribuir el error a una carrera de inicialización entre ambos Workers. Tampoco demuestra un defecto de OPFS-WL o de Brave: el problema sigue localizado en la preparación/escritura inicial del esquema de esta sonda.
+
+**Conservar la carpeta OPFS y el informe de este RUN_ID. No borrarlos ni reutilizarlos.**
+
+### Revisión 3 preparada; aceptación aún pendiente
+
+La revisión 3 modifica únicamente el Worker de la sonda:
+
+1. Crea la tabla y el índice en modo autocommit, separados de la transacción de inserción de filas de referencia.
+2. Consulta `sqlite_schema` y confirma que `writes` existe antes de intentar leer o insertar filas.
+3. Comprueba que la siembra deja exactamente cinco filas.
+4. Si ocurre otro error, el diagnóstico añade el listado de tablas visibles y cualquier error al consultar el esquema.
+
+La revisión 3 **no es una aceptación ni prueba que el problema esté resuelto**. Es una corrección experimental que permite separar con mayor claridad el DDL, la transacción de siembra y la verificación del esquema.
+
+Para instalarla en Termux, ejecuta:
+
+```sh
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/c6d60e07d17fa09f8ddea64d9812b4d55930a075/tools/storage-benchmark/install-opfs-wl-auto-test-revision-3.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+```
+
+El instalador modifica únicamente `opfs-wl-auto-test/src/opfs-wl-db-worker.js`. Comprueba el SHA exacto del servidor y del archivo descargado, y cancela si detecta cambios locales no reconocidos. No cambia SQLite WASM, el HTML, las dependencias, ningún servidor ni los archivos OPFS anteriores.
+
+Con el servidor 18768 todavía activo, recarga una vez:
+
+`http://127.0.0.1:18768/opfs-wl-auto-test/`
+
+Ejecuta una sola vez con `require-corp` y comparte el informe completo. No cambies a `credentialless` por el fallo de la imagen no-CORS: en ambas ejecuciones el mismo póster sí cargó con CORS. No reinicies el servidor ni borres datos del sitio. Los puertos 18767 y la aplicación Prisma permanecen fuera de esta sonda.
