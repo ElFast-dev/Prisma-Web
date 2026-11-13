@@ -139,3 +139,29 @@ Antes de volver a inyectar fallos:
 Esta aceptación solo caracteriza el ciclo de vida. No demuestra failover ni recuperación transaccional. Si una sesión aparece como `starting`, `activation-unresponsive` o `failed`, no pulses insertar ni repitas la terminación; conserva la bitácora.
 
 El watchdog de activación y los nuevos eventos de ciclo de vida todavía requieren aceptación funcional en Brave sobre el Galaxy A03. La implementación y el parseo sintáctico no se consideran una prueba real de navegador.
+
+## Evidencia posterior de recovery-fault-probe-3 (Galaxy A03 / Brave, 13-11-2026)
+
+### Visibilidad y retorno a primer plano
+
+En una ejecución, la página propietaria alternó entre `hidden` y `visible` mientras el SharedWorker permaneció operativo. Las solicitudes `visibility-restored` obtuvieron instantáneas del mismo coordinador y la base conservó cinco filas. La evidencia demuestra cambios de visibilidad y retorno a primer plano; no demuestra por sí sola eventos `freeze`, `resume` ni descarte de páginas.
+
+### Transferencia cooperativa y nuevo propietario
+
+SharedWorker `6bf70433-d704-4bc9-bd76-1b1255406158`. El propietario `6caa0f1a-85ea-4bdc-963d-96c0374665e5` cedió la propiedad a `74092e04-c52a-4d4e-b297-3db9b5f9017f`. La instantánea exportada e importada midió 32.768 bytes; el nuevo propietario encontró `/recovery-probe.sqlite3`, recuperó las cinco filas y quedó activo. Esta ejecución demuestra el relevo cooperativo, no el failover por terminación abrupta.
+
+### Intento de terminación abrupta después del relevo
+
+- 2:12:48 p. m.: se pulsó «Terminar Dedicated Worker sin avisar» en la pestaña que acababa de asumir la propiedad.
+- Las líneas disponibles posteriores muestran solicitudes `visibility-restored`, pero no incluyen `heartbeat-timeout`, `terminate-unresponsive-worker`, `owner-worker-retired` ni la confirmación de que el propietario anterior recuperó SQLite.
+- A las 2:13:22 p. m. apareció otra instancia de SharedWorker, `ef533a64-34a5-4d0a-9be8-faadb8b9e3bf`, y una nueva pestaña propietaria `10a5518f-f56e-4c1e-a945-80dc39655f9d`, con Dedicated Worker `2e662983-e94e-4597-a496-c5dad58d0ebf`. Esta instancia encontró el archivo de 32.768 bytes y recuperó las cinco filas.
+
+**Clasificación:** el archivo y sus cinco filas sobrevivieron y fueron recuperados por una instancia nueva del coordinador. El failover automático dentro del SharedWorker anterior no queda demostrado. La causa por la que desapareció la instancia anterior tampoco puede determinarse con las líneas conservadas. No se considera este intento una aceptación completa del ensayo A.
+
+Los ensayos B y C siguen pendientes. No se ejecutó limpieza. Los 200 registros de V8 y las cinco filas de referencia de esta sonda deben conservarse.
+
+## Traza de heartbeat y decisiones del coordinador (recovery-fault-probe-4)
+
+La revisión 4 añade al estado compartido una traza circular de hasta 40 eventos y un resumen del heartbeat: inicio del temporizador, último ping, último ACK, ping pendiente y edad, detección del timeout y solicitud de terminación. También registra selección de candidatos, confirmación de terminación, retirada del propietario y ACK de activación.
+
+La traza permite diferenciar entre: temporizador que no se inició, ping enviado sin ACK, timeout detectado, mensaje de terminación emitido, página que confirma la terminación, candidato promovido y coordinador nuevo. Consultarla mediante «Actualizar estado compartido» no ejecuta operaciones SQL ni modifica registros. La traza es diagnóstica y no sustituye la aceptación funcional en Brave.
