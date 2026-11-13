@@ -31,7 +31,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <header>
   <p>PRISMA · HERRAMIENTA TÉCNICA INDEPENDIENTE</p>
   <h1>SQLite SAH pool + SharedWorker</h1>
-  <p>Prueba funcional de un único actor SQLite compartido por varias pestañas en Brave Android.</p>
+  <p>Prueba funcional de un SharedWorker coordinador y un Dedicated Worker propietario de SQLite, compartidos por varias pestañas en Brave Android.</p>
 </header>
 
 <div class="note">
@@ -53,11 +53,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 <section class="panel">
 <h2>Conexión compartida</h2>
-<p>Ambas pestañas deben mostrar exactamente el mismo ID de Worker. Cuando las dos estén conectadas, el contador debe indicar 2 conexiones.</p>
+<p>Ambas pestañas deben mostrar exactamente el mismo ID del SharedWorker. Este coordinador envía las operaciones a un único Dedicated Worker, que es el propietario exclusivo de OPFS SAH pool. Cuando las dos pestañas estén conectadas, el contador debe indicar 2 conexiones.</p>
 <div class="grid">
   <div class="metric"><span>ID del SharedWorker</span><b id="workerId">Sin conectar</b></div>
   <div class="metric"><span>Pestañas conectadas</span><b id="connections">0</b></div>
   <div class="metric"><span>Identificador de esta pestaña</span><b id="clientId">—</b></div>
+  <div class="metric"><span>ID del Dedicated Worker SQLite</span><b id="dbWorkerId">Pendiente</b></div>
   <div class="metric"><span>Registros en SQLite</span><b id="totalRows">—</b></div>
 </div>
 <div class="actions">
@@ -156,6 +157,12 @@ function connect() {
         log("El VFS sintético fue eliminado.");
         return;
       }
+      if (message.kind === "fatal") {
+        $("connectionStatus").textContent = message.error;
+        $("connectionStatus").className = "status bad";
+        log("ERROR FATAL DEL WORKER: " + message.error);
+        return;
+      }
       if (message.kind === "response") {
         const waiter = pending.get(message.requestId);
         if (waiter) {
@@ -178,7 +185,10 @@ function connect() {
       $("insert").disabled = false;
       $("verify").disabled = false;
       $("cleanup").disabled = false;
-      log("Conectado. Worker ID: " + result.workerId);
+      log("Conectado. SharedWorker ID: " + result.workerId);
+      $("dbWorkerId").textContent = result.dedicatedWorkerId || "—";
+      log("Dedicated Worker SQLite ID: " + (result.dedicatedWorkerId || "no informado"));
+      log("APIs OPFS en Dedicated Worker: " + JSON.stringify(result.requiredOpfsApis || {}));
       log("Conexiones simultáneas: " + result.connections);
       log("Registros existentes: " + result.totalRows);
       $("totalRows").textContent = String(result.totalRows);
