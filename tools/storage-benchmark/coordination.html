@@ -218,7 +218,7 @@ function connect() {
     // inside SharedWorkerGlobalScope. Only the elected tab opens the SAH pool.
     dbWorker = new Worker("./src/sahpool-db-worker.js", {
       type: "module",
-      name: "prisma-sahpool-db-owner-candidate-v7-" + clientId
+      name: "prisma-sahpool-db-owner-candidate-v8-" + clientId
     });
 
     dbWorker.onerror = (event) => {
@@ -237,7 +237,7 @@ function connect() {
 
     shared = new SharedWorker("./src/sahpool-shared-worker.js", {
       type: "module",
-      name: "prisma-sahpool-sharedworker-probe-v7"
+      name: "prisma-sahpool-sharedworker-probe-v8"
     });
 
     port = shared.port;
@@ -259,13 +259,19 @@ function connect() {
         log("Antes de ceder: total " + String(message.totalRows) +
           "; DB encontrada: " + String(message.databaseDiagnostics?.databaseFileFound) +
           "; bytes: " + String(message.databaseDiagnostics?.databaseFileBytes) +
-          "; archivos: " + JSON.stringify(message.databaseDiagnostics?.fileNames || []));
+          "; archivos: " + JSON.stringify(message.databaseDiagnostics?.fileNames || []) +
+          "; instantánea exportada: " + String(message.databaseImageBytes || 0) + " bytes");
         return;
       }
 
       if (message.kind === "handoff-complete") {
         log("Transferencia completada. Otra pestaña es ahora la propietaria activa.");
         log("Registros recuperados por el nuevo propietario: " + String(message.totalRows));
+        log("Bytes de instantánea importados: " +
+          String(message.databaseDiagnostics?.importedDatabaseBytes || 0));
+        log("Archivo recuperado: " +
+          String(message.databaseDiagnostics?.databaseFileFound) +
+          "; tamaño: " + String(message.databaseDiagnostics?.databaseFileBytes));
         return;
       }
 
@@ -280,6 +286,8 @@ function connect() {
         log("TRANSFERENCIA RECHAZADA; se conservó el propietario anterior.");
         log("Motivo: " + String(message.error));
         log("Registros tras restaurar: " + String(message.totalRows));
+        log("Diagnóstico de restauración: " +
+          JSON.stringify(message.databaseDiagnostics || {}));
         return;
       }
 
@@ -313,6 +321,8 @@ function connect() {
           "; total filas: " + String(message.databaseDiagnostics?.totalRows));
         log("VFS: " + String(message.databaseDiagnostics?.vfsName) +
           "; directorio: " + String(message.databaseDiagnostics?.directory));
+        log("Bytes de instantánea importados: " +
+          String(message.databaseDiagnostics?.importedDatabaseBytes || 0));
         log("Directorio temporal V4 anterior eliminado: " +
           String(message.removedFailedV4Directory === true));
         return;
