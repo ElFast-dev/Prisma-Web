@@ -9,7 +9,7 @@ import os
 ROOT = Path.home() / "prisma-storage-benchmark"
 BASE = (
     "https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/"
-    "ff719c8f7c12d26dfbeff307e9d4a60920e4524f/tools/storage-benchmark/"
+    "300c0db26323f4c3f17786d66eb35a881524d837/tools/storage-benchmark/"
 )
 
 # Solo se admite la versión instalada inicialmente o la revisión ya actualizada.
@@ -24,7 +24,7 @@ FILES = {
     "opfs-wl-auto-test/src/opfs-wl-db-worker.js": {
         "expected_current": {
             "dae96e4f1549844791dce4ac219606a5c1371085",
-            "bced6a8f8adff399cf61e0eee78dac60ac024982",
+            "fef9b816b1380ff009aafc37a4ac3027a7b0fc9e",
         },
         "target": "bced6a8f8adff399cf61e0eee78dac60ac024982",
     },
