@@ -31,12 +31,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <header>
   <p>PRISMA · HERRAMIENTA TÉCNICA INDEPENDIENTE</p>
   <h1>SharedWorker coordinador + SQLite SAH pool · V7</h1>
-  <p>Prueba dos pestañas con un solo Dedicated Worker propietario de SQLite y validación de continuidad del archivo antes de aceptar un relevo.</p>
+  <p>V8: prueba dos pestañas con un solo propietario SQLite y traspaso mediante instantánea binaria verificada.</p>
 </header>
 
 <div class="note">
   <strong>Solo datos sintéticos.</strong> Cada pestaña crea un Dedicated Worker; el SharedWorker elige uno como propietario de la base y reenvía todas las operaciones a ese único Worker. Los demás quedan en espera. No usa datos personales ni modifica Prisma.
-  El registro de actividad y los IDs de Worker se reinician al recargar; eso es normal. El ID del conjunto de prueba y los registros de SQLite deben permanecer. Abre esta dirección en <strong>dos pestañas normales</strong> del mismo Brave.
+  El registro de actividad y los IDs de Worker se reinician al recargar; eso es normal. V8 exporta el archivo SQLite antes del relevo y lo importa en el nuevo propietario; el total debe conservarse. Abre esta dirección en <strong>dos pestañas normales</strong> del mismo Brave.
 </div>
 
 <section class="panel">
