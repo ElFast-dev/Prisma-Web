@@ -552,3 +552,20 @@ La revisión 5 agrega recuento global de filas, agrupación por RUN_ID/cliente y
 Instalador seguro: [install-opfs-wl-auto-test-revision-5.py](install-opfs-wl-auto-test-revision-5.py), fijado al commit `b4f3c9d62eb147cfd1d9e2f60428e7d7819d0e0d`. Modifica únicamente el Worker de la sonda, valida su SHA y el del servidor, y no toca SQLite WASM, dependencias, HTML, ningún servidor, la aplicación Prisma ni carpetas OPFS anteriores.
 
 **Estado vigente:** conexión OPFS-WL y creación de la tabla observadas; siembra de filas para el RUN_ID y carga concurrente aún no aceptadas. La revisión 5 requiere una ejecución real para continuar el diagnóstico. Mantener COEP `require-corp`, conservar los RUN_ID anteriores y ejecutar con el servidor 18768 activo, sin reiniciarlo.
+
+
+### OPFS-WL AutoTest: quinta ejecución y regresión de revisión 5 (13-11-2026)
+
+La ejecución con revisión 5 terminó **NO APROBADA** con `SQLITE_ERROR: no such table: writes`, desde `readCounts()` llamado por `seedDatabase()`:
+
+- RUN_ID: `prisma-opfs-wl-auto-66eee9ef-9c94-4c01-bc24-97a78ab19613`.
+- Requisitos de aislamiento y APIs disponibles; SQLite 3.54.1, `OpfsWlDb`, VFS `opfs-wl`, conexión y puntero válidos.
+- No hubo confirmación de filas de referencia, lotes concurrentes, 605 filas, reapertura ni limpieza.
+
+La inspección del Worker publicado identificó una regresión introducida al preparar revisión 5: se sustituyó la rutina de inserción y, por error, también se eliminó de `seedDatabase()` el bloque `CREATE TABLE` y `CREATE INDEX`. Por eso la revisión intentó escribir/leer `writes` sin crearla. Es un defecto de la sonda, no una prueba de incompatibilidad del navegador o del VFS. La revisión 4 sí había creado la tabla correctamente.
+
+La revisión 6 restaura el DDL y la comprobación de `sqlite_schema` antes de ejecutar la siembra multirregistro que se incorporó en revisión 5. Conserva los controles de cinco cambios iniciales, conteo global/por RUN_ID y 25 cambios por lote. El Worker pasó comprobación sintáctica; esto no sustituye una ejecución real en Brave.
+
+Instalador seguro: [install-opfs-wl-auto-test-revision-6.py](install-opfs-wl-auto-test-revision-6.py), fijado al commit `cf09dbe573949376d223704e421f904e9d5370dd`. Solo reemplaza el Worker y no toca SQLite WASM, dependencias, HTML, servidores, SAH pool, la aplicación Prisma ni directorios OPFS de ejecuciones anteriores.
+
+**Estado vigente:** la conexión OPFS-WL abre, la creación de esquema se demostró en revisión 4, revisión 5 tuvo una omisión DDL ya corregida en el código de revisión 6; todavía no hay aceptación de la prueba de escritura concurrente.
