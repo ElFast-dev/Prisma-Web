@@ -141,6 +141,10 @@ function finishHandoff(ownerClientIdForPort, message) {
   if (!(message.databaseImage instanceof ArrayBuffer) ||
       message.databaseImage.byteLength <= 0) {
     const expectedRows = Number.isFinite(message.totalRows) ? message.totalRows : 0;
+    if (previousOwner) {
+      previousOwner.role = "paused";
+      previousOwner.databaseWorkerId = message.dedicatedWorkerId;
+    }
     handoffInProgress = {
       controlId: handoffInProgress.controlId,
       phase: "restoring",
