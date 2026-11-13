@@ -25,6 +25,9 @@ function publishState() {
     connections: sessions.size,
     ownerClientId,
     databaseWorkerId,
+    requiredOpfsApis: ownerClientId
+      ? (sessions.get(ownerClientId)?.opfsApis || null)
+      : null,
     ownerReady: Boolean(ownerClientId && databaseWorkerId)
   };
   for (const session of sessions.values()) send(session.port, state);
