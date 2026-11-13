@@ -447,3 +447,21 @@ Esta ejecución completa la secuencia de relevo del protocolo v2. Estado inicial
 **Conclusión de aceptación funcional:** en el dispositivo de referencia quedó demostrada una cesión cooperativa mediante instantánea SQLite binaria verificada bajo `v8-broker-trace-2`, una escritura y reapertura desde el nuevo propietario, y una consulta, escritura y reapertura desde la pestaña que dejó de ser propietaria. El conjunto sintético persistente terminó en 200 filas.
 
 **Límites de la prueba:** las escrituras fueron secuenciales, no simultáneas. No se ha probado todavía equidad bajo contención, terminación del propietario durante una transacción ni caída aislada del Dedicated Worker y detección automática de esa caída. Los timeouts de ejecuciones anteriores siguen registrados y no se consideran anulados por este resultado exitoso.
+
+
+### OPFS-WL AutoTest V1 — herramienta preparada; aceptación pendiente
+
+Tras la aceptación real de Concurrency AutoTest V1, se añadió una sonda separada para la alternativa `opfs-wl`. Esta herramienta utiliza dos Dedicated Workers y dos conexiones SQLite independientes sobre un mismo archivo OPFS; no utiliza el SharedWorker ni el propietario único de SAH pool.
+
+- Interfaz e instrucciones: [opfs-wl-auto-test/README.md](opfs-wl-auto-test/README.md).
+- Instalador seguro: [install-opfs-wl-auto-test.py](install-opfs-wl-auto-test.py).
+- Servidor independiente con COOP/COEP: [serve-opfs-wl.py](serve-opfs-wl.py).
+- Usa el puerto 18768. El servidor actual de las sondas SAH pool en 18767 permanece separado y no se reinicia.
+- Comprueba `crossOriginIsolated`, `SharedArrayBuffer`, `Atomics.waitAsync`, Web Locks, OPFS y la disponibilidad del VFS SQLite `opfs-wl`.
+- Prueba dos conexiones independientes con 12 transacciones de 25 filas por cliente, cinco filas sintéticas de referencia, verificación de 605 filas desde ambos clientes, cierre/reapertura independiente y limpieza limitada al directorio del RUN_ID.
+- Registra reintentos `SQLITE_BUSY`, latencias, secuencia de confirmación y estimación de memoria cuando el navegador exponga una API compatible.
+- Compara la carga de una imagen pública de TMDB en modo no-CORS y CORS bajo COEP para detectar posibles incompatibilidades de imágenes externas. No llama a la API de TMDB ni transmite datos personales.
+
+**Estado:** archivos creados y verificados en GitHub; comprobación sintáctica de JavaScript completada. Todavía no se ha instalado ni ejecutado en Brave y no existe resultado de aceptación. No declarar OPFS-WL compatible ni elegirla hasta recibir el informe real del Galaxy A03.
+
+La variante `require-corp` se prueba primero; `credentialless` queda disponible como comparación si las imágenes externas o la carga de recursos se ven afectadas. La herramienta no cambia la aplicación Prisma, las dependencias, sus versiones ni los datos de otras sondas.
