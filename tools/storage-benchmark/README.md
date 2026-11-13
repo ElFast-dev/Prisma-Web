@@ -516,3 +516,26 @@ Instalador seguro: [install-opfs-wl-auto-test-revision-3.py](install-opfs-wl-aut
 Con el servidor 18768 activo, basta recargar la página `http://127.0.0.1:18768/opfs-wl-auto-test/`; no reiniciar servidor. La siguiente prueba debe ejecutarse una sola vez en `require-corp` y reportarse íntegramente.
 
 **Estado vigente:** apertura de conexión OPFS-WL observada con éxito, siembra/esquema aún no verificados y aceptación pendiente. Requisitos para considerar aprobación: dos conexiones, 24/24 transacciones, 605 filas verificadas por ambos clientes, cierre/reapertura y limpieza de solo el RUN_ID de prueba.
+
+
+### OPFS-WL AutoTest: tercera ejecución, esquema todavía vacío (13-11-2026)
+
+La ejecución con revisión 3 terminó **NO APROBADA** en la inicialización del Worker A:
+
+- RUN_ID: `prisma-opfs-wl-auto-9dc4693d-7d38-4fd7-812a-8552f069fb3f`.
+- Requisitos de aislamiento y APIs: todos disponibles bajo COOP `same-origin` y COEP `require-corp`.
+- SQLite 3.54.1, constructor `OpfsWlDb`, VFS `opfs-wl`, conexión abierta y puntero válido: confirmados.
+- La consulta a `sqlite_schema` devolvió `[]`, por lo que no existía la tabla `writes` visible en esa conexión después de la rutina de esquema.
+- No se confirmaron filas de referencia, escrituras concurrentes, 605 filas, reapertura ni limpieza.
+
+El fallo de la tabla no demuestra incompatibilidad de Brave ni del VFS. Se conserva el directorio OPFS del RUN_ID. El comportamiento de la imagen se mantuvo: el recurso TMDB de prueba falló no-CORS y cargó mediante CORS (500 × 750); se mantiene `require-corp`.
+
+### OPFS-WL AutoTest: revisión 4 de diagnóstico DDL
+
+La revisión 4 cambia únicamente el Worker de prueba. Ejecuta un bloque SQL como cadena directamente sobre la conexión, captura las sentencias reportadas por `db.exec({saveSql})) y registra antes/después `schema_version`, archivo SQLite, VFS efectivo, modo solo lectura y `database_list`. Si la tabla sigue sin aparecer, añade `page_count`, cambios totales y puntero SQLite.
+
+Este enfoque permite distinguir mejor si el DDL se está preparando, sobre qué archivo/VFS trabaja la conexión y si la base es de solo lectura. Es un instrumento de diagnóstico, no una corrección cuya eficacia ya se haya probado.
+
+Instalador: [install-opfs-wl-auto-test-revision-4.py](install-opfs-wl-auto-test-revision-4.py), fijado al commit `3fe38b4853a0c314810c7e979912714dfc7e6ee0`. Solo reemplaza el Worker de la sonda y no toca SQLite WASM, dependencias, HTML, servidores, puerto 18767, otras herramientas ni carpetas OPFS previas.
+
+**Estado vigente:** apertura de conexión OPFS-WL demostrada; creación y persistencia del esquema aún no demostradas. OPFS-WL continúa sin aceptación hasta completar los dos Workers, 24/24 transacciones, 605 filas, reapertura y limpieza limitada al RUN_ID.
