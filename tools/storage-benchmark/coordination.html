@@ -124,6 +124,9 @@ function updateState(data) {
   if (data.requiredOpfsApis) {
     $("opfs").textContent = JSON.stringify(data.requiredOpfsApis);
   }
+  if (data.removedFailedV4Directory === true) {
+    $("opfs").textContent += " · V4 anterior eliminado";
+  }
   if (data.ownerReady) {
     $("connectionStatus").textContent =
       "SharedWorker activo. SQLite tiene un único propietario.";
@@ -226,6 +229,8 @@ function connect() {
         });
         log("SQLite listo. Dedicated Worker ID: " + message.databaseWorkerId);
         log("APIs OPFS: " + JSON.stringify(message.requiredOpfsApis || {}));
+        log("Directorio temporal V4 anterior eliminado: " +
+          String(message.removedFailedV4Directory === true));
         return;
       }
 
