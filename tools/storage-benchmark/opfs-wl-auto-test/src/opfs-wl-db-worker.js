@@ -155,7 +155,8 @@ async function openDb() {
         continue;
       }
 
-      if (db && !db.pointer) db = null;
+      // Preserve the failed object until diagnostics have captured its
+      // pointer/isOpen/filename state. The page terminates this Worker on error.
       throwDiagnosticError(error, "open");
     }
   }
