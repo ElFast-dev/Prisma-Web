@@ -78,7 +78,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <button id="verify" class="secondary" disabled>Cerrar y reabrir SQLite</button>
 </div>
 <p id="writeStatus" class="status warn">Pendiente.</p>
-<div class="note">Esperado: dos IDs de SharedWorker iguales, dos pestañas conectadas, un único ID propietario de Dedicated Worker y 50 registros conservados después de reabrir.</div>
+<div class="note">Esperado: dos pestañas con el mismo ID de SharedWorker, un único propietario Dedicated Worker y el mismo total de filas antes y después del relevo. La transferencia se rechaza si el nuevo Worker no encuentra el archivo SQLite anterior o recupera menos filas de las confirmadas por el propietario saliente.</div>
 </section>
 
 <section class="panel">
