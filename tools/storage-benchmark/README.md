@@ -195,3 +195,21 @@ No se debe cerrar manualmente la pestaña propietaria antes de completar la cesi
 
 
 La revisión de esta prueba controlada usa nombres nuevos de Worker con sufijo `v6`; el nombre del conjunto de datos y el directorio OPFS se mantienen en `v5` para conservar los registros sintéticos existentes. Esto separa el código del coordinador de la identidad de los datos.
+
+
+### Diagnóstico y protección de datos en el relevo (V7)
+
+La ejecución V6 mostró que un nuevo Dedicated Worker podía inicializar SQLite y devolver cero filas tras una cesión. Eso no se acepta como un relevo correcto, aunque el Worker muestre OPFS disponible.
+
+V7 añade estas verificaciones antes de aceptar al nuevo propietario:
+
+- El propietario saliente registra el total de filas y el inventario del SAH pool antes de pausar el VFS.
+- El nuevo Worker instala el mismo VFS con `clearOnInit: false`, `preserveOnInitFailure: true`, el mismo nombre, directorio y archivo.
+- Antes de abrir SQLite comprueba que el pool contiene el nombre virtual exacto del archivo anterior y obtiene su tamaño con `exportFile()`.
+- Tras abrirlo, comprueba que la tabla existe y que el total de filas no sea inferior al confirmado por el propietario saliente.
+- Si no encuentra el archivo o recupera menos filas, rechaza el relevo y pausa su VFS sin borrar el directorio.
+- El SharedWorker intenta restaurar al propietario anterior usando su `PoolUtil` ya pausado y `unpauseVfs()`. Solo publica «Propietaria activa» cuando el nuevo o el restaurado Dedicated Worker confirma la base.
+
+El informe de diagnóstico incluye nombre del VFS, directorio, capacidad, archivos virtuales, presencia y tamaño del archivo SQLite, existencia de la tabla y total de filas. No se permite insertar datos durante la validación del relevo.
+
+La nueva revisión usa identificadores de Worker `v7`, pero conserva el conjunto y directorio de datos sintéticos `v5`. No activa `clearOnInit` ni elimina el VFS. La única eliminación automática sigue siendo el directorio aislado de prueba V4.
