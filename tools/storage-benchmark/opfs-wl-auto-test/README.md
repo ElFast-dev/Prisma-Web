@@ -221,3 +221,45 @@ python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.
 Este instalador modifica exclusivamente `opfs-wl-auto-test/src/opfs-wl-db-worker.js`, comprueba el hash del servidor y del archivo destino, y reconoce las versiones instaladas anteriores de ese Worker. No cambia SQLite WASM, dependencias, HTML, servidor ni datos OPFS.
 
 Con el servidor 18768 activo, recarga una vez `http://127.0.0.1:18768/opfs-wl-auto-test/` y ejecuta una sola vez con `require-corp`. Comparte el informe completo, sobre todo `schemaBefore`, `schemaAfter`, `preparedSchemaSql`, `schemaTables` y `databaseList`. No reinicies el servidor ni borres los directorios OPFS de las ejecuciones anteriores.
+
+
+## Cuarta ejecución observada y revisión diagnóstica 5 (13-11-2026)
+
+La revisión 4 consiguió que el esquema quedara visible y la tabla `writes` existiera. La prueba terminó **NO APROBADA** en la comprobación de la siembra:
+
+- RUN_ID: `prisma-opfs-wl-auto-3f8f81ea-5c11-4f93-b078-8ae9123068a9`
+- COOP `same-origin`, COEP `require-corp`, `crossOriginIsolated = true`.
+- SharedArrayBuffer, Atomics.waitAsync, Web Locks y OPFS: disponibles.
+- SQLite núcleo `3.54.1`, `OpfsWlDb` y VFS `opfs-wl` disponibles.
+- La conexión permanecía abierta y `sqlite_schema` ya contenía `writes`.
+- El recuento reportado fue `total=0, A=0, B=0`; no se confirmaron cinco filas para el RUN_ID.
+- No se inició la carga concurrente, no se verificaron 605 filas, no hubo prueba de cierre/reapertura ni limpieza.
+- El póster de TMDB siguió fallando en no-CORS y cargando con CORS a 500 × 750.
+
+**Matiz de interpretación:** el campo `total` de `readCounts()` filtra por el RUN_ID actual; no es un recuento global de la tabla. Por tanto, ese valor cero no demuestra por sí solo que no haya filas en `writes`: las filas podrían tener otro `run_id`. La sonda anterior no reportaba el total global ni la distribución de filas, por lo que el informe no permite distinguir esas posibilidades.
+
+Conservar el directorio OPFS y el informe de este RUN_ID; no borrar ni reutilizar ese identificador.
+
+### Revisión 5: aislar inserción SQL y distinguir recuento global/RUN_ID
+
+La revisión 5 cambia solo el Worker experimental:
+
+1. Añade un recuento global de `writes` a `readCounts()`, conservando `total` como el recuento filtrado por RUN_ID.
+2. Añade un diagnóstico de agrupación por `run_id` y `client_id`, más una muestra de filas con valores escapados.
+3. Sustituye la inserción de cinco filas iniciales por un único `INSERT ... VALUES (...), (...)` ejecutado con `tx.exec()` dentro de la transacción `IMMEDIATE`.
+4. Exige que SQLite informe exactamente cinco cambios antes del commit y verifica tanto el total global como el total del RUN_ID después del commit.
+5. Usa la misma ruta SQL multirregistro para las 24 tandas posteriores y exige 25 cambios por tanda. Así se evita mezclar la prueba de persistencia con el camino de sentencias preparadas que se había usado hasta ahora.
+
+La documentación oficial confirma que `DB.exec()` admite una o varias sentencias SQL y que `transaction()` confirma al retornar o revierte si el callback arroja una excepción. La API de sentencias preparadas y `stepReset()` también está documentada; la revisión cambia la ruta de inserción para aislarla, no porque esos métodos estén declarados incompatibles. Fuentes: https://sqlite.org/wasm/doc/trunk/api-oo1.md y https://sqlite.org/wasm/doc/trunk/api-c-style.md.
+
+**La revisión 5 es un experimento de diagnóstico y no una aprobación.** Aún no se ha ejecutado en Brave.
+
+Instalador seguro: `install-opfs-wl-auto-test-revision-5.py`, fijado al commit `b4f3c9d62eb147cfd1d9e2f60428e7d7819d0e0d`. En Termux:
+
+```sh
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/b4f3c9d62eb147cfd1d9e2f60428e7d7819d0e0d/tools/storage-benchmark/install-opfs-wl-auto-test-revision-5.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+```
+
+El instalador modifica únicamente `opfs-wl-auto-test/src/opfs-wl-db-worker.js`; verifica el SHA del servidor y del Worker, y acepta las versiones previas conocidas de ese archivo. No cambia SQLite WASM, dependencias, HTML, servidores, puerto 18767, aplicación Prisma ni directorios OPFS de pruebas anteriores.
+
+Mantén activo el servidor del puerto 18768, recarga una vez `http://127.0.0.1:18768/opfs-wl-auto-test/` y ejecuta una sola prueba con `require-corp`. Si vuelve a fallar, comparte todo el informe, especialmente `tableTotal`, `changesInsideTransaction`, `executedSeedSql`, `groups` y `sample`. No reinicies servidores ni borres carpetas OPFS.
