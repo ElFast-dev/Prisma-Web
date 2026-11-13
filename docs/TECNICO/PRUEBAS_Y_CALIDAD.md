@@ -149,13 +149,13 @@ Instrucciones de ejecución en Termux: [tools/storage-benchmark/README.md](../..
 
 | Dataset | Inserción Dexie | Inserción SQLite SAH pool | Integridad |
 |---|---:|---:|---|
-| 1k películas / 3k visionados | 993,1 ms | 359,5 ms | Correcta |
-| 5k películas / 15k visionados | 5.320,9 ms | 1.293,0 ms | Correcta |
-| 10k películas / 30k visionados | 10.578,7 ms | 2.441,5 ms | Correcta |
+| 1k películas / 3k visionados | 988,8 ms | 366,0 ms | Correcta |
+| 5k películas / 15k visionados | 5.051,3 ms | 1.324,0 ms | Correcta |
+| 10k películas / 30k visionados | 10.459,6 ms | 2.376,1 ms | Correcta |
 
 No interpretar el total del benchmark como comparación simétrica: SQLite incluye inicialización de Worker/WASM/VFS, Dexie ya está cargado antes de iniciar el cronómetro. Los informes más recientes confirman removeVfs() = true y ausencia del directorio OPFS temporal en los tres tamaños. La herramienta actual también enumera las bases IndexedDB de Dexie después de cada tanda; falta recibir esa comprobación.
 
-Próximas pruebas: OPFS-WL o actor único/SharedWorker, limpieza OPFS observada, funcionamiento con dos pestañas, tamaño del paquete y prueba de restauración de backup.
+Próximas pruebas: OPFS-WL o actor único/SharedWorker, enumeración de bases Dexie residuales, funcionamiento con dos pestañas, tamaño del paquete y prueba de restauración de backup.
 
 
 ### Últimos informes de limpieza (12-11-2026)
