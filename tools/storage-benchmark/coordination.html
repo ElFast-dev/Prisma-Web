@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Prisma · Prueba SharedWorker + SQLite V7</title>
+<title>Prisma · Prueba SharedWorker + SQLite V8</title>
 <style>
 :root{color-scheme:dark;--bg:#171a20;--surface:#222831;--surface2:#29333e;--border:#3a4552;--text:#f0f0f0;--muted:#b5bec8;--accent:#70aee0;--ok:#8cc9a3;--warn:#f0c674;--bad:#f28b82}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
@@ -30,7 +30,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <main>
 <header>
   <p>PRISMA · HERRAMIENTA TÉCNICA INDEPENDIENTE</p>
-  <h1>SharedWorker coordinador + SQLite SAH pool · V7</h1>
+  <h1>SharedWorker coordinador + SQLite SAH pool · V8</h1>
   <p>V8: prueba dos pestañas con un solo propietario SQLite y traspaso mediante instantánea binaria verificada.</p>
 </header>
 
@@ -72,7 +72,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 <section class="panel">
 <h2>Escrituras desde ambas pestañas</h2>
-<p>Cuando las dos estén conectadas, pulsa una sola vez «Insertar 25» desde cada pestaña. El SharedWorker enviará ambas operaciones al mismo Dedicated Worker.</p>
+<p>Cuando las dos estén conectadas, pulsa una vez «Insertar 25» desde cada pestaña. El SharedWorker enviará ambas operaciones al mismo Dedicated Worker.</p>
+<p>Después del relevo, la nueva propietaria debe insertar otra tanda y pasar de 50 a 75; reabre SQLite y confirma 75. Luego consulta desde la pestaña anterior e inserta allí otra tanda: debe llegar a 100, porque la operación se reenvía al propietario activo. El botón permite tandas adicionales; pulsa solo las indicadas en el procedimiento.</p>
 <div class="actions">
   <button id="insert" disabled>Insertar 25 registros</button>
   <button id="verify" class="secondary" disabled>Cerrar y reabrir SQLite</button>
@@ -105,8 +106,9 @@ let dbWorker = null;
 let dbWorkerPort = null;
 let requestCounter = 0;
 const pending = new Map();
-let insertedHere = false;
 let connected = false;
+let sharedDatabaseReady = false;
+let insertInProgress = false;
 
 function log(message) {
   const area = $("log");
@@ -150,8 +152,9 @@ function updateState(data) {
   }
 
   const activeDatabase = Boolean(data.ownerReady && data.databaseWorkerId);
+  sharedDatabaseReady = activeDatabase;
   $("status").disabled = !activeDatabase;
-  $("insert").disabled = !activeDatabase;
+  $("insert").disabled = !activeDatabase || insertInProgress;
   $("verify").disabled = !activeDatabase;
   $("cleanup").disabled = !activeHere;
   $("handoff").disabled = !activeHere || Number(data.connections) < 2;
@@ -408,14 +411,11 @@ $("status").addEventListener("click", async () => {
 });
 
 $("insert").addEventListener("click", async () => {
-  if (insertedHere) {
-    log("Esta pestaña ya insertó su lote. No se repetirá.");
-    return;
-  }
+  if (insertInProgress || !sharedDatabaseReady) return;
+  insertInProgress = true;
   $("insert").disabled = true;
   try {
     const result = await request("insertBatch", { count: 25 });
-    insertedHere = true;
     $("totalRows").textContent = String(result.totalRows);
     $("writeStatus").textContent =
       "Lote insertado: " + result.inserted + "; registros propios: " + result.clientRows + ".";
@@ -426,6 +426,9 @@ $("insert").addEventListener("click", async () => {
     $("writeStatus").textContent = error.message;
     $("writeStatus").className = "status bad";
     log("ERROR de escritura: " + error.message);
+  } finally {
+    insertInProgress = false;
+    $("insert").disabled = !sharedDatabaseReady;
   }
 });
 
