@@ -165,3 +165,41 @@ Los ensayos B y C siguen pendientes. No se ejecutó limpieza. Los 200 registros 
 La revisión 4 añade al estado compartido una traza circular de hasta 40 eventos y un resumen del heartbeat: inicio del temporizador, último ping, último ACK, ping pendiente y edad, detección del timeout y solicitud de terminación. También registra selección de candidatos, confirmación de terminación, retirada del propietario y ACK de activación.
 
 La traza permite diferenciar entre: temporizador que no se inició, ping enviado sin ACK, timeout detectado, mensaje de terminación emitido, página que confirma la terminación, candidato promovido y coordinador nuevo. Consultarla mediante «Actualizar estado compartido» no ejecuta operaciones SQL ni modifica registros. La traza es diagnóstica y no sustituye la aceptación funcional en Brave.
+
+## Recovery AutoTest V1: ejecución automática en una sola página
+
+Herramienta independiente:
+`tools/storage-benchmark/recovery-auto-test/`
+
+URL local:
+`http://127.0.0.1:18767/recovery-auto-test/`
+
+La V1 automatiza los ensayos A, B y C desde un único botón. La página contiene dos contextos iframe visibles; cada uno crea su propio Dedicated Worker y una conexión independiente al mismo SharedWorker. El coordinador tiene preferencia por candidatos visibles, después por ciclo de vida activo y, finalmente, por la señal más reciente. La prueba no necesita que el usuario cambie entre pestañas.
+
+Cada ejecución genera un UUID nuevo y un directorio OPFS exclusivo:
+
+- RUN_ID: `prisma-sahpool-recovery-auto-<UUID>`
+- Directorio OPFS: `/prisma-sahpool-recovery-auto-<UUID>`
+- Archivo SQLite: `/recovery-auto.sqlite3`
+- Protocolo: `recovery-auto-test-1`
+
+El trabajador SQLite se deriva de la implementación de recovery-probe V4, pero tiene su propio directorio y archivo. No comparte la base V4 ni el directorio V8.
+
+### Secuencia de un botón
+
+1. **Preparación:** crea dos clientes independientes; inicializa SQLite y confirma cinco filas sintéticas.
+2. **Ensayo A:** termina el Dedicated Worker del propietario en reposo. El heartbeat detecta la falta de ACK, la página confirma la terminación y la reserva recupera las cinco filas.
+3. **Ensayo B:** abre `BEGIN IMMEDIATE`, inserta cinco filas sin COMMIT y termina el propietario. El siguiente cliente abre el archivo y debe recuperar únicamente las cinco filas anteriores.
+4. **Ensayo C:** inserta cinco filas y ejecuta COMMIT. El Dedicated Worker retiene deliberadamente la respuesta. El coordinador detecta su terminación y el siguiente cliente debe recuperar diez filas.
+5. **Reapertura:** cierra y reabre SQLite, comprobando que siguen existiendo diez filas.
+6. **Limpieza:** solo si A, B, C y la reapertura pasan, la herramienta elimina el VFS exclusivo de esa ejecución. Si algo falla, conserva la carpeta de esa ejecución para diagnóstico y muestra un informe copiable.
+
+El usuario mantiene la página en primer plano y pulsa «EJECUTAR DIAGNÓSTICO COMPLETO». No debe abrir las pestañas de la sonda V4 ni ejecutar controles manuales de fallo. La ejecución tarda aproximadamente un minuto o algo más porque conserva la cadencia real del heartbeat de 5 s y el timeout de 20 s.
+
+### Alcance y limitaciones
+
+Los dos iframes son contextos de navegación independientes dentro de una única página visible. Esto permite automatizar las conexiones SharedWorker, los Dedicated Workers y los tres escenarios de recuperación transaccional sin depender de la suspensión de una pestaña secundaria. No reproduce el descarte real de una página por Android ni sustituye la prueba V4 de suspensión del sistema operativo.
+
+Un resultado APROBADO demostraría los escenarios A, B y C, la reapertura y la limpieza en el navegador y dispositivo que ejecutaron la prueba. No aprobaría por sí solo toda la arquitectura de almacenamiento de Prisma ni migraciones, cifrado, claves o restauración de respaldos.
+
+La herramienta es de prueba y no forma parte de la aplicación principal.
