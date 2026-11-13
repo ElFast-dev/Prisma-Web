@@ -143,3 +143,12 @@ El Dedicated Worker comprueba explícitamente `FileSystemHandle`, `FileSystemDir
 El archivo `coordination.html` usa un identificador de ejecución para que los restos de una ejecución interrumpida no se confundan con los 50 registros esperados en la siguiente. No activa `clearOnInit`, de modo que una promoción del Worker en espera no borra la base. La limpieza final elimina únicamente el VFS temporal de esta herramienta.
 
 Esta separación respeta el modelo de permisos del navegador, pero todavía requiere validación real en Brave del Galaxy A03. La prueba de dos pestañas no valida por sí sola un cierre abrupto del proceso ni la recuperación tras reiniciar el navegador.
+
+
+### Corrección de la prueba V5
+
+La ejecución en Brave confirmó que todas las APIs OPFS requeridas estaban presentes, pero SQLite OO1 rechazó la llamada de conteo por un error de enlace SQL. `selectValue(SQL, bind, asType)` acepta un solo argumento de enlace; cuando la consulta tiene dos parámetros, deben pasarse juntos como un array. Se corrigió `clientRows()` para usar `[runId, clientId]` y `countRows()` para usar `[runId]`.
+
+La coordinación también promueve automáticamente el siguiente Dedicated Worker candidato cuando falla la inicialización del propietario. Las pestañas en espera muestran ahora un estado explícito y un propietario fallido termina su Dedicated Worker para liberar recursos.
+
+V5 utiliza un nombre nuevo de SharedWorker y el directorio OPFS `prisma-sahpool-sharedworker-probe-v5`, aislados de la ejecución fallida anterior. Cierra todas las pestañas de pruebas anteriores antes de actualizar los archivos y arrancar de nuevo.
