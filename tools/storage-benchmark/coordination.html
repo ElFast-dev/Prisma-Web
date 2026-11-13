@@ -55,6 +55,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="grid">
   <div class="metric"><span>ID estable del conjunto de prueba</span><b id="datasetId">—</b></div>
   <div class="metric"><span>ID SharedWorker (debe coincidir mientras vive)</span><b id="workerId">Sin conectar</b></div>
+  <div class="metric"><span>Protocolo del coordinador</span><b id="brokerProtocol">Pendiente</b></div>
   <div class="metric"><span>Pestañas conectadas</span><b id="connections">0</b></div>
   <div class="metric"><span>Esta pestaña</span><b id="clientId">—</b></div>
   <div class="metric"><span>Propietario de SQLite</span><b id="owner">Pendiente</b></div>
@@ -119,6 +120,7 @@ function log(message) {
 function updateState(data) {
   $("datasetId").textContent = data.runId || "—";
   $("workerId").textContent = data.workerId || "—";
+  $("brokerProtocol").textContent = data.brokerProtocol || "Coordinador anterior o sin diagnóstico";
   if (Number.isFinite(data.totalRows)) {
     $("totalRows").textContent = String(data.totalRows);
   }
@@ -190,6 +192,11 @@ function request(operation, extra = {}) {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       pending.delete(requestId);
+      try {
+        port?.postMessage({ type: "cancelRequest", requestId });
+      } catch {}
+      log("TIMEOUT de página: operación " + operation +
+        "; requestId " + requestId + ". Se solicitó cancelar su correlación.");
       reject(new Error("Tiempo de espera agotado: " + operation));
     }, 30000);
 
@@ -221,7 +228,7 @@ function connect() {
     // inside SharedWorkerGlobalScope. Only the elected tab opens the SAH pool.
     dbWorker = new Worker("./src/sahpool-db-worker.js", {
       type: "module",
-      name: "prisma-sahpool-db-owner-candidate-v8-" + clientId
+      name: "prisma-sahpool-db-owner-candidate-v8-brokertrace-1-" + clientId
     });
 
     dbWorker.onerror = (event) => {
@@ -240,10 +247,17 @@ function connect() {
 
     shared = new SharedWorker("./src/sahpool-shared-worker.js", {
       type: "module",
-      name: "prisma-sahpool-sharedworker-probe-v8"
+      name: "prisma-sahpool-sharedworker-probe-v8-brokertrace-1"
     });
 
+    shared.onerror = (event) => {
+      log("ERROR SharedWorker: " + (event.message || "fallo de inicialización"));
+      $("connectionStatus").textContent = "No se pudo iniciar el SharedWorker.";
+      $("connectionStatus").className = "status bad";
+    };
+
     port = shared.port;
+    port.onmessageerror = () => log("ERROR: mensaje no deserializable desde SharedWorker.");
     port.onmessage = (event) => {
       const message = event.data || {};
 
@@ -331,6 +345,22 @@ function connect() {
         return;
       }
 
+      if (message.kind === "broker-trace") {
+        log("BROKER [" + String(message.stage) + "] operación=" +
+          String(message.operation || "—") +
+          "; requestId=" + String(message.requestId || "—") +
+          "; brokerRequestId=" + String(message.brokerRequestId || "—") +
+          "; correlación=" + String(message.matchedPendingRequest ?? "—") +
+          "; protocolo=" + String(message.brokerProtocol || $("brokerProtocol").textContent));
+        return;
+      }
+
+      if (message.kind === "broker-orphan-response") {
+        log("BROKER ORPHAN: respuesta sin solicitud pendiente. " +
+          JSON.stringify(message));
+        return;
+      }
+
       if (message.kind === "stats") {
         $("totalRows").textContent = String(message.totalRows);
         log("Actualización compartida: " + message.totalRows + " registros.");
@@ -341,6 +371,11 @@ function connect() {
         const waiter = pending.get(message.requestId);
         if (!waiter) return;
         pending.delete(message.requestId);
+        if (message.brokerCorrelation) {
+          log("Respuesta correlacionada mediante " + message.brokerCorrelation +
+            "; operación=" + String(message.type || "—") +
+            "; total=" + String(message.totalRows ?? "—"));
+        }
         if (message.ok) waiter.resolve(message);
         else waiter.reject(new Error(
           (message.error || "Error del Worker") +
