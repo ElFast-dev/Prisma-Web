@@ -232,3 +232,22 @@ El registro V7 debe incluir, antes y después del relevo:
 - `vfsName` y `directory`.
 
 El test de V7 no inserta automáticamente ni limpia la base durante el handoff. Primero conectar una pestaña, consultar y anotar el total inicial; luego conectar la segunda, comprobar que ambas ven el mismo total, y solo entonces pulsar «Ceder propiedad». No cerrar el propietario manualmente hasta que V7 confirme transferencia completada o restauración del propietario anterior.
+
+
+### Relevo con instantánea SQLite explícita (V8)
+
+V7 detectó que el archivo persistente contenía la tabla `writes` pero cero filas después de un relevo anterior. Para no depender exclusivamente de que una nueva instalación del SAH pool reconstruya correctamente el mapeo virtual del archivo, V8 incorpora una instantánea de la base:
+
+1. El propietario consulta el total de filas y cierra la conexión SQLite.
+2. Exporta el archivo virtual exacto con `PoolUtil.exportFile(DB_FILE)`.
+3. Pausa el VFS con `pauseVfs()` y transfiere la instantánea binaria al SharedWorker.
+4. El SharedWorker conserva una copia en memoria y envía una copia transferible al Dedicated Worker entrante.
+5. El nuevo propietario instala o reanuda el SAH pool y usa `PoolUtil.importDb(DB_FILE, bytes)` para sobrescribir el archivo virtual con la instantánea recibida.
+6. Abre SQLite y valida que el conteo sea al menos el confirmado por el propietario saliente.
+7. Solo tras esa verificación se confirma el nuevo propietario. Si falla la importación o validación, el coordinador intenta restaurar el propietario anterior utilizando la misma instantánea.
+
+SQLite documenta que `exportFile()` devuelve los bytes de un archivo virtual del pool y que `importDb()` importa o sobrescribe una base de datos existente; el nombre del archivo debe ser absoluto y la importación debe ocurrir cuando la base no está abierta. Esta prueba mantiene `journal_mode=DELETE` para entregar un archivo autocontenido.
+
+La instantánea queda temporalmente en memoria del SharedWorker únicamente durante el relevo. No es una copia de seguridad persistente de Prisma ni sustituye el sistema de exportación/restauración del producto.
+
+V8 usa nuevos nombres de instancias de Worker, pero conserva el directorio y conjunto sintético V5. No activa `clearOnInit`, no invoca `removeVfs()` y no elimina la base al iniciar.
