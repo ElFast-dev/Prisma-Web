@@ -109,6 +109,7 @@ const history = [];
 const waiters = [];
 let runToken = null;
 let running = false;
+let failedRun = false;
 let reportLines = [];
 
 $("secure").textContent = String(isSecureContext);
@@ -487,18 +488,18 @@ async function runAll() {
         break;
       }
     }
-    $("overall").textContent = "La prueba no pudo completarse. El informe conserva el punto del fallo.";
+    $("overall").textContent = "La prueba no pudo completarse. El informe conserva el punto del fallo. Recarga esta página antes de iniciar otra ejecución.";
     $("overall").className = "status bad";
     $("resultSummary").textContent = "INCONCLUSO · " + detail;
     $("resultSummary").className = "status bad";
-    for (const slot of ["A", "B"]) {
-      try { command(slot, { command: "dispose" }); } catch {}
-    }
+    failedRun = true;
   } finally {
     $("report").value = reportLines.join("\n");
     $("copy").disabled = false;
-    $("start").disabled = false;
-    $("start").textContent = "EJECUTAR NUEVA PRUEBA AISLADA";
+    $("start").disabled = failedRun;
+    $("start").textContent = failedRun
+      ? "RECARGA LA PÁGINA PARA REPETIR"
+      : "EJECUTAR NUEVA PRUEBA AISLADA";
     running = false;
   }
 }
