@@ -161,3 +161,12 @@ La primera versión de la prueba generaba `RUN_ID` con `crypto.randomUUID()` den
 Se corrigió usando un identificador estable `prisma-sahpool-sharedworker-probe-v5` para el conjunto de datos y contando todos los registros de la base exclusiva de la prueba. Los IDs del SharedWorker y Dedicated Worker siguen siendo IDs de instancia y pueden cambiar al recargar; eso no significa que se haya reiniciado la base.
 
 La persistencia del conjunto debe verificarse recargando la página y comprobando que el total continúa en 50. No pulses «Eliminar la base sintética» antes de esa comprobación.
+
+
+### Persistencia visible tras recargar (corrección V5)
+
+Se encontró un defecto en la sonda: el SharedWorker generaba un `RUN_ID` aleatorio al arrancar y el conteo total filtraba los registros por ese valor. Al terminar el SharedWorker y crearse otra instancia, se generaba otro ID y la interfaz parecía mostrar cero, aunque los registros seguían almacenados en OPFS.
+
+La corrección fija el ID del conjunto de datos como `prisma-sahpool-sharedworker-probe-v5`, cuenta todas las filas de la base exclusiva de esta herramienta y conserva en el SharedWorker el último total conocido para informar a pestañas secundarias que se recarguen. El ID de instancia del SharedWorker puede cambiar y no identifica los datos persistentes.
+
+La verificación esperada tras recargar la página es que el conjunto mantenga 50 registros y muestre el mismo ID estable del conjunto de prueba.
