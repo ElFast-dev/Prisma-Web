@@ -30,6 +30,9 @@ function publishState() {
     requiredOpfsApis: ownerClientId
       ? (sessions.get(ownerClientId)?.opfsApis || null)
       : null,
+    removedFailedV4Directory: ownerClientId
+      ? (sessions.get(ownerClientId)?.removedFailedV4Directory ?? null)
+      : null,
     ownerReady: Boolean(ownerClientId && databaseWorkerId)
   };
   for (const session of sessions.values()) send(session.port, state);
@@ -102,12 +105,14 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     databaseWorkerId = message.dedicatedWorkerId;
     owner.role = "owner";
     owner.opfsApis = message.requiredOpfsApis || null;
+    owner.removedFailedV4Directory = message.removedFailedV4Directory === true;
     publishState();
     send(owner.port, {
       kind: "owner-ready",
       workerId: SHARED_WORKER_ID,
       databaseWorkerId,
       requiredOpfsApis: owner.opfsApis,
+      removedFailedV4Directory: owner.removedFailedV4Directory,
       totalRows: message.totalRows
     });
     return;
