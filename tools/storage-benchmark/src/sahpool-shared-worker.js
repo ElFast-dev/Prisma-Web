@@ -116,6 +116,7 @@ function removeSession(clientId, reason) {
           error: "El propietario o la pestaña que originó la operación se cerró. Consulta el estado antes de reintentar."
         });
       }
+      if (request.watchdogTimer) clearTimeout(request.watchdogTimer);
       pending.delete(brokerRequestId);
     }
   }
