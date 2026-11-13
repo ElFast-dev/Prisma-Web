@@ -1,6 +1,6 @@
 import sqlite3InitModule from "../node_modules/@sqlite.org/sqlite-wasm/dist/index.mjs";
 
-const DB_DIRECTORY = "/prisma-sahpool-sharedworker-probe-v4";
+const DB_DIRECTORY = "/prisma-sahpool-sharedworker-probe-v5";
 const DB_FILE = "/sharedworker-probe.sqlite3";
 const DEDICATED_WORKER_ID = crypto.randomUUID();
 
@@ -86,15 +86,16 @@ async function ensureDatabase() {
 function countRows(runId) {
   return Number(db.selectValue(
     "SELECT COUNT(*) FROM writes WHERE run_id = ?",
-    runId
+    [runId]
   ));
 }
 
 function clientRows(runId, clientId) {
+  // selectValue() accepts one bind argument. Multiple SQL parameters
+  // must be passed together as an array; a third argument is the SQLITE_* type.
   return Number(db.selectValue(
     "SELECT COUNT(*) FROM writes WHERE run_id = ? AND client_id = ?",
-    runId,
-    clientId
+    [runId, clientId]
   ));
 }
 
