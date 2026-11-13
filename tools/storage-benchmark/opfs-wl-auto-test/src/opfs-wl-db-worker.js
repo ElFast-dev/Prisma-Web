@@ -92,6 +92,7 @@ function describeError(error, stage) {
     dbIsOpen: isOpen,
     openAttempts,
     busyRetries,
+    retryCallbackCalls,
     stack: typeof error?.stack === "string" ? error.stack.slice(0, 8000) : null
   };
 }
@@ -318,6 +319,7 @@ function seedDatabase() {
         totalChangesInsideTransaction,
         totalChangesAfterCommit: db.changes(true),
         executedSeedSql,
+        retryCallbackCalls,
         rows: inspectWriteRows()
       })
     );
@@ -411,7 +413,8 @@ async function initialize(message) {
     atomicsWaitAsync: typeof Atomics.waitAsync === "function",
     sharedArrayBuffer: typeof SharedArrayBuffer === "function",
     openAttempts,
-    busyRetries
+    busyRetries,
+    retryCallbackCalls
   });
 }
 
