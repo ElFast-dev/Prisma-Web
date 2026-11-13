@@ -30,62 +30,60 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <main>
 <header>
   <p>PRISMA · HERRAMIENTA TÉCNICA INDEPENDIENTE</p>
-  <h1>SQLite SAH pool + SharedWorker</h1>
-  <p>Prueba funcional de un SharedWorker coordinador y un Dedicated Worker propietario de SQLite, compartidos por varias pestañas en Brave Android.</p>
+  <h1>SharedWorker coordinador + SQLite SAH pool</h1>
+  <p>Prueba dos pestañas con un solo Dedicated Worker propietario de SQLite.</p>
 </header>
 
 <div class="note">
-  <strong>Solo datos sintéticos.</strong> Esta prueba crea y elimina una base con nombre exclusivo de la herramienta. No toca datos personales ni la aplicación Prisma.
-  Abre esta misma dirección en <strong>dos pestañas</strong> del mismo Brave y del mismo origen. No uses navegación privada.
+  <strong>Solo datos sintéticos.</strong> Cada pestaña crea un Dedicated Worker; el SharedWorker elige uno como propietario de la base y reenvía todas las operaciones a ese único Worker. Los demás quedan en espera. No usa datos personales ni modifica Prisma.
+  Abre esta dirección en <strong>dos pestañas normales</strong> del mismo Brave.
 </div>
 
 <section class="panel">
-<h2>Requisitos del entorno</h2>
+<h2>Entorno</h2>
 <div class="grid">
   <div class="metric"><span>Origen seguro</span><b id="secure">—</b></div>
-  <div class="metric"><span>crossOriginIsolated</span><b id="isolated">—</b></div>
   <div class="metric"><span>SharedWorker</span><b id="shared">—</b></div>
-  <div class="metric"><span>OPFS</span><b id="opfs">—</b></div>
-  <div class="metric"><span>SharedArrayBuffer</span><b id="sab">—</b></div>
-  <div class="metric"><span>SQLite WASM</span><b id="sqlite">3.54.1-build1 (pendiente)</b></div>
+  <div class="metric"><span>Worker dedicado</span><b id="dedicated">—</b></div>
+  <div class="metric"><span>OPFS en Dedicated Worker</span><b id="opfs">Pendiente</b></div>
 </div>
 </section>
 
 <section class="panel">
-<h2>Conexión compartida</h2>
-<p>Ambas pestañas deben mostrar exactamente el mismo ID del SharedWorker. Este coordinador envía las operaciones a un único Dedicated Worker, que es el propietario exclusivo de OPFS SAH pool. Cuando las dos pestañas estén conectadas, el contador debe indicar 2 conexiones.</p>
+<h2>Coordinación compartida</h2>
 <div class="grid">
-  <div class="metric"><span>ID del SharedWorker</span><b id="workerId">Sin conectar</b></div>
+  <div class="metric"><span>ID SharedWorker (debe coincidir)</span><b id="workerId">Sin conectar</b></div>
   <div class="metric"><span>Pestañas conectadas</span><b id="connections">0</b></div>
-  <div class="metric"><span>Identificador de esta pestaña</span><b id="clientId">—</b></div>
-  <div class="metric"><span>ID del Dedicated Worker SQLite</span><b id="dbWorkerId">Pendiente</b></div>
-  <div class="metric"><span>Registros en SQLite</span><b id="totalRows">—</b></div>
+  <div class="metric"><span>Esta pestaña</span><b id="clientId">—</b></div>
+  <div class="metric"><span>Propietario de SQLite</span><b id="owner">Pendiente</b></div>
+  <div class="metric"><span>ID Dedicated Worker SQLite</span><b id="dbWorkerId">Pendiente</b></div>
+  <div class="metric"><span>Registros de esta ejecución</span><b id="totalRows">—</b></div>
 </div>
 <div class="actions">
-  <button id="connect">Conectar al SharedWorker</button>
+  <button id="connect">Conectar y registrar</button>
   <button id="status" class="secondary" disabled>Consultar estado</button>
 </div>
 <p id="connectionStatus" class="status warn">Esperando conexión.</p>
 </section>
 
 <section class="panel">
-<h2>Escrituras desde las dos pestañas</h2>
-<p>Después de conectar ambas pestañas, pulsa «Insertar 25» una vez en cada una. El Worker ejecutará cada lote en una transacción SQLite y notificará el total a las dos pestañas.</p>
+<h2>Escrituras desde ambas pestañas</h2>
+<p>Cuando las dos estén conectadas, pulsa una sola vez «Insertar 25» desde cada pestaña. El SharedWorker enviará ambas operaciones al mismo Dedicated Worker.</p>
 <div class="actions">
   <button id="insert" disabled>Insertar 25 registros</button>
   <button id="verify" class="secondary" disabled>Cerrar y reabrir SQLite</button>
 </div>
 <p id="writeStatus" class="status warn">Pendiente.</p>
-<div class="note">Resultado esperado después de insertar desde ambas pestañas: mismo ID de Worker, 2 conexiones y 50 registros en total. La reapertura debe conservar los 50 registros.</div>
+<div class="note">Esperado: dos IDs de SharedWorker iguales, dos pestañas conectadas, un único ID propietario de Dedicated Worker y 50 registros conservados después de reabrir.</div>
 </section>
 
 <section class="panel">
-<h2>Registro de actividad</h2>
+<h2>Registro</h2>
 <div id="log" class="log" aria-live="polite">La prueba aún no ha comenzado.</div>
 <div class="actions">
   <button id="cleanup" class="secondary" disabled>Eliminar la base sintética</button>
 </div>
-<p>Ejecuta la limpieza desde una sola pestaña cuando ambas hayan terminado. La eliminación afecta exclusivamente al VFS de prueba.</p>
+<p>Ejecuta la limpieza desde una pestaña cuando ambas hayan terminado. La operación elimina únicamente el VFS temporal de esta prueba.</p>
 </section>
 </main>
 
@@ -94,113 +92,173 @@ const $ = (id) => document.getElementById(id);
 const clientId = crypto.randomUUID();
 $("clientId").textContent = clientId.slice(0, 12);
 $("secure").textContent = String(isSecureContext);
-$("isolated").textContent = String(self.crossOriginIsolated === true);
 $("shared").textContent = typeof SharedWorker === "function" ? "Disponible" : "No disponible";
-$("opfs").textContent = typeof navigator.storage?.getDirectory === "function" ? "Disponible" : "No disponible";
-$("sab").textContent = typeof SharedArrayBuffer === "function" ? "Disponible" : "No disponible";
+$("dedicated").textContent = typeof Worker === "function" ? "Disponible en esta pestaña" : "No disponible";
 
 let shared = null;
 let port = null;
+let dbWorker = null;
+let dbWorkerPort = null;
 let requestCounter = 0;
 const pending = new Map();
 let insertedHere = false;
+let connected = false;
 
 function log(message) {
-  const stamp = new Date().toLocaleTimeString();
   const area = $("log");
-  area.textContent += "\n[" + stamp + "] " + message;
+  area.textContent += "\n[" + new Date().toLocaleTimeString() + "] " + message;
   area.scrollTop = area.scrollHeight;
 }
 
-function updateConnections(data) {
+function updateState(data) {
   $("workerId").textContent = data.workerId || "—";
   $("connections").textContent = String(data.connections ?? "—");
+  $("dbWorkerId").textContent = data.databaseWorkerId || "Pendiente";
+  $("owner").textContent = data.ownerClientId
+    ? (data.ownerClientId === clientId ? "Esta pestaña" : "Otra pestaña")
+    : "Pendiente";
+  if (data.ownerReady) {
+    $("connectionStatus").textContent =
+      "SharedWorker activo. SQLite tiene un único propietario.";
+    $("connectionStatus").className = "status ok";
+    $("insert").disabled = false;
+    $("verify").disabled = false;
+    $("status").disabled = false;
+    $("cleanup").disabled = false;
+  }
 }
 
-function request(type, extra = {}) {
-  if (!port) return Promise.reject(new Error("Primero conecta el SharedWorker."));
-  const requestId = String(++requestCounter) + "-" + clientId;
+function request(operation, extra = {}) {
+  if (!port || !connected) {
+    return Promise.reject(new Error("Primero conecta esta pestaña."));
+  }
+
+  const requestId = clientId + "-" + (++requestCounter);
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       pending.delete(requestId);
-      reject(new Error("Tiempo de espera agotado en la operación " + type));
+      reject(new Error("Tiempo de espera agotado: " + operation));
     }, 30000);
+
     pending.set(requestId, {
       resolve: (value) => { clearTimeout(timeout); resolve(value); },
       reject: (error) => { clearTimeout(timeout); reject(error); }
     });
-    port.postMessage({ requestId, type, clientId, ...extra });
+
+    port.postMessage({
+      type: "request",
+      requestId,
+      operation,
+      ...extra
+    });
   });
 }
 
 function connect() {
-  if (port) return;
-  if (typeof SharedWorker !== "function") {
-    $("connectionStatus").textContent = "SharedWorker no está disponible.";
+  if (connected) return;
+
+  if (typeof Worker !== "function" || typeof SharedWorker !== "function") {
+    $("connectionStatus").textContent = "Worker o SharedWorker no disponible en esta pestaña.";
     $("connectionStatus").className = "status bad";
     return;
   }
+
   try {
+    // The page creates the Dedicated Worker because Worker() is not exposed
+    // inside SharedWorkerGlobalScope. Only the elected tab opens the SAH pool.
+    dbWorker = new Worker("./src/sahpool-db-worker.js", {
+      type: "module",
+      name: "prisma-sahpool-db-owner-candidate-v3-" + clientId
+    });
+
+    dbWorker.onerror = (event) => {
+      log("ERROR Dedicated Worker: " + (event.message || "fallo desconocido"));
+      port?.postMessage({ type: "dbWorkerFailed" });
+    };
+
+    dbWorker.onmessageerror = () => {
+      log("ERROR: mensaje no deserializable del Dedicated Worker.");
+      port?.postMessage({ type: "dbWorkerFailed" });
+    };
+
+    const channel = new MessageChannel();
+    dbWorker.postMessage({ type: "attach", port: channel.port1 }, [channel.port1]);
+    dbWorkerPort = channel.port2;
+
     shared = new SharedWorker("./src/sahpool-shared-worker.js", {
       type: "module",
-      name: "prisma-sahpool-sharedworker-probe-v1"
+      name: "prisma-sahpool-sharedworker-probe-v3"
     });
+
     port = shared.port;
     port.onmessage = (event) => {
       const message = event.data || {};
-      if (message.kind === "connections" || message.kind === "stats") {
-        updateConnections(message);
-        if (Number.isFinite(message.totalRows)) $("totalRows").textContent = String(message.totalRows);
+
+      if (message.kind === "state") {
+        updateState(message);
         return;
       }
-      if (message.kind === "cleaned") {
-        log("El VFS sintético fue eliminado.");
+
+      if (message.kind === "owner-ready") {
+        $("opfs").textContent = JSON.stringify(message.requiredOpfsApis || {});
+        $("totalRows").textContent = String(message.totalRows ?? 0);
+        updateState({
+          workerId: message.workerId,
+          databaseWorkerId: message.databaseWorkerId,
+          ownerClientId: clientId,
+          connections: Number($("connections").textContent) || 1,
+          ownerReady: true
+        });
+        log("SQLite listo. Dedicated Worker ID: " + message.databaseWorkerId);
+        log("APIs OPFS: " + JSON.stringify(message.requiredOpfsApis || {}));
         return;
       }
-      if (message.kind === "fatal") {
-        $("connectionStatus").textContent = message.error;
-        $("connectionStatus").className = "status bad";
-        log("ERROR FATAL DEL WORKER: " + message.error);
+
+      if (message.kind === "stats") {
+        $("totalRows").textContent = String(message.totalRows);
+        log("Actualización compartida: " + message.totalRows + " registros.");
         return;
       }
+
       if (message.kind === "response") {
         const waiter = pending.get(message.requestId);
-        if (waiter) {
-          pending.delete(message.requestId);
-          if (message.ok) waiter.resolve(message);
-          else waiter.reject(new Error(message.error || "Error del SharedWorker"));
-        }
+        if (!waiter) return;
+        pending.delete(message.requestId);
+        if (message.ok) waiter.resolve(message);
+        else waiter.reject(new Error(
+          (message.error || "Error del Worker") +
+          (message.requiredOpfsApis
+            ? " APIs: " + JSON.stringify(message.requiredOpfsApis)
+            : "")
+        ));
+      }
+
+      if (message.kind === "error") {
+        $("connectionStatus").textContent = message.error;
+        $("connectionStatus").className = "status bad";
+        log("ERROR: " + message.error);
       }
     };
+
     port.start();
+    connected = true;
     $("connect").disabled = true;
-    $("connectionStatus").textContent = "Conectando y abriendo SQLite…";
+    $("connectionStatus").textContent = "Registrando esta pestaña y su Dedicated Worker…";
     $("connectionStatus").className = "status warn";
-    request("hello").then((result) => {
-      updateConnections(result);
-      $("sqlite").textContent = "Inicializado correctamente";
-      $("connectionStatus").textContent = "Conexión activa.";
-      $("connectionStatus").className = "status ok";
-      $("status").disabled = false;
-      $("insert").disabled = false;
-      $("verify").disabled = false;
-      $("cleanup").disabled = false;
-      log("Conectado. SharedWorker ID: " + result.workerId);
-      $("dbWorkerId").textContent = result.dedicatedWorkerId || "—";
-      log("Dedicated Worker SQLite ID: " + (result.dedicatedWorkerId || "no informado"));
-      log("APIs OPFS en Dedicated Worker: " + JSON.stringify(result.requiredOpfsApis || {}));
-      log("Conexiones simultáneas: " + result.connections);
-      log("Registros existentes: " + result.totalRows);
-      $("totalRows").textContent = String(result.totalRows);
-    }).catch((error) => {
-      $("connectionStatus").textContent = error.message;
-      $("connectionStatus").className = "status bad";
-      log("ERROR: " + error.message);
-    });
+
+    port.postMessage(
+      { type: "register", clientId },
+      [dbWorkerPort]
+    );
+    dbWorkerPort = null;
+
+    log("Registro enviado al SharedWorker.");
   } catch (error) {
     $("connectionStatus").textContent = error.message;
     $("connectionStatus").className = "status bad";
-    log("No se pudo crear SharedWorker: " + error.message);
+    log("No se pudo conectar: " + error.message);
+    try { dbWorker?.terminate(); } catch {}
+    dbWorker = null;
   }
 }
 
@@ -209,9 +267,8 @@ $("connect").addEventListener("click", connect);
 $("status").addEventListener("click", async () => {
   try {
     const result = await request("status");
-    updateConnections(result);
     $("totalRows").textContent = String(result.totalRows);
-    log("Estado: " + result.totalRows + " registros; " + result.connections + " conexiones.");
+    log("Estado consultado: " + result.totalRows + " registros.");
   } catch (error) { log("ERROR: " + error.message); }
 });
 
@@ -225,9 +282,10 @@ $("insert").addEventListener("click", async () => {
     const result = await request("insertBatch", { count: 25 });
     insertedHere = true;
     $("totalRows").textContent = String(result.totalRows);
-    $("writeStatus").textContent = "Lote insertado: " + result.inserted + " registros desde esta pestaña.";
+    $("writeStatus").textContent =
+      "Lote insertado: " + result.inserted + "; registros propios: " + result.clientRows + ".";
     $("writeStatus").className = "status ok";
-    log("Lote confirmado. Total: " + result.totalRows + "; propios: " + result.clientRows + ".");
+    log("Escritura confirmada. Total: " + result.totalRows + ".");
   } catch (error) {
     $("insert").disabled = false;
     $("writeStatus").textContent = error.message;
@@ -241,9 +299,10 @@ $("verify").addEventListener("click", async () => {
   try {
     const result = await request("reopenVerify");
     $("totalRows").textContent = String(result.totalRows);
-    $("writeStatus").textContent = "SQLite reabierto correctamente. Registros recuperados: " + result.totalRows + ".";
+    $("writeStatus").textContent =
+      "SQLite reabierto. Registros recuperados: " + result.totalRows + ".";
     $("writeStatus").className = "status ok";
-    log("Cierre y reapertura correctos. Total persistido: " + result.totalRows + ".");
+    log("Cierre/reapertura correctos: " + result.totalRows + " registros.");
   } catch (error) {
     $("writeStatus").textContent = error.message;
     $("writeStatus").className = "status bad";
@@ -254,18 +313,27 @@ $("verify").addEventListener("click", async () => {
 });
 
 $("cleanup").addEventListener("click", async () => {
-  if (!confirm("Eliminar únicamente la base sintética de esta prueba SharedWorker + SAH pool. ¿Continuar?")) return;
+  if (!confirm("Eliminar exclusivamente la base sintética de la prueba. ¿Continuar?")) return;
   $("cleanup").disabled = true;
   try {
     const result = await request("cleanup");
     $("totalRows").textContent = "0";
-    $("writeStatus").textContent = "VFS temporal eliminado. Resultado removeVfs(): " + result.removeVfsResult;
+    $("writeStatus").textContent =
+      "VFS eliminado. removeVfs(): " + result.removeVfsResult;
     $("writeStatus").className = "status ok";
     log("Limpieza completada. removeVfs(): " + result.removeVfsResult);
   } catch (error) {
     $("cleanup").disabled = false;
     log("ERROR de limpieza: " + error.message);
   }
+});
+
+window.addEventListener("pagehide", () => {
+  // Terminate the dedicated DB owner first so its SyncAccessHandles are released
+  // before the SharedWorker promotes a standby tab.
+  try { dbWorker?.terminate(); } catch {}
+  try { port?.postMessage({ type: "unregister" }); } catch {}
+  try { port?.close(); } catch {}
 });
 </script>
 </body>
