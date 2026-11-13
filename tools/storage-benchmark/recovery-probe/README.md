@@ -34,6 +34,22 @@ Usa dos pestañas normales de Brave del mismo origen. La página se registra aut
 
 Este ensayo distingue la terminación del Worker de una notificación explícita de fallo: `Worker.terminate()` no ofrece tiempo para finalizar operaciones. Cerrar después la página es la señal que permite al coordinador retirar la sesión que quedó huérfana.
 
+
+
+## Resultado observado del ensayo A (Galaxy A03 / Brave, 13-11-2026)
+
+Base aislada inicial: 5 filas confirmadas; archivo `/recovery-probe.sqlite3` en `/prisma-sahpool-recovery-probe-v1`, tamaño 32.768 bytes. Había dos pestañas conectadas al SharedWorker `a68990df-9c23-4766-910a-a7b9c2347410`. El propietario inicial utilizaba Dedicated Worker `2dbef596-e820-419a-a3da-b9b1ffb7b04f`; la pestaña secundaria era `340a0a13-697`.
+
+Se terminó el Dedicated Worker propietario mediante el botón «Terminar Dedicated Worker sin avisar». Desde la pestaña secundaria se enviaron dos consultas `status`. Ambas llegaron al SharedWorker (`shared-received`) y quedaron pendientes; el watchdog informó `lastStage=shared-received` a los 18 segundos y las páginas agotaron el tiempo a los 30 segundos. No apareció una respuesta `dedicated-received` ni una recuperación automática inmediata mientras la sesión de la página propietaria permanecía registrada.
+
+Después de retirar la sesión del propietario anterior, apareció un nuevo Dedicated Worker `642a1121-0f6d-4b67-a67e-80d50347af7a`. El nuevo propietario encontró el mismo archivo de 32.768 bytes, la tabla `writes` y las cinco filas. La pestaña secundaria quedó como propietaria activa.
+
+**Resultado:** recuperación de las cinco filas después de retirar la sesión del propietario fallido: correcta. Detección automática de `Worker.terminate()` mientras la página propietaria sigue conectada: no demostrada; las consultas secundarias quedaron colgadas hasta el timeout. El coordinador mantuvo la sesión/propiedad lógica después de que el Dedicated Worker había terminado. El paso de cierre/unregister de la página permitió finalmente promover la pestaña de reserva.
+
+**Corrección necesaria antes de aprobar la arquitectura:** añadir una señal explícita de liveness entre SharedWorker y Dedicated Worker, con timeout, y un protocolo para que la página propietaria termine el Worker que no responde y confirme su retirada antes de promover otra pestaña. No se debe abrir un segundo SAH pool mientras el Worker anterior pueda seguir vivo manteniendo SyncAccessHandles. Si la página propietaria está congelada y no puede confirmar la terminación, el coordinador debe permanecer en estado de recuperación bloqueada y no permitir dos propietarios.
+
+El ensayo B (transacción abierta antes de COMMIT) y el ensayo C (COMMIT completado con acuse perdido) todavía no se han ejecutado. No se debe considerar este resultado como validación de rollback de journal ni de recuperación de commit con respuesta perdida.
+
 ## Ensayo B: interrupción antes de COMMIT
 
 1. Con dos pestañas conectadas y un propietario activo, pulsa «Abrir transacción e insertar 5 sin COMMIT».
