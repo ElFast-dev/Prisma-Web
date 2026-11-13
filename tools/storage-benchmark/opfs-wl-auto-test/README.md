@@ -304,3 +304,44 @@ python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.
 Con el servidor 18768 activo, recarga una vez `http://127.0.0.1:18768/opfs-wl-auto-test/` y ejecuta una sola prueba con `require-corp`. Comparte todo el informe, en especial `changesInsideTransaction`, `executedSeedSql`, `tableTotal`, `groups` y `sample`. No reinicies servidores ni borres las carpetas OPFS de ejecuciones anteriores.
 
 **Estado vigente:** se demostró apertura de la conexión y se ha aislado el error de la revisión 5 como omisión DDL. La revisión 6 aún no se ha ejecutado. OPFS-WL permanece sin aceptación hasta completar dos conexiones, 24/24 transacciones, 605 filas verificadas, cierre/reapertura y limpieza limitada al RUN_ID.
+
+## Sexta ejecución observada y revisión 7 (13-11-2026)
+
+La ejecución con revisión 6 terminó **NO APROBADA** durante la siembra:
+
+- RUN_ID: prisma-opfs-wl-auto-49ac6a3d-23cf-4fcb-8940-70fa16c318ff
+- COOP same-origin, COEP require-corp, crossOriginIsolated true.
+- SharedArrayBuffer, Atomics.waitAsync, Web Locks y OPFS: disponibles.
+- SQLite 3.54.1, constructor OpfsWlDb, VFS opfs-wl, conexión abierta y tabla writes: confirmados.
+- El informe devolvió changesInsideTransaction null, totalChangesInsideTransaction null y executedSeedSql vacío.
+- El total global y el total por RUN_ID permanecieron en cero. No se iniciaron las 24 transacciones, no se verificaron 605 filas, reapertura ni limpieza.
+
+### Causa localizada: retryBusy() pasaba -1 al helper
+
+La revisión del Worker muestra que todas las inserciones se ejecutan dentro de retryBusy(), que a su vez llamaba a sqlite3_js_retry_busy(-1, callback, beforeRetryCallback).
+
+El informe confirma que el callback no llegó a ejecutarse: los valores que solo se asignan dentro del callback quedaron null y executedSeedSql quedó vacío. La implementación publicada de sqlite3_js_retry_busy() recorre los intentos con for (let n = 1; n <= maxTimes; ++n); con maxTimes = -1, la condición inicial es falsa y el cuerpo —incluido el callback— se omite. La implementación consultada está aquí: https://chromium.googlesource.com/external/github.com/sqlite/sqlite/%2B/refs/heads/compile-commands%5E1..refs/heads/compile-commands/ (bloque sqlite3_js_retry_busy). El comentario de la misma implementación indica que se debe usar un límite positivo grande para repetir indefinidamente, lo que entra en contradicción con la nota negativa de alguna documentación generada.
+
+Esta explicación concuerda con el informe; no es evidencia de un fallo de OPFS-WL, de Brave, de OpfsWlDb ni del SQL de inserción. En esta ejecución, el callback de transacción no se ejecutó porque el mecanismo de reintento no entró en su bucle.
+
+### Revisión 7
+
+La revisión 7 cambia retryBusy() para pasar un límite positivo y acotado de **120 intentos** al helper SQLite. Además, incrementa y reporta retryCallbackCalls, de modo que el siguiente resultado permitirá comprobar explícitamente que las operaciones sí entraron en el callback.
+
+Conserva:
+- DDL de revisión 6: creación de tabla e índice y verificación de sqlite_schema.
+- Inserción de referencia y lotes de 25 filas mediante SQL multirregistro.
+- Recuento global, por RUN_ID, agrupación y muestra de filas.
+- Protección de los RUN_ID anteriores y limpieza limitada al RUN_ID nuevo solo si la prueba termina aprobada.
+
+**La revisión 7 aún no se ha ejecutado en Brave y no aprueba OPFS-WL.**
+
+Instalador seguro: install-opfs-wl-auto-test-revision-7.py, fijado al commit b73eeff671db54022fbfaed3da4e3b573189ad42. En Termux:
+
+```sh
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/b73eeff671db54022fbfaed3da4e3b573189ad42/tools/storage-benchmark/install-opfs-wl-auto-test-revision-7.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+```
+
+El instalador cambia únicamente opfs-wl-auto-test/src/opfs-wl-db-worker.js, comprueba los SHA del servidor y del Worker, reconoce las revisiones previas conocidas y no toca dependencias, SQLite WASM, HTML, servidores ni directorios OPFS anteriores.
+
+Con el servidor 18768 activo, recarga una vez http://127.0.0.1:18768/opfs-wl-auto-test/ y ejecuta una prueba con require-corp. Comparte el informe íntegro. El campo decisivo inicial será retryCallbackCalls: debe ser mayor que cero. Después interesa confirmar cinco filas de referencia, ambos Workers y el resto del ciclo completo. No reinicies el servidor ni borres datos del sitio o los RUN_ID anteriores.
