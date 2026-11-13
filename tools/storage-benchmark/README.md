@@ -511,7 +511,7 @@ Se preparó una nueva revisión que cambia solo el Worker de la sonda:
 
 La revisión 3 es experimental y **no significa que OPFS-WL esté aprobada**. Su finalidad es aislar la creación del esquema y registrar evidencia más precisa.
 
-Instalador seguro: [install-opfs-wl-auto-test-revision-3.py](install-opfs-wl-auto-test-revision-3.py). Descarga fijada al commit `c6d60e07d17fa09f8ddea64d9812b4d55930a075`. Modifica únicamente el Worker. No toca SQLite WASM, dependencias, HTML, servidores, el puerto 18767 ni ningún directorio OPFS existente.
+Instalador seguro: [install-opfs-wl-auto-test-revision-3.py](install-opfs-wl-auto-test-revision-3.py). Descarga fijada al commit `8f3ef0b343680acf86713056117e7420f87cd28b`. Modifica únicamente el Worker. No toca SQLite WASM, dependencias, HTML, servidores, el puerto 18767 ni ningún directorio OPFS existente.
 
 Con el servidor 18768 activo, basta recargar la página `http://127.0.0.1:18768/opfs-wl-auto-test/`; no reiniciar servidor. La siguiente prueba debe ejecutarse una sola vez en `require-corp` y reportarse íntegramente.
 
