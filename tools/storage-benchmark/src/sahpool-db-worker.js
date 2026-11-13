@@ -10,6 +10,7 @@ let pool = null;
 let db = null;
 let initialization = null;
 let removedFailedV4Directory = false;
+let importedDatabaseBytes = 0;
 let port = null;
 let queue = Promise.resolve();
 
@@ -167,7 +168,7 @@ async function openDatabase({
     await pool.unpauseVfs();
   }
 
-  let importedDatabaseBytes = 0;
+  importedDatabaseBytes = 0;
   if (databaseImage) {
     const image = databaseImage instanceof Uint8Array
       ? databaseImage
