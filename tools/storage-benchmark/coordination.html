@@ -120,7 +120,9 @@ function log(message) {
 function updateState(data) {
   $("datasetId").textContent = data.runId || "—";
   $("workerId").textContent = data.workerId || "—";
-  $("brokerProtocol").textContent = data.brokerProtocol || "Coordinador anterior o sin diagnóstico";
+  if (typeof data.brokerProtocol === "string" && data.brokerProtocol) {
+    $("brokerProtocol").textContent = data.brokerProtocol;
+  }
   if (Number.isFinite(data.totalRows)) {
     $("totalRows").textContent = String(data.totalRows);
   }
@@ -201,6 +203,7 @@ function request(operation, extra = {}) {
     }, 30000);
 
     pending.set(requestId, {
+      operation,
       resolve: (value) => { clearTimeout(timeout); resolve(value); },
       reject: (error) => { clearTimeout(timeout); reject(error); }
     });
@@ -373,7 +376,7 @@ function connect() {
         pending.delete(message.requestId);
         if (message.brokerCorrelation) {
           log("Respuesta correlacionada mediante " + message.brokerCorrelation +
-            "; operación=" + String(message.type || "—") +
+            "; operación=" + String(waiter.operation || message.type || "—") +
             "; total=" + String(message.totalRows ?? "—"));
         }
         if (message.ok) waiter.resolve(message);
