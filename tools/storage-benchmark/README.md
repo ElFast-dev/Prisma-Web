@@ -170,3 +170,12 @@ Se encontró un defecto en la sonda: el SharedWorker generaba un `RUN_ID` aleato
 La corrección fija el ID del conjunto de datos como `prisma-sahpool-sharedworker-probe-v5`, cuenta todas las filas de la base exclusiva de esta herramienta y conserva en el SharedWorker el último total conocido para informar a pestañas secundarias que se recarguen. El ID de instancia del SharedWorker puede cambiar y no identifica los datos persistentes.
 
 La verificación esperada tras recargar la página es que el conjunto mantenga 50 registros y muestre el mismo ID estable del conjunto de prueba.
+
+
+### Transferencia controlada de propiedad (V6)
+
+La interfaz anterior mostraba «Esta pestaña» al seleccionarse un candidato, antes de que SQLite terminara de inicializarse. Ahora distingue «Preparando propiedad» de «Propietaria activa» y mantiene deshabilitadas las operaciones durante la transición.
+
+Para una cesión normal se utiliza el botón «Ceder propiedad a otra pestaña». El Dedicated Worker propietario cierra primero su conexión SQLite y ejecuta `PoolUtil.pauseVfs()`, lo que libera los SyncAccessHandles sin eliminar el contenido de OPFS. Solo tras recibir la confirmación de pausa, el SharedWorker promueve la pestaña candidata. Su Dedicated Worker ejecuta `unpauseVfs()` si ya tenía un pool pausado, o inicializa el pool si es nuevo.
+
+La propiedad solo se considera transferida cuando el nuevo Dedicated Worker confirma la apertura de SQLite. Los cierres abruptos del propietario siguen siendo un escenario distinto; no deben confundirse con la cesión controlada.
