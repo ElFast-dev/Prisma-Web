@@ -281,3 +281,22 @@ V8 no presupone que ese contenido exista. La siguiente ejecución debe crear un 
 12. Guardar los registros de ambas pestañas y los diagnósticos antes de limpiar. No repetir tandas si los totales ya coinciden.
 
 No cerrar ninguna pestaña ni eliminar la base sintética antes de recibir y registrar todas las confirmaciones. Si el relevo falla, conservar ambos registros y diagnósticos.
+
+
+### Diagnóstico de solicitudes del broker (V8)
+
+La interfaz V8 muestra el identificador del protocolo del SharedWorker. La revisión de diagnóstico usa `v8-broker-trace-1` y registra cada salto de una solicitud:
+
+- `shared-forwarded`: el SharedWorker recibió la petición de una pestaña y la envió al Dedicated Worker propietario.
+- `dedicated-received`: el puerto del Dedicated Worker recibió la petición.
+- `dedicated-processing`: el Dedicated Worker comenzó a ejecutarla.
+- `dedicated-completed`: el Dedicated Worker terminó la operación y prepara su respuesta.
+- `Respuesta correlacionada`: el SharedWorker devolvió el resultado a la pestaña que originó la petición. La correlación usa primero `brokerRequestId` y, si no coincide, intenta `clientId + requestId`.
+- `BROKER ORPHAN`: llegó una respuesta sin una solicitud pendiente coincidente; se conserva el identificador para diagnosticarla.
+
+Si la traza se detiene en `shared-forwarded`, revisar la entrega al Dedicated Worker. Si llega a `dedicated-completed` pero no aparece la respuesta correlacionada, revisar el retorno y la asociación de IDs. No repetir una escritura cuya respuesta haya agotado el tiempo: primero consultar el total desde la pestaña propietaria para saber si el lote se confirmó.
+
+**Recarga del coordinador:** recargar una página no actualiza una instancia SharedWorker que sigue viva. Los SharedWorkers se reutilizan cuando coinciden el origen, la URL del script y el nombre. Para cargar esta revisión de diagnóstico, no basta con recargar una de las dos páginas: deben cerrarse ambas pestañas de la sonda para que termine la instancia anterior y después abrirse de nuevo. La sonda mantiene la misma URL y nombre de Worker para evitar crear dos coordinadores que intenten abrir simultáneamente el mismo VFS.
+
+La base V5 contiene datos sintéticos. Antes de cerrar ambas pestañas, verificar que no haya solicitudes en curso y que el total esté confirmado tras cierre/reapertura. Cerrar la última pestaña termina el contexto de Worker sin ejecutar una cesión cooperativa de SQLite; se registra como **terminación abrupta en reposo**, no como cierre limpio. Al abrir de nuevo, comprobar primero que se recupera el mismo total. No ejecutar limpieza ni habilitar nuevas escrituras hasta verificarlo.
+
