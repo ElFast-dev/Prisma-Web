@@ -94,6 +94,20 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     return;
   }
 
+  if (message.kind === "activation-error") {
+    if (ownerClientId !== ownerClientIdForPort) return;
+    owner.role = "failed";
+    databaseWorkerId = null;
+    publishState();
+    send(owner.port, {
+      kind: "error",
+      error: message.error || "No se pudo inicializar SQLite en el Dedicated Worker.",
+      requiredOpfsApis: message.requiredOpfsApis || null,
+      workerId: SHARED_WORKER_ID
+    });
+    return;
+  }
+
   if (message.kind === "stats") {
     for (const session of sessions.values()) {
       send(session.port, {
@@ -245,7 +259,3 @@ self.onconnect = (event) => {
   port.start();
 };
 
-setInterval(() => {
-  // Explicit pagehide/unregister is used for normal tab closure.
-  // No short heartbeat timeout: background mobile tabs may be throttled.
-}, 30000);
