@@ -72,6 +72,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <strong>Sesiones observadas por el coordinador</strong>
   <div id="sessionState" class="log">Esperando el primer estado compartido.</div>
 </div>
+<div class="note">
+  <strong>Heartbeat y decisiones de recuperación</strong>
+  <div id="recoveryState" class="log">Esperando la traza del coordinador.</div>
+</div>
 <p>«Preparando propiedad» significa que la pestaña fue elegida, pero SQLite aún no está listo. Solo «Propietaria activa» habilita las operaciones. Para transferir el acceso, pulsa «Ceder propiedad» antes de cerrar la pestaña propietaria.</p>
 </section>
 
@@ -184,6 +188,30 @@ function updateState(data) {
     log("Activación en curso: " + data.activationAttempt.clientId +
       "; " + data.activationAttempt.activationId +
       "; terminación solicitada=" + data.activationAttempt.terminationRequested);
+  }
+
+  if (data.heartbeat) {
+    const hb = data.heartbeat;
+    const fmt = (value) => value ? new Date(value).toLocaleTimeString() : "—";
+    const pending = hb.pending
+      ? hb.pending.heartbeatId + " · pendiente " + Math.round(hb.pending.ageMs / 1000) + " s"
+      : "ninguno";
+    const summary = [
+      "Cadencia: " + hb.intervalMs + " ms · timeout: " + hb.timeoutMs + " ms",
+      "Temporizador iniciado: " + fmt(hb.timerStartedAt),
+      "Último ping: " + fmt(hb.lastSentAt) + " · " + (hb.lastHeartbeatId || "—"),
+      "Último ACK: " + fmt(hb.lastAckAt),
+      "Heartbeat pendiente: " + pending,
+      "Solicitud de terminación enviada: " + String(hb.terminationRequested),
+      "Timeout detectado: " + fmt(hb.lastTimeoutAt)
+    ];
+    const events = (data.recoveryTrace || []).map((entry) =>
+      "[" + fmt(entry.at) + "] " + entry.event +
+      " · " + JSON.stringify(Object.fromEntries(
+        Object.entries(entry).filter(([key]) => key !== "at" && key !== "event")
+      ))
+    );
+    $("recoveryState").textContent = summary.concat(["", "Historial:"]).concat(events).join("\n");
   }
 
   const selectedHere = data.ownerClientId === clientId;
@@ -451,6 +479,7 @@ function connect() {
           type: "dbWorkerTerminated",
           reason: message.reason || "heartbeat-timeout"
         });
+        log("Confirmación dbWorkerTerminated enviada al coordinador.");
         return;
       }
 
