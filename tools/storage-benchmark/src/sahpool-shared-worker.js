@@ -1,5 +1,6 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
-const RUN_ID = crypto.randomUUID();
+// Stable dataset identity across SharedWorker lifetimes and page reloads.
+const RUN_ID = "prisma-sahpool-sharedworker-probe-v5";
 const NESTED_WORKER_AVAILABLE = typeof Worker === "function";
 const sessions = new Map();
 const portOwners = new Map();
@@ -110,6 +111,7 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
     send(owner.port, {
       kind: "owner-ready",
       workerId: SHARED_WORKER_ID,
+      runId: RUN_ID,
       databaseWorkerId,
       requiredOpfsApis: owner.opfsApis,
       removedFailedV4Directory: owner.removedFailedV4Directory,
