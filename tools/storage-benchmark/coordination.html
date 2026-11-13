@@ -64,8 +64,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="actions">
   <button id="connect">Conectar y registrar</button>
   <button id="status" class="secondary" disabled>Consultar estado</button>
+  <button id="handoff" class="secondary" disabled>Ceder propiedad a otra pestaña</button>
 </div>
 <p id="connectionStatus" class="status warn">Esperando conexión.</p>
+<p>«Preparando propiedad» significa que la pestaña fue elegida, pero SQLite aún no está listo. Solo «Propietaria activa» habilita las operaciones.</p>
 </section>
 
 <section class="panel">
@@ -120,33 +122,58 @@ function updateState(data) {
   }
   $("connections").textContent = String(data.connections ?? "—");
   $("dbWorkerId").textContent = data.databaseWorkerId || "Pendiente";
+
+  const selectedHere = data.ownerClientId === clientId;
+  const activeHere = Boolean(data.ownerReady && selectedHere);
+  const preparingHere = Boolean(selectedHere && !data.ownerReady);
+
+  if (activeHere) {
+    $("owner").textContent = "Esta pestaña · PROPIETARIA ACTIVA";
+  } else if (preparingHere) {
+    $("owner").textContent = data.ownerRole === "releasing"
+      ? "Liberando propiedad…"
+      : "Preparando propiedad…";
+  } else if (data.ownerClientId) {
+    $("owner").textContent = "Otra pestaña";
+  } else {
+    $("owner").textContent = "Sin propietario activo";
+  }
+
   if (typeof data.nestedWorkerConstructor === "boolean") {
     $("nestedWorker").textContent = data.nestedWorkerConstructor ? "Disponible" : "No expuesto";
   }
-  $("owner").textContent = data.ownerClientId
-    ? (data.ownerClientId === clientId ? "Esta pestaña" : "Otra pestaña")
-    : "Pendiente";
   if (data.requiredOpfsApis) {
     $("opfs").textContent = JSON.stringify(data.requiredOpfsApis);
   }
   if (data.removedFailedV4Directory === true) {
     $("opfs").textContent += " · V4 anterior eliminado";
   }
-  if (data.ownerReady) {
+
+  const activeDatabase = Boolean(data.ownerReady && data.databaseWorkerId);
+  $("status").disabled = !activeDatabase;
+  $("insert").disabled = !activeDatabase;
+  $("verify").disabled = !activeDatabase;
+  $("cleanup").disabled = !activeHere;
+  $("handoff").disabled = !activeHere || Number(data.connections) < 2;
+
+  if (activeHere) {
     $("connectionStatus").textContent =
-      "SharedWorker activo. SQLite tiene un único propietario.";
+      "Propietaria activa. SQLite está abierto y acepta operaciones.";
     $("connectionStatus").className = "status ok";
-    $("insert").disabled = false;
-    $("verify").disabled = false;
-    $("status").disabled = false;
-    $("cleanup").disabled = false;
+  } else if (activeDatabase) {
+    $("connectionStatus").textContent =
+      "SQLite está activo en otra pestaña. Puedes utilizarlo desde aquí.";
+    $("connectionStatus").className = "status ok";
+  } else if (preparingHere) {
+    $("connectionStatus").textContent = data.ownerRole === "releasing"
+      ? "Liberando los SyncAccessHandles antes de transferir la propiedad…"
+      : "Esta pestaña fue seleccionada. Esperando confirmación de SQLite…";
+    $("connectionStatus").className = "status warn";
+  } else if (data.handoffInProgress) {
+    $("connectionStatus").textContent = "Transferencia de propiedad en curso. Espera…";
+    $("connectionStatus").className = "status warn";
   } else {
-    $("insert").disabled = true;
-    $("verify").disabled = true;
-    $("cleanup").disabled = true;
-    $("connectionStatus").textContent = data.ownerClientId
-      ? "Pestaña registrada; esperando que el propietario de SQLite termine de inicializar."
-      : "Pestaña registrada; esperando elección de propietario.";
+    $("connectionStatus").textContent = "Esperando a que SQLite tenga un propietario activo.";
     $("connectionStatus").className = "status warn";
   }
 }
@@ -219,6 +246,28 @@ function connect() {
 
       if (message.kind === "state") {
         updateState(message);
+        return;
+      }
+
+      if (message.kind === "handoff-started") {
+        log("Liberando SQLite para transferir la propiedad a otra pestaña.");
+        return;
+      }
+
+      if (message.kind === "handoff-released") {
+        log("VFS pausado; SyncAccessHandles liberados sin borrar la base.");
+        return;
+      }
+
+      if (message.kind === "handoff-complete") {
+        log("Transferencia completada. Otra pestaña es ahora la propietaria activa.");
+        return;
+      }
+
+      if (message.kind === "handoff-error") {
+        log("ERROR al ceder la propiedad: " + message.error);
+        $("connectionStatus").textContent = message.error;
+        $("connectionStatus").className = "status bad";
         return;
       }
 
@@ -299,6 +348,13 @@ function connect() {
 }
 
 $("connect").addEventListener("click", connect);
+
+$("handoff").addEventListener("click", () => {
+  if (!port || !connected) return;
+  $("handoff").disabled = true;
+  port.postMessage({ type: "handoff" });
+  log("Solicitud de cesión de propiedad enviada al SharedWorker.");
+});
 
 $("status").addEventListener("click", async () => {
   try {
