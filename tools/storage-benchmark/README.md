@@ -126,6 +126,18 @@ Si los IDs de Worker son distintos, no se ha demostrado que Brave comparta el Sh
 
 Esta prueba valida el actor compartido y el acceso a SAH pool desde dos pestañas. No sustituye las pruebas posteriores de cierre abrupto del Worker, recuperación tras reiniciar Brave ni funcionamiento en el origen HTTPS definitivo.
 
+### Sonda de recuperación ante fallos (aislada de V8)
+
+La herramienta se sirve en `/recovery-probe/` y tiene su propio Dedicated Worker, SharedWorker, RUN_ID, VFS y archivo SQLite:
+
+- OPFS: `/prisma-sahpool-recovery-probe-v1`
+- Archivo SQLite: `/recovery-probe.sqlite3`
+- Protocolo: `recovery-fault-probe-1`
+
+No comparte ni elimina los datos de referencia de V8 (`/prisma-sahpool-sharedworker-probe-v5/sharedworker-probe.sqlite3`). Su failover exige que el nuevo propietario encuentre el archivo anterior y recupere al menos el último total confirmado si este era mayor que cero; así evita aceptar una base vacía como recuperación correcta.
+
+La sonda incluye tres ensayos: terminación del Dedicated Worker en reposo sin notificar al coordinador; cierre del propietario con una transacción abierta antes de COMMIT; y cierre después de que COMMIT haya terminado pero antes de entregar el acuse. El tercer caso prueba pérdida de respuesta después de commit, **no** terminación dentro de la llamada COMMIT. La documentación paso a paso está en [recovery-probe/README.md](recovery-probe/README.md).
+
 ### Nota de arquitectura: SharedWorker y SyncAccessHandle
 
 `FileSystemSyncAccessHandle` y `createSyncAccessHandle()` están disponibles únicamente dentro de Dedicated Workers, no dentro de SharedWorkers. Por eso SQLite SAH pool no debe inicializarse directamente en el SharedWorker.
