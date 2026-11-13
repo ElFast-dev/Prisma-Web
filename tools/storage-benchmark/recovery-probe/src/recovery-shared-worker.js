@@ -1,6 +1,6 @@
 const SHARED_WORKER_ID = crypto.randomUUID();
 const RUN_ID = "prisma-sahpool-recovery-probe-v1";
-const BROKER_PROTOCOL = "recovery-fault-probe-2";
+const BROKER_PROTOCOL = "recovery-fault-probe-3";
 const NESTED_WORKER_AVAILABLE = typeof Worker === "function";
 
 const sessions = new Map();
@@ -16,8 +16,11 @@ let handoffInProgress = null;
 
 const HEARTBEAT_INTERVAL_MS = 5000;
 const HEARTBEAT_TIMEOUT_MS = 20000;
+const ACTIVATION_TIMEOUT_MS = 30000;
 let heartbeatTimer = null;
 let heartbeatSequence = 0;
+let activationSequence = 0;
+let activationAttempt = null;
 
 function send(port, message, transfer = []) {
   try { port.postMessage(message, transfer); } catch { /* Client closed. */ }
@@ -28,10 +31,10 @@ function sessionFor(port) {
   return clientId ? sessions.get(clientId) : null;
 }
 
-function publishState() {
+function stateSnapshot(kind = "state") {
   const owner = ownerClientId ? sessions.get(ownerClientId) : null;
-  const state = {
-    kind: "state",
+  return {
+    kind,
     workerId: SHARED_WORKER_ID,
     runId: RUN_ID,
     brokerProtocol: BROKER_PROTOCOL,
@@ -45,9 +48,122 @@ function publishState() {
     removedFailedV4Directory: owner?.removedFailedV4Directory ?? null,
     databaseDiagnostics: owner?.databaseDiagnostics || null,
     ownerReady: Boolean(ownerClientId && owner?.role === "owner" && databaseWorkerId),
-    handoffInProgress: handoffInProgress?.phase || null
+    handoffInProgress: handoffInProgress?.phase || null,
+    activationTimeoutMs: ACTIVATION_TIMEOUT_MS,
+    activationAttempt: activationAttempt ? {
+      clientId: activationAttempt.clientId,
+      activationId: activationAttempt.activationId,
+      terminationRequested: activationAttempt.terminationRequested,
+      startedAt: activationAttempt.startedAt
+    } : null,
+    sessions: [...sessions.values()].map((session) => ({
+      clientId: session.clientId,
+      role: session.role,
+      visibilityState: session.visibilityState || "unknown",
+      lifecycleState: session.lifecycleState || "unknown",
+      lastLifecycleEvent: session.lastLifecycleEvent || "registered",
+      lastLifecycleAt: session.lastLifecycleAt || session.registeredAt,
+      dedicatedWorkerPortAttached: Boolean(session.dbPort),
+      registeredAt: session.registeredAt,
+      activationId: activationAttempt?.clientId === session.clientId
+        ? activationAttempt.activationId
+        : null
+    }))
   };
+}
+
+function publishState() {
+  const state = stateSnapshot();
   for (const session of sessions.values()) send(session.port, state);
+}
+
+function clearActivationAttempt(clientId = null) {
+  if (!activationAttempt) return;
+  if (clientId && activationAttempt.clientId !== clientId) return;
+  if (activationAttempt.timer) clearTimeout(activationAttempt.timer);
+  activationAttempt = null;
+}
+
+function requestActivationCandidateTermination(activationId) {
+  const attempt = activationAttempt;
+  if (!attempt || attempt.activationId !== activationId ||
+      attempt.terminationRequested) return;
+
+  const candidate = sessions.get(attempt.clientId);
+  if (!candidate || ownerClientId !== attempt.clientId ||
+      candidate.role !== "starting") return;
+
+  attempt.terminationRequested = true;
+  candidate.role = "activation-unresponsive";
+  publishState();
+
+  send(candidate.port, {
+    kind: "terminate-activation-candidate",
+    activationId,
+    reason: "activation-timeout",
+    timeoutMs: ACTIVATION_TIMEOUT_MS
+  });
+}
+
+function completeActivationCandidateTermination(clientId, message) {
+  const attempt = activationAttempt;
+  if (!attempt || attempt.clientId !== clientId ||
+      attempt.activationId !== message.activationId ||
+      !attempt.terminationRequested) return;
+
+  if (attempt.timer) clearTimeout(attempt.timer);
+  const candidate = sessions.get(clientId);
+  if (candidate) {
+    candidate.role = "failed";
+    candidate.databaseWorkerId = null;
+    try { candidate.dbPort?.close(); } catch {}
+    candidate.dbPort = null;
+  }
+
+  ownerClientId = null;
+  databaseWorkerId = null;
+  activationAttempt = null;
+
+  const handoff = handoffInProgress;
+  if (handoff?.phase === "activating" && handoff.toClientId === clientId) {
+    handoffInProgress = {
+      controlId: handoff.controlId,
+      phase: "restoring",
+      fromClientId: clientId,
+      toClientId: handoff.fromClientId,
+      expectedRows: handoff.expectedRows,
+      databaseImage: handoff.databaseImage || null,
+      failure: "El candidato no respondió a la activación y su Worker fue terminado."
+    };
+    activateNextOwner({
+      excludeClientId: clientId,
+      preferredClientId: handoff.fromClientId,
+      expectExistingDb: true,
+      expectedMinRows: handoff.expectedRows,
+      databaseImage: handoff.databaseImage || null
+    });
+    return;
+  }
+
+  if (handoff?.phase === "restoring" && handoff.toClientId === clientId) {
+    handoffInProgress = null;
+    publishState();
+    for (const session of sessions.values()) {
+      send(session.port, {
+        kind: "handoff-failed",
+        error: "Falló la activación del candidato y tampoco pudo restaurarse el propietario anterior.",
+        totalRows: persistedTotalRows,
+        databaseDiagnostics: null
+      });
+    }
+    return;
+  }
+
+  activateNextOwner({
+    excludeClientId: clientId,
+    expectExistingDb: attempt.expectExistingDb,
+    expectedMinRows: attempt.expectedMinRows
+  });
 }
 
 function requestOwnerTermination(owner, reason) {
@@ -147,6 +263,7 @@ function activateNextOwner({
   expectedMinRows = 0,
   databaseImage = null
 } = {}) {
+  clearActivationAttempt();
   databaseWorkerId = null;
   ownerClientId = null;
 
@@ -167,8 +284,23 @@ function activateNextOwner({
 
   ownerClientId = candidate.clientId;
   candidate.role = "starting";
+  const activationId = "activation-" + String(++activationSequence);
+  activationAttempt = {
+    clientId: candidate.clientId,
+    activationId,
+    expectExistingDb,
+    expectedMinRows,
+    startedAt: Date.now(),
+    terminationRequested: false,
+    timer: null
+  };
+  activationAttempt.timer = setTimeout(
+    () => requestActivationCandidateTermination(activationId),
+    ACTIVATION_TIMEOUT_MS
+  );
   const activation = {
     type: "activate",
+    activationId,
     clientId: candidate.clientId,
     runId: RUN_ID,
     expectExistingDb,
@@ -189,6 +321,9 @@ function removeSession(clientId, reason) {
   if (!session) return;
 
   const wasOwner = ownerClientId === clientId;
+  if (activationAttempt?.clientId === clientId) {
+    clearActivationAttempt(clientId);
+  }
   const cancelledHandoff =
     handoffInProgress &&
     (handoffInProgress.fromClientId === clientId ||
@@ -355,8 +490,13 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
   }
 
   if (message.kind === "activated") {
-    if (ownerClientId !== ownerClientIdForPort) return;
+    if (ownerClientId !== ownerClientIdForPort ||
+        !activationAttempt ||
+        activationAttempt.clientId !== ownerClientIdForPort ||
+        activationAttempt.activationId !== message.activationId ||
+        activationAttempt.terminationRequested) return;
 
+    clearActivationAttempt(ownerClientIdForPort);
     databaseWorkerId = message.dedicatedWorkerId;
     persistedTotalRows = Number.isFinite(message.totalRows)
       ? message.totalRows
@@ -423,8 +563,13 @@ function onDatabaseMessage(ownerClientIdForPort, message) {
   }
 
   if (message.kind === "activation-error") {
-    if (ownerClientId !== ownerClientIdForPort) return;
+    if (ownerClientId !== ownerClientIdForPort ||
+        !activationAttempt ||
+        activationAttempt.clientId !== ownerClientIdForPort ||
+        activationAttempt.activationId !== message.activationId ||
+        activationAttempt.terminationRequested) return;
 
+    clearActivationAttempt(ownerClientIdForPort);
     owner.role = "failed";
     owner.opfsApis = message.requiredOpfsApis || null;
     owner.databaseDiagnostics = message.databaseDiagnostics || null;
@@ -615,6 +760,10 @@ function registerSession(port, message, dbPort) {
     dbPort,
     role: "standby",
     registeredAt: Date.now(),
+    visibilityState: message.visibilityState || "unknown",
+    lifecycleState: message.lifecycleState || "registered",
+    lastLifecycleEvent: "register",
+    lastLifecycleAt: Date.now(),
     heartbeatPending: null,
     lastHeartbeatAt: null,
     terminationRequested: false,
@@ -709,6 +858,25 @@ function handleClientMessage(port, message, dbPort) {
   }
 
   if (message.type === "heartbeat") return;
+
+  if (message.type === "getState") {
+    send(port, stateSnapshot("state-snapshot"));
+    return;
+  }
+
+  if (message.type === "lifecycle") {
+    session.visibilityState = message.visibilityState || "unknown";
+    session.lifecycleState = message.lifecycleState || "unknown";
+    session.lastLifecycleEvent = message.eventName || "lifecycle";
+    session.lastLifecycleAt = Date.now();
+    publishState();
+    return;
+  }
+
+  if (message.type === "activationCandidateTerminated") {
+    completeActivationCandidateTermination(session.clientId, message);
+    return;
+  }
 
   if (message.type === "cancelRequest") {
     for (const [brokerRequestId, request] of pending) {
