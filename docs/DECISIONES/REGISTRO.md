@@ -39,7 +39,7 @@ Los requisitos y recursos visuales migrados son candidatos a revalidar, no aprob
 | ID | Propuesta | Estado |
 |---|---|---|
 | T-001 | React + TypeScript + Vite y otras opciones de primer nivel. | Candidatas; comparar con criterios de calidad y pruebas, sin preferencia automática por soluciones básicas |
-| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | Benchmark en Brave Android completado hasta 10.000 películas/30.000 visionados: SQLite SAH pool gana en inserción y algunas consultas; integridad correcta. Aún falta resolver concurrencia multi-pestaña, verificar limpieza OPFS, comparar OPFS-WL y probar recuperación/migraciones antes de seleccionar |
+| T-002 | Dexie 4.4.7/IndexedDB frente a SQLite WASM/OPFS para el diario inicial. | Benchmark repetido en Brave Android hasta 30.000 visionados: SQLite SAH pool gana en inserción (2,70×–4,40×); integridad correcta. removeVfs() = true y el directorio OPFS de prueba está ausente en las tres cargas. Falta verificar bases IndexedDB residuales, concurrencia multi-pestaña, OPFS-WL/actor compartido y recuperación/migraciones |
 | T-003 | Cache Storage para shell e imágenes reconstruibles. | Candidata; nunca será la única copia de datos personales |
 | T-004 | Web Workers, OPFS o WebAssembly. | Evaluar como candidatas serias y elegir según benchmarks y calidad; no incluir ni descartar por prejuicio |
 | T-005 | Firebase Hosting clásico en Spark como alojamiento estático con hostname web.app dedicado. | Candidato recomendado de 0 USD; falta aprobar proyecto/site ID y verificar configuración sin facturación. GitHub Pages queda desaconsejado por origen compartido |
@@ -121,19 +121,31 @@ Fuentes técnicas: [paquete oficial SQLite WASM](https://github.com/sqlite/sqlit
 
 | Dataset | Inserción Dexie | Inserción SQLite | Ventaja SQLite |
 |---|---:|---:|---:|
-| 1.000 películas / 3.000 visionados | 993,1 ms | 359,5 ms | 2,76× |
-| 5.000 películas / 15.000 visionados | 5.320,9 ms | 1.293,0 ms | 4,12× |
-| 10.000 películas / 30.000 visionados | 10.578,7 ms | 2.441,5 ms | 4,33× |
+| 1.000 películas / 3.000 visionados | 988,8 ms | 366,0 ms | 2,70× |
+| 5.000 películas / 15.000 visionados | 5.051,3 ms | 1.324,0 ms | 3,81× |
+| 10.000 películas / 30.000 visionados | 10.459,6 ms | 2.376,1 ms | 4,40× |
 
-En 10.000 películas, las medianas de consultas fueron: por año 17,8 ms Dexie vs 4,0 ms SQLite; título 2,0 vs 1,6 ms; visionados por película 3,0 vs 2,2 ms. Actualización de nota: 10,4 ms Dexie vs 12,7 ms SQLite. Rollback: 4,6 ms Dexie vs 12,8 ms SQLite. Reapertura: 207,5 ms Dexie vs 6,7 ms SQLite.
+En el informe más reciente de 10.000 películas, las medianas fueron: consulta por año 11,9 ms Dexie vs 4,2 ms SQLite; título 1,9 vs 1,6 ms; visionados por película 2,6 vs 2,2 ms. Actualización de nota: 13,3 vs 8,8 ms; rollback: 12,7 vs 9,5 ms; reapertura: 175,4 vs 6,7 ms. La apertura inicial de DB fue 58,9 ms Dexie vs 250,5 ms SQLite; el módulo WASM y el VFS añadieron aproximadamente 93,7 + 249,5 ms de inicialización mediana en esa ronda. Las operaciones de una sola fila no muestran una ventaja tan grande como la inserción por lotes.
 
 **Integridad:** integrityPassed = true en los tres informes y en ambos motores: conteos esperados, nota actualizada, rollback sin registro parcial y recuento tras reapertura correctos.
 
 **Interpretación:** SQLite/SAH pool demuestra una ventaja marcada en lotes e inserciones, y una ventaja en consultas por año y reapertura. Las búsquedas simples y cambios unitarios presentan diferencias pequeñas o variables. El tiempo total no es una comparación simétrica: incluye inicialización del Worker/WASM/VFS para SQLite, pero Dexie ya estaba importado. El arranque frío de SQLite agrega aproximadamente 174–179 ms de inicialización WASM+VFS por ronda, antes de la apertura de la DB.
 
 **Pendientes que impiden una decisión definitiva:**
-1. SAH pool reserva SyncAccessHandles y no ofrece concurrencia multi-pestaña transparente; evaluar OPFS-WL/OPFS o un único actor coordinado.
-2. Los informes muestran crecimiento de estimate().usage (0 → 1,52 MB → 4,70 MB → 9,45 MB). Es una estimación del navegador y no demuestra por sí sola una fuga. La herramienta se actualizó para registrar removeVfs() y comprobar si queda el directorio OPFS propio; repetir una ronda pequeña y revisar esos campos antes de volver a ejecutar datasets grandes.
-3. Medir tamaño descargado del WASM, memoria/impacto en interfaz, migraciones y exportación/restauración cifrada.
+1. SAH pool reserva SyncAccessHandles y no ofrece concurrencia multi-pestaña transparente; evaluar OPFS-WL o un único actor coordinado mediante SharedWorker/Web Locks.
+2. La última tanda confirma removeVfs() = true y ausencia del directorio OPFS de prueba después de 1k, 5k y 10k. El uso de estimate() siguió aumentando (delta aproximado de 0,80 MB, 3,88 MB y 4,31 MB, respectivamente); esto no demuestra una fuga de OPFS porque el VFS fue eliminado. La versión más reciente del benchmark enumera las bases Dexie con el prefijo del benchmark para detectar posibles restos IndexedDB; esa verificación aún no aparece en los informes recibidos.
+3. Medir tamaño descargado del WASM, memoria/impacto en interfaz, migraciones, recuperación y exportación/restauración cifrada.
 
 **Estado de decisión:** SQLite/WASM es ahora la candidata de mejor rendimiento para el diario, pero SAH pool no es aún la variante de producción aprobada. Dexie sigue como alternativa de menor complejidad y mejor concurrencia nativa multi-pestaña.
+
+
+### Actualización de limpieza y almacenamiento estimado — 12 de noviembre de 2026
+
+Se recibieron nuevos informes con la versión del benchmark que registra limpieza OPFS:
+- 1k/3k: removeVfs() = true en las tres rondas y opfsCleanup.exists = false.
+- 5k/15k: los mismos resultados.
+- 10k/30k: los mismos resultados.
+
+Esto verifica la eliminación del VFS y la ausencia del directorio OPFS exclusivo de la prueba. No explica por sí solo el crecimiento de StorageManager.estimate().usage: en estos informes las variaciones posteriores fueron aproximadamente +0,80 MB, +3,88 MB y +4,31 MB. Los valores son estimaciones del navegador, no prueba directa de archivos retenidos.
+
+El benchmark se amplió para enumerar bases IndexedDB cuyo nombre empiece por prisma-dexie-benchmark- después de cada tanda. Falta recibir un informe que incluya indexedDbCleanup y cleanupVerification.dexieBenchmarkDatabasesAbsent; no atribuir el delta a Dexie hasta revisar ese resultado.
