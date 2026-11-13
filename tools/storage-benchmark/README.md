@@ -136,7 +136,7 @@ La herramienta se sirve en `/recovery-probe/` y tiene su propio Dedicated Worker
 
 No comparte ni elimina los datos de referencia de V8 (`/prisma-sahpool-sharedworker-probe-v5/sharedworker-probe.sqlite3`). Su failover exige que el nuevo propietario encuentre el archivo anterior y recupere al menos el último total confirmado si este era mayor que cero; así evita aceptar una base vacía como recuperación correcta.
 
-La sonda incluye tres ensayos: terminación del Dedicated Worker en reposo sin notificar al coordinador; cierre del propietario con una transacción abierta antes de COMMIT; y cierre después de que COMMIT haya terminado pero antes de entregar el acuse. El tercer caso prueba pérdida de respuesta después de commit, **no** terminación dentro de la llamada COMMIT. La documentación paso a paso está en [recovery-probe/README.md](recovery-probe/README.md).
+La sonda incluye tres ensayos: terminación del Dedicated Worker en reposo sin notificar al coordinador; cierre del propietario con una transacción abierta antes de COMMIT; y cierre después de que COMMIT haya terminado pero antes de entregar el acuse. La revisión `recovery-fault-probe-2` añade heartbeat del coordinador (cada 5 s, timeout de 20 s), solicitud de terminación del Worker a su página propietaria y confirmación de retirada antes de promover la reserva. Si la página propietaria no responde, no se abre una segunda conexión SAH pool. El resultado del primer ensayo y sus límites están en `recovery-probe/README.md`. El tercer caso prueba pérdida de respuesta después de commit, **no** terminación dentro de la llamada COMMIT. La documentación paso a paso está en [recovery-probe/README.md](recovery-probe/README.md).
 
 ### Nota de arquitectura: SharedWorker y SyncAccessHandle
 
