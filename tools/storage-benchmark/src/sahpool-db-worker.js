@@ -417,8 +417,31 @@ async function handle(request) {
 }
 
 async function processRequest(request) {
+  const trace = {
+    brokerRequestId: request?.brokerRequestId || null,
+    requestId: request?.requestId || null,
+    clientId: request?.clientId || null,
+    operation: request?.type || null
+  };
+
   try {
+    if (trace.brokerRequestId) {
+      send({ kind: "broker-trace", stage: "dedicated-processing", ...trace });
+    }
+
     const result = await handle(request);
+
+    if (trace.brokerRequestId) {
+      send({
+        kind: "broker-trace",
+        stage: "dedicated-completed",
+        ...trace,
+        ok: result?.ok !== false,
+        resultKind: result?.kind || null,
+        totalRows: Number.isFinite(result?.totalRows) ? result.totalRows : null
+      });
+    }
+
     if (result?.kind === "released" && result.databaseImage instanceof ArrayBuffer) {
       const image = result.databaseImage;
       delete result.databaseImage;
@@ -427,6 +450,15 @@ async function processRequest(request) {
       send(result);
     }
   } catch (error) {
+    if (trace.brokerRequestId) {
+      send({
+        kind: "broker-trace",
+        stage: "dedicated-error",
+        ...trace,
+        error: error?.message || String(error)
+      });
+    }
+
     send({
       kind: request?.type === "activate"
         ? "activation-error"
@@ -456,6 +488,18 @@ self.addEventListener("message", (event) => {
   port = event.ports[0];
   port.onmessage = (messageEvent) => {
     const request = messageEvent.data;
+
+    if (request?.brokerRequestId) {
+      send({
+        kind: "broker-trace",
+        stage: "dedicated-received",
+        brokerRequestId: request.brokerRequestId,
+        requestId: request.requestId || null,
+        clientId: request.clientId || null,
+        operation: request.type || null
+      });
+    }
+
     queue = queue.then(() => processRequest(request));
   };
   port.start();
