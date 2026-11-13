@@ -4,10 +4,10 @@ Sonda técnica independiente para probar escrituras solicitadas por dos clientes
 
 ## Instalación y ejecución
 
-Desde Termux, ejecuta esta única línea. El instalador descarga los seis archivos, verifica sus huellas SHA-1 de Git y se detiene sin sobrescribir archivos locales distintos:
+Desde Termux, ejecuta esta única línea. El instalador se descarga desde un commit inmutable (no desde `main`), descarga los seis archivos desde el commit fijo `360eeb656eb412c0f72c0d3cbaab39e4301cd475`, verifica sus huellas SHA-1 de Git y se detiene sin sobrescribir archivos locales distintos:
 
 ```sh
-python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/main/tools/storage-benchmark/install-concurrency-auto-test.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/6af0d181ea4bcfbad243ee0b217b3204e67c85e7/tools/storage-benchmark/install-concurrency-auto-test.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
 ```
 
 No reinstala dependencias y no reinicia el servidor si ya está activo. Después abre:
