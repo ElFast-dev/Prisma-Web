@@ -182,3 +182,42 @@ Con el servidor 18768 todavía activo, recarga una vez:
 `http://127.0.0.1:18768/opfs-wl-auto-test/`
 
 Ejecuta una sola vez con `require-corp` y comparte el informe completo. No cambies a `credentialless` por el fallo de la imagen no-CORS: en ambas ejecuciones el mismo póster sí cargó con CORS. No reinicies el servidor ni borres datos del sitio. Los puertos 18767 y la aplicación Prisma permanecen fuera de esta sonda.
+
+
+## Tercera ejecución observada y revisión diagnóstica 4 (13-11-2026)
+
+La revisión 3 confirmó que la tabla seguía ausente después de la rutina de creación del esquema. La prueba terminó **NO APROBADA** durante la inicialización:
+
+- RUN_ID: `prisma-opfs-wl-auto-9dc4693d-7d38-4fd7-812a-8552f069fb3f`
+- COOP `same-origin`, COEP `require-corp`, `crossOriginIsolated = true`.
+- SharedArrayBuffer, Atomics.waitAsync, Web Locks y OPFS: disponibles.
+- SQLite núcleo `3.54.1`, constructor `OpfsWlDb` disponible y VFS `opfs-wl` registrado.
+- La conexión A permanecía abierta y con un puntero SQLite válido.
+- La consulta de diagnóstico devolvió `schemaTables: []`; no se pudo confirmar la tabla `writes`.
+- No se confirmaron filas de referencia, transacciones, 605 filas, reapertura ni limpieza.
+- El póster de TMDB falló no-CORS y cargó con CORS a 500 × 750, igual que en las pruebas anteriores.
+
+El resultado no demuestra incompatibilidad del navegador ni del VFS. Confirma que la rutina de preparación no dejó visible la tabla. Se debe conservar el informe y el directorio OPFS exclusivo del RUN_ID, sin borrarlo ni reutilizarlo.
+
+### Revisión 4: ejecución DDL directa y diagnóstico de la identidad de la base
+
+La revisión 4 modifica únicamente el Worker:
+
+1. Ejecuta un único bloque SQL como cadena, directamente sobre la conexión abierta, sin envolver la creación del esquema en el helper de reintento.
+2. Captura las sentencias SQL que el método `db.exec()` prepara mediante `saveSql`.
+3. Registra antes y después `PRAGMA schema_version`, nombre de archivo de la conexión, VFS efectivo, indicador de solo lectura y `PRAGMA database_list`.
+4. Si la tabla sigue ausente, agrega `page_count`, cambios totales y puntero SQLite al diagnóstico.
+
+La API oficial OO1 documenta que `OpfsWlDb` ofrece la funcionalidad de `OpfsDb` y que `DB.exec()` ejecuta sentencias SQL; la extensión `saveSql` permite registrar las sentencias procesadas. Esta revisión busca distinguir entre un problema al despachar el DDL, una conexión de solo lectura o una identidad/VFS inesperada. No presupone cuál de esas causas explica el resultado.
+
+**La revisión 4 es instrumental y experimental; no es una aceptación ni una prueba de que la creación de tabla ya funcione.**
+
+Instalador seguro: `install-opfs-wl-auto-test-revision-4.py`, fijado al commit `3fe38b4853a0c314810c7e979912714dfc7e6ee0`. Comando para Termux:
+
+```sh
+python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.com/ElFast-dev/Prisma-Web/3fe38b4853a0c314810c7e979912714dfc7e6ee0/tools/storage-benchmark/install-opfs-wl-auto-test-revision-4.py'; exec(compile(urlopen(u, timeout=30).read(), u, 'exec'))"
+```
+
+Este instalador modifica exclusivamente `opfs-wl-auto-test/src/opfs-wl-db-worker.js`, comprueba el hash del servidor y del archivo destino, y reconoce las versiones instaladas anteriores de ese Worker. No cambia SQLite WASM, dependencias, HTML, servidor ni datos OPFS.
+
+Con el servidor 18768 activo, recarga una vez `http://127.0.0.1:18768/opfs-wl-auto-test/` y ejecuta una sola vez con `require-corp`. Comparte el informe completo, sobre todo `schemaBefore`, `schemaAfter`, `preparedSchemaSql`, `schemaTables` y `databaseList`. No reinicies el servidor ni borres los directorios OPFS de las ejecuciones anteriores.
