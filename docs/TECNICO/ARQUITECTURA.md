@@ -223,9 +223,9 @@ Fuentes: [guía oficial de persistencia OPFS](https://sqlite.org/wasm/doc/tip/pe
 
 Para el primer diario local, **SQLite WASM + OPFS pasa a ser la candidata principal por rendimiento**: la prueba en Brave del Galaxy A03 muestra una ventaja consistente de 2,70× a 4,40× en inserciones frente a Dexie. Dexie 4.4.7 sigue siendo la alternativa de menor complejidad y concurrencia natural mediante IndexedDB. La elección definitiva depende de resolver el acceso multi-pestaña y completar pruebas de recuperación.
 
-No se elige porque sea la alternativa más básica. Se elige provisionalmente porque combina una biblioteca madura, migraciones y transacciones, almacenamiento nativo del navegador y menos restricciones de despliegue/concurrencia que SQLite OPFS. No añade sincronización ni requiere servicios externos.
+La ventaja de rendimiento no basta para aprobar SQLite por sí sola. La configuración de producción debe ofrecer una sola autoridad de datos, coordinación fiable entre pestañas, recuperación ante cierre inesperado, migraciones y copias restaurables. El tamaño del WASM y su coste de arranque también deben medirse.
 
-**SQLite WASM + OPFS no queda descartado.** Se mantiene como alternativa seria: la sonda real confirmó OPFS y SyncAccessHandle en Worker en Brave Android. El benchmark comparará el paquete SQLite WASM 3.54.1-build1 con Dexie; la decisión dependerá del rendimiento real, integridad, tamaño descargado, memoria, recuperación y concurrencia.
+**Dexie 4.4.7 no queda descartado.** Sigue siendo la alternativa de menor complejidad porque IndexedDB coordina transacciones de distintas pestañas de forma nativa. SQLite solo la sustituirá si resolvemos con evidencia su acceso compartido y su ciclo de vida en el Galaxy A03.
 
 No se deben mantener dos bases autoritativas ni sincronizarlas entre sí. La decisión final elegirá un único almacenamiento canónico.
 
