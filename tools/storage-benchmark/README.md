@@ -596,3 +596,17 @@ El uso de `OpfsWlDb`, `DB.transaction("IMMEDIATE", ...)` y `DB.exec()` coincide 
 Siguiente paso: sonda mínima y aislada, con RUN_ID nuevo, comparación de `opfs-wl` y `opfs`, una fila por operación, integridad entre fases y reapertura. No volver a cargar la base fallida ni limpiar ejecuciones previas.
 
 Detalle y trazas: [OPFS-WL AutoTest README](opfs-wl-auto-test/README.md).
+
+## Comparación funcional de OPFS-WL y OPFS clásico (13-11-2026)
+
+La sonda con dos Dedicated Workers independientes produjo resultados distintos según el VFS:
+
+- **OPFS clásico (`opfs)):** completó todas las fases. Tras autocommit concurrente, dos tandas `BEGIN IMMEDIATE` (una fila y 25 filas por Worker), cierre y reapertura de ambas conexiones, ambas verificaron `quick_check=ok`, `integrity_check=ok` y 57 filas (A=29, B=28).
+- **OPFS-WL (`opfs-wl`):** ambos Workers reportaron una inserción concurrente, pero la verificación encontró 4 filas en vez de 5 (A=3, B=1). Las comprobaciones estructurales de esa instantánea devolvieron `ok`; no se identificó la causa y la sonda se detuvo antes de las fases posteriores.
+
+OPFS clásico pasa **este escenario controlado** y queda como candidato principal para nuevas validaciones. OPFS-WL permanece sin aprobación. Ninguno de estos resultados, por sí solo, selecciona definitivamente la arquitectura de Prisma: faltan repetición con RUN_ID independientes, persistencia tras recargar, recuperación ante cierre abrupto y comparación final con SharedWorker + SAH pool.
+
+RUN_ID OPFS-WL: `prisma-opfs-lock-diag-482fb3aa-5879-40e2-873d-044161ba69c7`.  
+RUN_ID OPFS clásico: `prisma-opfs-lock-diag-b23f86e8-d6f0-4c14-bd66-13df45cb4bee`.
+
+Informe detallado: [opfs-lock-diagnostic-results-2026-11-13.md](opfs-lock-diagnostic-results-2026-11-13.md). Ambos directorios OPFS se conservaron; no limpiar, reparar ni reutilizar esos RUN_ID.
