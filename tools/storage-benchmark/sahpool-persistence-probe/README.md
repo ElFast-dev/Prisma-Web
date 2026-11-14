@@ -1,0 +1,60 @@
+# Prisma · SAH Pool Persistence Probe V1
+
+Prueba aislada de persistencia para SQLite WASM 3.54.1 usando el VFS `opfs-sahpool`. Compara el resultado con `opfs` a través de creación, cierre de la conexión, recarga de la página y reapertura manual de Brave.
+
+## Requisitos
+
+- Proyecto `~/prisma-storage-benchmark` con `node_modules/@sqlite.org/sqlite-wasm` 3.54.1-build1 en la raíz.
+- Servidor `serve-opfs-wl.py` ya activo en puerto 18768.
+- OPFS, Dedicated Worker y Web Crypto disponibles en Brave.
+- No hace falta habilitar SharedArrayBuffer o COOP/COEP específicamente para SAH pool; el servidor actual conserva sus cabeceras habituales.
+
+No instala dependencias, no reinicia servidores ni toca el VFS SAH pool principal, las bases V8 o pruebas anteriores.
+
+## URL
+
+`http://127.0.0.1:18768/sahpool-persistence-probe/`
+
+Instalar esta carpeta en la raíz publicada por el puerto 18768: `~/prisma-storage-benchmark/sahpool-persistence-probe/`.
+
+## Protección del almacenamiento
+
+La herramienta registra e instala exactamente estas opciones:
+
+- `name: "prisma_sahpool_persistence_v1"`
+- `directory: "/prisma-sahpool-persistence-probe-v1"`
+- `initialCapacity: 6`
+- `clearOnInit: false`
+- `preserveOnInitFailure: true`
+
+La carpeta es separada del VFS principal de Prisma. `clearOnInit=false` evita limpiar el pool al abrir. `preserveOnInitFailure=true` hace que un fallo de inicialización cierre los manejadores que se hayan abierto pero preserve el almacenamiento subyacente, en lugar de borrar el VFS. Estas opciones están disponibles en SQLite WASM 3.54.1. El VFS usa un nombre de archivo virtual absoluto `/<RUN_ID>.sqlite3`.
+
+No se llama a `removeVfs()`, `unlink()`, `wipeFiles()` ni a ninguna función de limpieza. No hay botón de borrado. No intentes reparar un RUN_ID que falle.
+
+## Protocolo
+
+1. Abre la URL base sin parámetro `run`. Se genera un RUN_ID aleatorio y se instala el VFS SAH pool con las opciones protegidas.
+2. Pulsa «Crear base sintética de 57 registros». Guarda 29 filas A, 28 filas B, un manifiesto con la huella SHA-256 y una tabla de historial de sesiones. Ejecuta `quick_check` e `integrity_check`, y cierra la conexión.
+3. Pulsa «Recargar y verificar persistencia». Un nuevo contexto de página y Dedicated Worker vuelve a instalar el mismo VFS sin borrar el directorio y abre la misma ruta virtual. Debe recuperar los mismos registros y la misma huella.
+4. Después de aprobar la recarga, pulsa «Preparar prueba tras cerrar Brave». Copia la URL completa, cierra Brave por completo y vuelve a abrir exactamente esa dirección.
+5. Comparte el informe completo, incluido RUN_ID, SHA-256, conteos, historial de sesiones, opciones del VFS y datos de capacidad del pool.
+
+La fase `after-close-N` se declara manualmente; la página no puede certificar por sí sola el cierre completo del proceso Brave.
+
+## Resultados esperados
+
+- SQLite core 3.54.1, paquete 3.54.1-build1, VFS `prisma_sahpool_persistence_v1`.
+- 57 filas únicas: A=29 y B=28.
+- SHA-256 esperado igual al observado después de cada reapertura.
+- `quick_check=["ok"]`, `integrity_check=["ok"]`.
+- `journal_mode=delete`, `synchronous=2` (FULL), `readOnly=0`.
+- Pool con capacidad informada y el archivo virtual esperado en `getFileNames()` cuando esté asignado.
+- Historial de sesiones con `seed-created`, `after-reload` y `after-close-N` conforme se ejecuten.
+
+## Alcance
+
+Esta prueba mide persistencia del archivo virtual SAH pool entre sesiones de página/navegador. No mide concurrencia de varias pestañas ni fallos de energía. El diseño de Prisma mantiene un único propietario SQLite en SharedWorker/worker coordinado; SAH pool no debe abrirse independientemente desde varias pestañas. La concurrencia entre clientes debe permanecer mediada por el propietario único.
+
+La prueba no aprueba por sí sola toda la arquitectura de Prisma. Después de ejecutarla se compararán los resultados con OPFS clásico y se cerrará la decisión del VFS/propietario.
+
+**Estado al publicar:** paquete preparado y validado estáticamente; pendiente de ejecución real en Brave.
