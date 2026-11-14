@@ -42,12 +42,12 @@ El workflow `.github/workflows/framework-comparison-ci.yml` ejecuta dos trabajos
 2. Ejecuta un único `npm ci` para el framework.
 3. Compila y mide el resultado de producción; React Router también pasa TypeScript.
 4. Ejecuta un único `npm ci` para las herramientas E2E.
-5. Instala Chromium y ejecuta los 10 escenarios del framework seleccionado.
+5. Instala Chromium y ejecuta los 14 escenarios del framework seleccionado.
 6. Guarda el informe de Playwright, las trazas y las capturas de los fallos como artefactos de GitHub durante 14 días.
 
 La caché reutiliza descargas de npm, no la carpeta `node_modules`. Cada trabajo vuelve a hacer una instalación limpia desde su lockfile. Playwright recomienda no almacenar los binarios de sus navegadores en caché por defecto porque restaurarlos puede tardar tanto como descargarlos; por eso Chromium se instala en el runner que lo necesita.
 
-La suite compartida comprueba portada, navegación, búsqueda, filtros y orden, calificación, persistencia del tema, manifiesto PWA, Service Worker, funcionamiento offline, errores JavaScript y accesibilidad con axe-core. Cada escenario se ejecuta contra ambos frameworks, sin que uno espere a que el otro termine.
+La suite compartida comprueba portada, diseño adaptable a móvil y escritorio, navegación, uso de filtros con teclado, búsqueda por título/género/año y búsquedas sin coincidencias, filtros y orden real por año, calificación, rutas inexistentes, persistencia del tema, manifiesto PWA, Service Worker, funcionamiento offline, errores JavaScript y accesibilidad con axe-core. Cada uno de los 14 escenarios se ejecuta contra ambos frameworks.
 
 ### Preparación de lockfiles
 
@@ -58,6 +58,12 @@ El workflow `.github/workflows/prepare-framework-lockfiles.yml` se activa cuando
 La auditoría está separada en `.github/workflows/dependency-security.yml`. Se ejecuta para cambios de dependencias en solicitudes de integración y tiene una programación semanal cuando el workflow esté en la rama principal del repositorio. También se puede lanzar manualmente desde GitHub Actions una vez disponible en la rama predeterminada.
 
 Dependabot revisa semanalmente las dependencias npm de los tres proyectos y las acciones de GitHub Actions. Las actualizaciones se proponen como cambios revisables; no se aceptan automáticamente sin pasar por CI.
+
+### Revisión integral multibrowser
+
+Las ejecuciones habituales utilizan Chromium para obtener resultados rápidos y comparables en cada cambio. Cuando se necesite una revisión más amplia —por ejemplo, antes de proponer la integración o tras cambiar navegación, PWA, CSS o diálogos— se puede iniciar manualmente `Framework comparison CI` desde GitHub Actions y activar el parámetro `full_suite`. Esa modalidad amplía la matriz a Chromium, Firefox y WebKit para los dos frameworks (seis trabajos paralelos). Firefox utiliza un perfil de navegador de escritorio con viewport móvil porque Playwright no implementa en Firefox la misma emulación móvil de Chromium/WebKit; las pruebas de diseño siguen comprobando el ancho de 360 y 320 píxeles.
+
+No se ejecutan los tres navegadores en cada push porque son más costosos y el retorno de esa cobertura adicional es mayor en cambios que afectan a compatibilidad de navegador. La suite rápida continúa siendo obligatoria; la integral complementa, no reemplaza, esa comprobación.
 
 ### Evidencias
 
