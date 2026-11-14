@@ -64,6 +64,4 @@ jobs:
       - name: Start CI against the branch with committed lockfiles
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh workflow run framework-comparison-ci.yml --ref "${GITHUB_REF_NAME}"
-          gh workflow run dependency-security.yml --ref "${GITHUB_REF_NAME}"
+        run: gh workflow run framework-comparison-ci.yml --ref "${GITHUB_REF_NAME}"
