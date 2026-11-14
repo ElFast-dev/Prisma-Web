@@ -31,6 +31,10 @@ Las puntuaciones son de Chromium y emulación móvil, no mediciones del Galaxy A
 
 El resumen `lighthouse-summary.md` muestra las puntuaciones y métricas principales de las tres pantallas para cada candidato. Los informes detallados HTML y JSON permiten investigar diferencias.
 
+## Excepción explícita de dependencia transitiva
+
+Lighthouse CI incluye indirectamente `basic-ftp` mediante sus dependencias de proxy. La versión transitiva que resolvía el árbol inicial pertenecía a la rama 5.x y npm la marcó por advisories de seguridad recientes. El manifiesto fija `basic-ftp@6.2.6` mediante `overrides`, para que todo el árbol utilice la versión corregida. El workflow verifica la versión resuelta y ejecuta `npm audit`; si la sustitución no es compatible o no elimina los avisos, el build se detiene y se revisa la cadena antes de avanzar.
+
 ## Archivos de bloqueo
 
 Los tres `package-lock.json` están versionados en esta rama. GitHub Actions verifica la instalación reproducible con `npm ci`; en la primera actualización de una dependencia, `npm install` refresca el bloqueo y `npm ci` comprueba que puede reproducirse. Los cambios de lockfile se guardan únicamente en la rama experimental.
