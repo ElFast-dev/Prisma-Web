@@ -55,7 +55,9 @@ El workflow `.github/workflows/prepare-framework-lockfiles.yml` se activa cuando
 
 ### Auditoría de seguridad
 
-La auditoría está separada en `.github/workflows/dependency-security.yml`. Se ejecuta para cambios de dependencias en solicitudes de integración y tiene una programación semanal cuando el workflow esté en la rama principal del repositorio. También se puede lanzar manualmente desde GitHub Actions una vez disponible en la rama predeterminada.
+La preparación de lockfiles ejecuta `npm audit --audit-level=high` en los tres proyectos después de generar sus lockfiles. Esto consulta el árbol bloqueado sin instalar `node_modules`; no se repite en cada cambio visual. La auditoría separada de `.github/workflows/dependency-security.yml` añade análisis de seguridad para actualizaciones de dependencias y una ejecución semanal cuando el workflow esté disponible en la rama predeterminada del repositorio.
+
+**Aviso conocido que queda en seguimiento (14 de noviembre de 2026):** npm audit muestra cuatro referencias de bajo nivel asociadas a `deepmerge@4.3.1`, dependencia transitiva de `@sveltejs/vite-plugin-svelte@7.3.1`. El aviso oficial [GHSA-gcqx-w48m-w2h4 / CVE-2026-93753](https://github.com/advisories/ghsa-gcqx-w48m-w2h4) afecta a `deepmerge` 4.2.0–4.3.1 y todavía no declara una versión corregida. En esta muestra aparece como dependencia de desarrollo, no como código de ejecución de la aplicación desplegada. No se aplica `npm audit fix --force`: npm propone una bajada incompatible de SvelteKit a 0.0.30. El workflow muestra este aviso de bajo nivel, pero bloquea vulnerabilidades altas o críticas. Se revisará de nuevo cuando el proyecto upstream publique una corrección o cambie la cadena de dependencias.
 
 Dependabot revisa semanalmente las dependencias npm de los tres proyectos y las acciones de GitHub Actions. Las actualizaciones se proponen como cambios revisables; no se aceptan automáticamente sin pasar por CI.
 
