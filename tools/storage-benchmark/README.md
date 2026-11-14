@@ -601,7 +601,7 @@ Detalle y trazas: [OPFS-WL AutoTest README](opfs-wl-auto-test/README.md).
 
 La sonda con dos Dedicated Workers independientes produjo resultados distintos según el VFS:
 
-- **OPFS clásico (`opfs)):** completó todas las fases. Tras autocommit concurrente, dos tandas `BEGIN IMMEDIATE` (una fila y 25 filas por Worker), cierre y reapertura de ambas conexiones, ambas verificaron `quick_check=ok`, `integrity_check=ok` y 57 filas (A=29, B=28).
+- **OPFS clásico (`opfs`):** completó todas las fases. Tras autocommit concurrente, dos tandas `BEGIN IMMEDIATE` (una fila y 25 filas por Worker), cierre y reapertura de ambas conexiones, ambas verificaron `quick_check=ok`, `integrity_check=ok` y 57 filas (A=29, B=28).
 - **OPFS-WL (`opfs-wl`):** ambos Workers reportaron una inserción concurrente, pero la verificación encontró 4 filas en vez de 5 (A=3, B=1). Las comprobaciones estructurales de esa instantánea devolvieron `ok`; no se identificó la causa y la sonda se detuvo antes de las fases posteriores.
 
 OPFS clásico pasa **este escenario controlado** y queda como candidato principal para nuevas validaciones. OPFS-WL permanece sin aprobación. Ninguno de estos resultados, por sí solo, selecciona definitivamente la arquitectura de Prisma: faltan repetición con RUN_ID independientes, persistencia tras recargar, recuperación ante cierre abrupto y comparación final con SharedWorker + SAH pool.
@@ -610,3 +610,22 @@ RUN_ID OPFS-WL: `prisma-opfs-lock-diag-482fb3aa-5879-40e2-873d-044161ba69c7`.
 RUN_ID OPFS clásico: `prisma-opfs-lock-diag-b23f86e8-d6f0-4c14-bd66-13df45cb4bee`.
 
 Informe detallado: [opfs-lock-diagnostic-results-2026-11-13.md](opfs-lock-diagnostic-results-2026-11-13.md). Ambos directorios OPFS se conservaron; no limpiar, reparar ni reutilizar esos RUN_ID.
+
+## OPFS Persistence Probe V1: reapertura después de cerrar Brave (13-11-2026)
+
+El usuario aportó el informe real de OPFS Persistence Probe V1. RUN_ID: `prisma-opfs-survival-a29c5f2e-f49f-4e57-85ed-e0106d31df25`.
+
+- VFS `opfs`, SQLite 3.54.1 / paquete 3.54.1-build1.
+- La base se creó con 57 registros sintéticos: A=29, B=28.
+- La primera recarga volvió a abrir y verificar el mismo archivo.
+- Tras el procedimiento manual de cierre completo declarado por el usuario, Brave volvió a abrir la URL preparada en fase `after-close-1`; una conexión SQLite nueva encontró los mismos 57 registros.
+- SHA-256 esperado y observado: `feb1859f51eeef189df729862f4e14b3875cdc7d25c0f0063e0b1e7f4b8d524a`.
+- `quick_check=["ok"]`, `integrity_check=["ok"]`, `distinctPayloads=57`.
+- El historial persistido contiene `seed-created`, `after-reload` y `after-close-1`, con tres PAGE_BOOT_ID distintos.
+- Metadatos: `journal_mode=delete`, `locking_mode=normal`, `synchronous=2`, `page_size=8192`, `readOnly=0`.
+
+**Conclusión:** OPFS clásico aprobó la persistencia de datos confirmados a través de siembra, recarga y reapertura manual del navegador en este escenario. La fase `after-close-1` es declarada por el usuario; la página no puede certificar telemétricamente que el proceso de Brave terminó por completo.
+
+La prueba no cubre terminación abrupta durante una transacción, antes/después de COMMIT, pérdida de energía, cierre forzado por Android, cuota agotada ni restauración de exportaciones. OPFS clásico sigue como candidato principal, no como arquitectura definitiva aprobada.
+
+RUN_ID preservado; no borrar ni reutilizar. Informe: [opfs-persistence-results-2026-11-13.md](opfs-persistence-results-2026-11-13.md).
