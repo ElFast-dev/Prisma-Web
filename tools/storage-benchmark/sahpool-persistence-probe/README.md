@@ -75,3 +75,26 @@ sha256sum "$HOME/storage/downloads/sahpool-persistence-probe-v1.zip"
 ```
 
 El resultado debe coincidir exactamente con el valor indicado arriba. La aceptación real en Brave sigue pendiente.
+
+## Aceptación real en Brave · 13-11-2026
+
+Ejecución aportada por el propietario:
+
+- RUN_ID: `prisma-sahpool-survival-b1bb9d6f-2558-4d1d-a2a8-a75744cebc2a`.
+- Fase final declarada: `after-close-1`.
+- Tres PAGE_BOOT_ID distintos: siembra, después de recargar y después de la reapertura manual de Brave declarada por el propietario.
+- SQLite núcleo 3.54.1 / paquete 3.54.1-build1.
+- VFS `prisma_sahpool_persistence_v1`, capacidad 6, un archivo virtual asignado.
+- Opciones verificadas: `clearOnInit=false`, `preserveOnInitFailure=true`.
+- 57 registros recuperados (A=29, B=28, 57 payloads distintos).
+- SHA-256 esperado y observado idéntico: `a9d09c499384dc4deeaadfeffd9d68f9a0860eec4648bd5144a1862638c33d76`.
+- `quick_check=["ok"]` y `integrity_check=["ok"]`.
+- `journal_mode=delete`, `synchronous=2`, `readOnly=0`.
+
+**Resultado real: PASS** para persistencia tras cierre de conexión, recarga y reapertura manual de Brave declarada por el propietario.
+
+**Límite:** `after-close-1` se declara manualmente. La página no certifica el cierre completo del proceso Brave/Android. La prueba tampoco demuestra varias instalaciones SAH pool concurrentes; la arquitectura debe usar un único propietario SQLite activo y coordinar las demás pestañas desde la aplicación.
+
+Informe completo: [sahpool-persistence-results-2026-11-13.md](../sahpool-persistence-results-2026-11-13.md).
+
+El RUN_ID y el directorio VFS quedan preservados. No borrar ni reutilizar.
