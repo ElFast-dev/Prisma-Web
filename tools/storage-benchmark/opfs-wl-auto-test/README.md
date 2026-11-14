@@ -345,3 +345,70 @@ python -c "from urllib.request import urlopen; u='https://raw.githubusercontent.
 El instalador cambia únicamente opfs-wl-auto-test/src/opfs-wl-db-worker.js, comprueba los SHA del servidor y del Worker, reconoce las revisiones previas conocidas y no toca dependencias, SQLite WASM, HTML, servidores ni directorios OPFS anteriores.
 
 Con el servidor 18768 activo, recarga una vez http://127.0.0.1:18768/opfs-wl-auto-test/ y ejecuta una prueba con require-corp. Comparte el informe íntegro. El campo decisivo inicial será retryCallbackCalls: debe ser mayor que cero. Después interesa confirmar cinco filas de referencia, ambos Workers y el resto del ciclo completo. No reinicies el servidor ni borres datos del sitio o los RUN_ID anteriores.
+
+
+## Séptima ejecución real: concurrencia observada y SQLITE_CORRUPT (13-11-2026)
+
+La revisión 7 sí se ejecutó en Brave sobre el Galaxy A03. Esta ejecución llega por primera vez a confirmar transacciones reales en **dos conexiones SQLite independientes** al mismo archivo OPFS-WL, pero termina con un error de integridad crítico antes de completar la carga.
+
+- RUN_ID: `prisma-opfs-wl-auto-973de902-311b-447c-8078-90e9c365b6d4`.
+- Inicio registrado: 13-11-2026, 18:16:08; último resultado recibido: 18:16:23, hora de Panamá (UTC-5).
+- Archivo: `file:prisma-opfs-wl-auto-973de902-311b-447c-8078-90e9c365b6d4/shared.sqlite3`.
+- COOP `same-origin`, COEP `require-corp`, `crossOriginIsolated=true`.
+- SharedArrayBuffer, Atomics.waitAsync, Web Locks y OPFS disponibles.
+- Núcleo SQLite 3.54.1, paquete 3.54.1-build1, VFS `opfs-wl`.
+- Dos Dedicated Workers y dos instancias `OpfsWlDb` independientes.
+- Ambos Workers abrieron el mismo archivo y observaron las cinco filas iniciales.
+
+### Transacciones confirmadas antes del error
+
+Orden observado:
+
+1. Worker B: transacción 1/12 confirmada, 375,99 ms.
+2. Worker A: transacción 1/12 confirmada, 527,51 ms.
+3. Worker B: transacción 2/12 confirmada, 424,32 ms.
+4. Worker A: transacción 2/12 confirmada, 488,16 ms.
+
+Esto demuestra que cada conexión ejecutó y confirmó al menos dos transacciones sobre el archivo compartido. No demuestra que la concurrencia sostenida sea segura.
+
+### Error crítico
+
+Al comenzar el siguiente lote de escritura de Worker B:
+
+- Código SQLite: `11` (`SQLITE_CORRUPT`).
+- Mensaje: `database disk image is malformed`.
+- Operación: `tx.exec(buildInsertSql(clientId, batch, 25))`, dentro de `db.transaction("IMMEDIATE", ...)`.
+- `retryCallbackCalls=3`; `busyRetries=0`.
+- La conexión permanecía abierta, el VFS seguía registrado y la tabla `writes` seguía existiendo.
+
+La ejecución terminó **NO APROBADA**. No completó las 24 transacciones, no verificó 605 filas, no hizo cierre/reapertura y no limpió el directorio. El RUN_ID y su carpeta OPFS quedan preservados. **No borrar, reparar, limpiar ni reutilizar esta base.** No borrar datos del sitio de Brave.
+
+### Investigación del código oficial de SQLite
+
+Se contrastó el paquete fijado con el código de la versión oficial `version-3.54.1`:
+
+- `ext/wasm/api/sqlite3-api-prologue.js` implementa `sqlite3_js_retry_busy()` con un bucle `for (let n = 1; n <= maxTimes; ++n)`.
+- `ext/wasm/tests/opfs/concurrency/worker.js` llama dos veces a ese helper con `-1`.
+- Con esa implementación, el callback no se ejecuta cuando `maxTimes=-1`. El contador de intervalos de la prueba oficial avanza fuera del callback y su interfaz considera terminado al Worker cuando alcanza su número de intervalos. Por ello, el mensaje de finalización de esa prueba no acredita por sí solo que se hayan realizado las escrituras.
+- La documentación de SQLite 3.53.0 llegó a recomendar un valor negativo, aunque el bucle de esa versión tampoco lo admite; la documentación posterior cambió a un valor positivo grande. La llamada negativa siguió en el archivo de concurrencia hasta la versión 3.54.1 y también aparece en la rama actual consultada.
+- La revisión 7 de esta sonda usa 120 intentos positivos. El contador confirma que esta vez sí entró en el callback; por eso las cuatro confirmaciones anteriores son evidencia de operaciones reales, no un efecto de la prueba oficial defectuosa.
+
+Fuentes fijadas:
+- [Helper SQLite 3.54.1](https://github.com/sqlite/sqlite/blob/version-3.54.1/ext/wasm/api/sqlite3-api-prologue.js)
+- [Prueba oficial de concurrencia SQLite 3.54.1](https://github.com/sqlite/sqlite/blob/version-3.54.1/ext/wasm/tests/opfs/concurrency/worker.js)
+- [Implementación OPFS-WL](https://github.com/sqlite/sqlite/blob/version-3.54.1/ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js)
+- [Proxy OPFS y Web Locks](https://github.com/sqlite/sqlite/blob/version-3.54.1/ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js)
+
+### Qué se sabe y qué no se sabe
+
+La API OO1 `transaction("IMMEDIATE", callback)` ejecuta `BEGIN IMMEDIATE`, el callback, `COMMIT`, y trata de hacer `ROLLBACK` cuando se produce una excepción. `DB.exec()` y el INSERT multirregistro empleado son usos admitidos por la API. No se identificó un error de sintaxis o un uso no admitido en esas llamadas.
+
+El VFS OPFS-WL coordina los bloqueos mediante Web Locks. Su implementación documenta que la transición de un bloqueo compartido a uno exclusivo requiere liberar el primero y solicitar después el segundo; esa transición no es atómica. También hay antecedentes de investigaciones internas de SQLite sobre inanición y bloqueos colgados en versiones anteriores del proxy. Estos hechos hacen que la coordinación de bloqueos sea un área de investigación prioritaria, pero **no demuestran que sea la causa de este SQLITE_CORRUPT**.
+
+No se ha determinado si el error refleja corrupción persistente del archivo, un fallo de coordinación del VFS, una interacción con la operación multirregistro o un defecto del navegador/paquete. No se debe clasificar como falso positivo ni declarar OPFS-WL incompatible sin una prueba controlada.
+
+### Estado
+
+**OPFS-WL no está aprobada.** La siguiente investigación debe reducir la carga a una fila por operación, contrastar `opfs-wl` con `opfs` en archivos nuevos e independientes y ejecutar `PRAGMA quick_check` e `integrity_check` entre las fases. Ante cualquier error, hay que detener ambos Workers y conservar el RUN_ID sin limpieza.
+
+La alternativa SharedWorker + OPFS SAH pool mantiene las aceptaciones V8, Recovery y Concurrency ya documentadas; OPFS-WL no las invalida. Ninguna arquitectura de almacenamiento ha sido aprobada todavía como definitiva para Prisma.
