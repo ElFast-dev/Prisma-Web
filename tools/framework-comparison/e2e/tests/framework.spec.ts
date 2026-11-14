@@ -55,7 +55,17 @@ test("filtros y orden: aplica Pendiente y ordena por año", async ({ page }) => 
   await dialog.getByRole("button", { name: "Aplicar" }).click();
 
   await expect(page.locator(".results")).toContainText("60 resultados");
-  await expect(page.locator(".results")).toContainText("Año reciente");
+  await expect(page.locator(".results")).toContainText("Orden: Año");
+
+  const years = await page.locator(".poster").evaluateAll(elements =>
+    elements.map(element => {
+      const match = element.getAttribute("aria-label")?.match(/,\s*(\d{4}),/);
+      return match ? Number(match[1]) : Number.NaN;
+    })
+  );
+  expect(years.length).toBe(60);
+  expect(years.every(Number.isFinite)).toBe(true);
+  expect(years).toEqual([...years].sort((a, b) => b - a));
 });
 
 test("calificación: guarda una nota válida en la ficha", async ({ page }) => {
@@ -99,7 +109,7 @@ test("PWA: declara manifiesto y registra un Service Worker activo", async ({ pag
   }, { timeout: 15_000 });
 });
 
-test("offline: abre una ruta profunda después de almacenar la aplicación", async ({ page, context }) => {
+test("offline: vuelve a abrir sin red una ficha visitada con conexión", async ({ page, context }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
@@ -110,6 +120,11 @@ test("offline: abre una ruta profunda después de almacenar la aplicación", asy
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), {
     timeout: 15_000
   });
+
+  // Visita la ficha mientras hay red para que su módulo de ruta también entre en caché.
+  await page.goto("/pelicula/25", { waitUntil: "networkidle" });
+  await expect(page.locator(".hero")).toBeVisible();
+  await page.goto("/", { waitUntil: "networkidle" });
 
   await context.setOffline(true);
   try {
