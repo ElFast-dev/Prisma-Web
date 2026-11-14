@@ -13,6 +13,25 @@ test("portada: muestra el catálogo completo y cabe en una pantalla móvil", asy
   expect(overflowsHorizontally).toBe(false);
 });
 
+test("diseño adaptable: móvil estrecho y pantalla grande sin desbordamiento", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Descubrir" })).toBeVisible();
+
+  const mobileOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+  );
+  expect(mobileOverflow).toBe(false);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const desktopLayout = await page.locator(".feed").evaluate(element => ({
+    columns: getComputedStyle(element).gridTemplateColumns.split(/\s+/).length,
+    overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+  }));
+  expect(desktopLayout.columns).toBeGreaterThanOrEqual(4);
+  expect(desktopLayout.overflow).toBe(false);
+});
+
 test("navegación: Personal, Descubrir y una ruta profunda", async ({ page }) => {
   await page.goto("/personal");
   await expect(page.getByRole("heading", { name: "Personal" })).toBeVisible();
@@ -24,6 +43,24 @@ test("navegación: Personal, Descubrir y una ruta profunda", async ({ page }) =>
   await expect(page.locator(".hero")).toBeVisible();
   await expect(page.getByText("FICHA DE PRUEBA")).toBeVisible();
   await expect(page.getByRole("button", { name: "Calificar" })).toBeVisible();
+});
+
+test("teclado: permite abrir y cerrar los filtros sin usar el ratón", async ({ page }) => {
+  await page.goto("/");
+  const search = page.getByRole("searchbox", {
+    name: "Buscar películas por título, género o año"
+  });
+
+  await search.focus();
+  await page.keyboard.press("Tab");
+  const filtersButton = page.getByRole("button", { name: "Filtros" });
+  await expect(filtersButton).toBeFocused();
+  await page.keyboard.press("Enter");
+
+  const dialog = page.getByRole("dialog", { name: "Filtros y orden" });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
 });
 
 test("búsqueda: encuentra títulos, géneros y años", async ({ page }) => {
@@ -42,6 +79,16 @@ test("búsqueda: encuentra títulos, géneros y años", async ({ page }) => {
   await search.fill("1963");
   expect(await page.locator(".poster").count()).toBeGreaterThan(0);
   expect(await page.locator(".poster").count()).toBeLessThan(240);
+});
+
+test("búsqueda sin coincidencias: muestra cero resultados sin tarjetas obsoletas", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("searchbox", {
+    name: "Buscar películas por título, género o año"
+  }).fill("zzzz_sin_coincidencias_prisma_987654");
+
+  await expect(page.getByText("0 resultados")).toBeVisible();
+  await expect(page.locator(".poster")).toHaveCount(0);
 });
 
 test("filtros y orden: aplica Pendiente y ordena por año", async ({ page }) => {
@@ -78,6 +125,11 @@ test("calificación: guarda una nota válida en la ficha", async ({ page }) => {
   await dialog.getByRole("button", { name: "Guardar nota" }).click();
 
   await expect(page.getByRole("button", { name: "8/10" })).toBeVisible();
+});
+
+test("ruta inexistente: informa claramente que la película no existe", async ({ page }) => {
+  await page.goto("/pelicula/999999");
+  await expect(page.getByRole("heading", { name: "Película no encontrada" })).toBeVisible();
 });
 
 test("tema: conserva Cuarzo después de recargar", async ({ page }) => {
