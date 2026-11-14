@@ -74,7 +74,7 @@ Antes de extraerlo, verifica el SHA-256 en Termux:
 sha256sum "$HOME/storage/downloads/sahpool-persistence-probe-v1.zip"
 ```
 
-El resultado debe coincidir exactamente con el valor indicado arriba. La aceptación real en Brave sigue pendiente.
+El resultado debe coincidir exactamente con el valor indicado arriba. La aceptación real de esta revisión se completó y está documentada en la sección siguiente; el ZIP binario se mantiene como adjunto de la conversación y no se publica en GitHub porque la transferencia remota anterior no superó la comprobación de tamaño.
 
 ## Aceptación real en Brave · 13-11-2026
 
