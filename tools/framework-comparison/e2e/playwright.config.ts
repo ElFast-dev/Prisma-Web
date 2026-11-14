@@ -56,6 +56,8 @@ if (!browsers.includes(requestedBrowser as Browser)) {
   );
 }
 
+const mobileEmulation = requestedBrowser !== "firefox";
+
 export default defineConfig({
   testDir: "./tests",
   timeout: 30_000,
@@ -73,9 +75,9 @@ export default defineConfig({
   use: {
     browserName: requestedBrowser as Browser,
     viewport: { width: 360, height: 800 },
-    deviceScaleFactor: 2,
-    isMobile: true,
-    hasTouch: true,
+    deviceScaleFactor: requestedBrowser === "firefox" ? 1 : 2,
+    isMobile: mobileEmulation,
+    hasTouch: mobileEmulation,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure"
