@@ -1,6 +1,6 @@
 # Almacenamiento, seguridad y recuperación — Prisma
 
-**Estado:** dirección local-first confirmada; Dexie/IndexedDB y Argon2id + AES-256-GCM son candidatos técnicos, todavía sujetos a benchmark y aprobación.
+**Estado actualizado (13-11-2026):** dirección local-first confirmada. SQLite WASM 3.54.1-build1 + OPFS SAH pool, con un único propietario SQLite activo y coordinación entre pestañas, es el candidato de almacenamiento preferido por la evidencia de rendimiento, concurrencia cooperativa, recuperación y persistencia en Brave. Sigue pendiente de aprobación expresa del propietario y de cerrar cifrado/copias, migraciones y origen HTTPS definitivo. Dexie/IndexedDB se conserva como alternativa. Argon2id + AES-256-GCM siguen sin aprobarse como formato de copia.
 
 ## Protección de la información
 
@@ -20,7 +20,7 @@ El almacenamiento web está sujeto a cuota y políticas del navegador. Por defec
 
 La interfaz debe explicar los límites, detectar errores de cuota y ofrecer una copia manual recuperable. Una limpieza automática solo puede afectar recursos reconstruibles, nunca el diario.
 
-La elección concreta entre IndexedDB/Dexie y SQLite/OPFS está en [Arquitectura — comparativa de almacenamiento](ARQUITECTURA.md#comparativa-de-almacenamiento-resultado-de-investigacion). El benchmark real del Galaxy A03 confirma que SQLite SAH pool supera a Dexie en inserciones hasta 4,40×, pero SAH pool no debe abrirse desde varias pestañas sin coordinación. La limpieza OPFS está verificada; falta enumerar bases IndexedDB residuales y evaluar SharedWorker/OPFS-WL. No crear dos bases autoritativas.
+La comparación del Galaxy A03 confirma que SQLite SAH pool supera a Dexie en inserciones entre 2,70× y 4,40×. La evaluación de concurrencia ya se realizó: SharedWorker coordina los clientes, pero un único Dedicated Worker propietario administra SQLite y serializa las escrituras; no se abren instancias SAH pool independientes desde cada pestaña. OPFS-WL no se aprueba debido al fallo de integridad SQLITE_CORRUPT bajo escrituras concurrentes. La persistencia SAH pool también pasó 57 registros, SHA-256 e integridad después de recarga y reapertura manual declarada. Sigue pendiente verificar restos IndexedDB del benchmark y validar el origen HTTPS final. No crear dos bases autoritativas.
 
 ### Durabilidad de escrituras
 
@@ -86,6 +86,39 @@ Fuentes: [MDN — OPFS y cuotas](https://developer.mozilla.org/en-US/docs/Web/AP
 
 ## Evidencia de rendimiento de almacenamiento
 
-El benchmark real del Galaxy A03 indicó que SQLite WASM/OPFS SAH pool inserta 3.000, 15.000 y 30.000 visionados entre 2,70× y 4,40× más rápido que Dexie 4.4.7 en los datasets sintéticos. Todos los resultados pasaron las comprobaciones de integridad. No es una selección final de motor: SAH pool no ofrece varias instancias multi-pestaña transparentes y aún falta evaluar OPFS-WL/SharedWorker.
+El benchmark real del Galaxy A03 indicó que SQLite WASM/OPFS SAH pool inserta 3.000, 15.000 y 30.000 visionados entre 2,70× y 4,40× más rápido que Dexie 4.4.7 en los datasets sintéticos. Todos los resultados pasaron las comprobaciones de integridad. La concurrencia cooperativa ya se comprobó con SharedWorker y un único propietario SAH pool; OPFS-WL también se evaluó y no se aprobó por SQLITE_CORRUPT. La persistencia SAH pool tras recarga y reapertura manual declarada quedó verificada con 57 filas y SHA-256 coincidente. La arquitectura sigue siendo una recomendación técnica pendiente de aprobación expresa del propietario, no una decisión final del producto.
 
 El uso reportado por StorageManager.estimate() aumentó después de las pruebas, pero los últimos informes confirman removeVfs() = true y ausencia del directorio OPFS temporal. No hay evidencia actual de residuos OPFS. Falta verificar si quedan bases IndexedDB con el prefijo Dexie; la herramienta ya incluye esa enumeración. El delta de estimate() sigue siendo solo una estimación del navegador y no demuestra por sí mismo una fuga.
+
+## Actualización de evidencia · SAH pool y coordinación multi-pestaña (13-11-2026)
+
+### Persistencia SAH pool
+
+La ejecución `prisma-sahpool-survival-b1bb9d6f-2558-4d1d-a2a8-a75744cebc2a` aprobó la persistencia de 57 registros (A=29, B=28) tras siembra, cierre de conexión, recarga y reapertura manual de Brave declarada por el propietario.
+
+- SHA-256 esperado y observado idéntico: `a9d09c499384dc4deeaadfeffd9d68f9a0860eec4648bd5144a1862638c33d76`.
+- `quick_check` e `integrity_check`: `ok`.
+- SQLite 3.54.1, `journal_mode=delete`, `synchronous=FULL`, `readOnly=0`.
+- VFS con `clearOnInit=false` y `preserveOnInitFailure=true`.
+- Tres PAGE_BOOT_ID distintos entre siembra, recarga y reapertura declarada.
+
+La fase `after-close-1` la declara manualmente el propietario; la sonda no puede certificar por sí sola que el proceso Android/Brave se terminó por completo. No extrapolar la prueba a pérdida de energía ni a un fallo físico.
+
+Informe: [SAH Pool Persistence Probe V1](../../tools/storage-benchmark/sahpool-persistence-results-2026-11-13.md).
+
+### Recomendación actual de almacenamiento
+
+La recomendación técnica es **SQLite WASM 3.54.1-build1 + OPFS SAH pool con un único propietario SQLite activo**, coordinado mediante SharedWorker. Cada pestaña no instalará el VFS ni abrirá la misma base de forma independiente. El propietario será un Dedicated Worker; los demás clientes remitirán operaciones al propietario y las escrituras quedarán serializadas. La transferencia cooperativa solo se realizará con el protocolo de propiedad ya probado.
+
+Esta recomendación combina:
+- benchmark Dexie vs SQLite: ventaja SQLite de 2,70×–4,40× en inserciones;
+- V8: transferencia cooperativa entre dos pestañas y 200 registros;
+- Concurrency AutoTest: 24/24 solicitudes y 605 filas con un solo propietario;
+- Recovery AutoTest V1 sobre SAH pool: rollback, COMMIT con respuesta retenida y reapertura aprobados;
+- SAH Pool Persistence Probe: 57 filas y SHA-256 coincidente después de recarga y reapertura manual declarada.
+
+**Límite arquitectónico:** SAH pool no ofrece concurrencia multi-pestaña transparente. La coordinación única en la aplicación es obligatoria. La ejecución OPFS-WL que devolvió `SQLITE_CORRUPT` se conserva como no aprobada. OPFS clásico queda como alternativa; su recuperación controlada pasó, aunque el informe registra un journal residual cuya cabecera no se capturó.
+
+### Pendientes fuera del motor de almacenamiento
+
+La elección del motor no aprueba todavía el sistema de copias ni la seguridad completa. Siguen pendientes: formato de exportación cifrada, KDF y parámetros, restauración segura sin sobrescribir, migraciones del esquema, cuota y persistencia en el origen HTTPS final, y tratamiento de actualización PWA. No guardar información personal real antes de que la exportación/restauración cifrada esté implementada y aceptada.
