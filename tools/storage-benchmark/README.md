@@ -639,13 +639,13 @@ Se preparó una sonda independiente para OPFS clásico (`opfs`), SQLite 3.54.1 /
 
 La reapertura final repite conteos e `quick_check` / `integrity_check`. No existe función de limpieza y toda carpeta creada se conserva ante éxito o error.
 
-**Límite:** `Worker.terminate()` demuestra interrupción inmediata del Dedicated Worker, no apagado, cierre forzado del proceso Brave/Android ni pérdida de energía. La herramienta está construida y validada estáticamente; todavía no tiene aceptación real en el Galaxy A03.
+**Límite:** `Worker.terminate()` demuestra interrupción inmediata del Dedicated Worker, no apagado, cierre forzado del proceso Brave/Android ni pérdida de energía. La aceptación real para los dos escenarios controlados se registró en el bloque siguiente y en el informe detallado.
 
-- Paquete local preparado: `opfs-crash-recovery-auto-test-v1.zip`.
-- URL tras instalar en la raíz servida por el puerto 18768: `http://127.0.0.1:18768/opfs-crash-recovery-auto-test/`.
-- Documentación de la sonda: [opfs-crash-recovery-auto-test/README.md](opfs-crash-recovery-auto-test/README.md).
+- URL de la sonda: `http://127.0.0.1:18768/opfs-crash-recovery-auto-test/`.
+- Documentación de la herramienta y aceptación: [opfs-crash-recovery-auto-test/README.md](opfs-crash-recovery-auto-test/README.md).
+- Resultado completo: [opfs-crash-recovery-results-2026-11-13.md](opfs-crash-recovery-results-2026-11-13.md).
 
-No ejecutar hasta instalar el paquete completo. No reutilizar RUN_ID ni borrar directorios de pruebas anteriores. El resultado, si aprueba, será evidencia para estos dos escenarios de terminación del Worker, no aprobación final de arquitectura.
+No reutilizar el RUN_ID ni borrar directorios de pruebas anteriores.
 
 ## Actualización de aceptación · OPFS Crash Recovery ejecutada (13-11-2026)
 
