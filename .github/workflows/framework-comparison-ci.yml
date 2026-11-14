@@ -14,6 +14,12 @@ on:
     paths:
       - "tools/framework-comparison/**"
   workflow_dispatch:
+    inputs:
+      full_suite:
+        description: "Ejecutar también Firefox y WebKit (6 trabajos en paralelo)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,16 +30,17 @@ concurrency:
 
 jobs:
   framework-test:
-    name: Build and test ${{ matrix.framework }}
+    name: Build and test ${{ matrix.framework }} on ${{ matrix.browser }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 6
       matrix:
         framework:
           - sveltekit
           - react-router
+        browser: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.full_suite == true && '["chromium","firefox","webkit"]' || '["chromium"]') }}
 
     steps:
       - name: Checkout repository
@@ -71,22 +78,22 @@ jobs:
       - name: Install browser-test dependencies from the committed lockfile
         run: npm ci --prefix tools/framework-comparison/e2e --no-audit --no-fund
 
-      - name: Install Chromium and operating-system dependencies
+      - name: Install selected browser and operating-system dependencies
         working-directory: tools/framework-comparison/e2e
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps ${{ matrix.browser }}
 
       - name: Run the shared browser suite for this framework
         working-directory: tools/framework-comparison/e2e
         env:
           PRISMA_FRAMEWORK: ${{ matrix.framework }}
-          PLAYWRIGHT_BROWSER: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.browser }}
         run: npm test -- --project="${{ matrix.framework }}"
 
       - name: Upload Playwright report and failure evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: framework-${{ matrix.framework }}-test-report
+          name: framework-${{ matrix.framework }}-${{ matrix.browser }}-test-report
           path: |
             tools/framework-comparison/e2e/playwright-report/
             tools/framework-comparison/e2e/test-results/
