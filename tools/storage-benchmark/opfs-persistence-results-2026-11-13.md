@@ -71,17 +71,21 @@ El usuario informó que cerró Brave por completo antes de abrir la URL preparad
 
 ## Alcance y pruebas pendientes
 
-Esta ejecución valida persistencia de datos ya confirmados a través del flujo de siembra, cierre explícito de SQLite, recarga y reapertura manual del navegador. No valida todavía:
+La ejecución de este informe y la prueba posterior de Crash Recovery cubren:
+- Persistencia de 57 registros a través de siembra, cierre de SQLite, recarga y reapertura manual de Brave.
+- Rollback de cinco INSERT no confirmados tras terminar abruptamente el Dedicated Worker.
+- Conservación de cinco INSERT cuyo COMMIT terminó antes de perderse el acuse.
+- Dos reaperturas posteriores con conteos e integridad correctos.
 
-- terminación abrupta de un Worker mientras existe una transacción sin COMMIT;
-- terminación después de COMMIT pero antes de la respuesta al cliente;
-- interrupción real del proceso durante la escritura o sincronización;
-- pérdida de energía, bloqueo del dispositivo, cierre forzado por Android o descarte real del proceso por el sistema;
-- cuota agotada, migraciones, cifrado, gestión de claves o restauración de exportaciones.
+**Aún no cubierto:**
+- Pérdida de energía, bloqueo del dispositivo, cierre forzado por Android o terminación real del proceso Brave durante escritura/sincronización.
+- Cuota agotada, migraciones, cifrado y gestión de claves.
+- Exportación, restauración y recuperación de un respaldo.
+- Comparación de persistencia equivalente con SharedWorker + OPFS SAH pool.
 
-La próxima prueba debe aislar OPFS clásico y ensayar dos casos de interrupción: una transacción sin COMMIT que debe desaparecer por rollback y una transacción ya confirmada cuya respuesta se retiene deliberadamente y que debe reaparecer al abrir una conexión nueva. Cada escenario tendrá un RUN_ID nuevo, verificaciones de integridad y preservación automática ante cualquier error.
+La prueba de Crash Recovery se documenta en [opfs-crash-recovery-results-2026-11-13.md](opfs-crash-recovery-results-2026-11-13.md). Esa ejecución dejó una observación pendiente del archivo `recovery.sqlite3-journal`; no se capturó su cabecera y no se debe manipular manualmente.
 
-**Estado de arquitectura:** OPFS clásico es el candidato principal y ha aprobado esta prueba de persistencia. La arquitectura de almacenamiento definitiva de Prisma todavía no está aprobada; debe completarse la recuperación ante interrupción y compararse con SharedWorker + OPFS SAH pool bajo criterios equivalentes. No limpiar ni reutilizar este RUN_ID.
+**Estado de arquitectura:** OPFS clásico sigue como candidato principal y ha aprobado los escenarios ejecutados, pero la arquitectura definitiva todavía no está aprobada. La siguiente comparación es la persistencia del SAH pool con `clearOnInit=false` y `preserveOnInitFailure=true`. No limpiar ni reutilizar ninguno de los RUN_ID existentes.
 
 ## Actualización: recuperación ante terminación abrupta del Worker (13-11-2026)
 
