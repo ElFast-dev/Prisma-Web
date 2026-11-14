@@ -1,0 +1,1 @@
+import{fileURLToPath}from"node:url";import{defineConfig}from"vite";import{ sveltekit }from"@sveltejs/kit/vite";import adapter from"@sveltejs/adapter-static";const root=fileURLToPath(new URL("..",import.meta.url));export default defineConfig({plugins:[sveltekit({adapter:adapter({fallback:"200.html"})})],server:{fs:{allow:[root]}}});

@@ -1,0 +1,1 @@
+import{fileURLToPath}from"node:url";import{defineConfig}from"vite";import{reactRouter}from"@react-router/dev/vite";const root=fileURLToPath(new URL("..",import.meta.url));export default defineConfig({plugins:[reactRouter()],server:{fs:{allow:[root]}}});
