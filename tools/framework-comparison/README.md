@@ -78,4 +78,16 @@ Los pósteres son gradientes y monogramas CSS sintéticos, sin descargas de imá
 
 Ambas incluyen manifiesto y Service Worker para comprobar registro, control, caché e instalación. No implementan todavía el mecanismo seguro de actualización de Prisma: estas muestras no contienen datos personales ni transacciones que proteger. No deben usarse para aprobar una política productiva de actualización.
 
-Ningún framework se declara ganador hasta completar builds, pruebas reales en el Galaxy A03, accesibilidad, rutas profundas, modo avión, mediciones y revisión de mantenibilidad.
+## Automatización en GitHub
+
+La rama `experiment/framework-comparison-ci` incorpora pruebas automáticas sin intervención manual:
+
+- GitHub Actions instala las dependencias y compila las dos muestras.
+- Vitest comprueba las invariantes del catálogo sintético.
+- Playwright ejecuta en Chromium móvil los mismos recorridos sobre SvelteKit y React Router.
+- axe analiza accesibilidad y bloquea infracciones críticas o graves.
+- Los informes, trazas, capturas y archivos de bloqueo se conservan como artefactos de la ejecución.
+
+Consulta los resultados en la pestaña **Actions** del repositorio, en el workflow **Framework comparison · automated checks**. El detalle de instalación y cobertura está en [automation/README.md](automation/README.md).
+
+Las pruebas en Chromium emulado no sustituyen la aceptación final en Brave del Galaxy A03. Ningún framework se declara ganador hasta completar los builds, las pruebas automáticas, las tres rondas reales, accesibilidad, rutas profundas, modo avión, mediciones y revisión de mantenibilidad.
