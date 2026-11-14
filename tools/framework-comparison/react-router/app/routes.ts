@@ -1,1 +1,1 @@
-import{index,type RouteConfig}from"@react-router/dev/routes";export default[index("routes/home.tsx")] satisfies RouteConfig;
+import{index,route,type RouteConfig}from"@react-router/dev/routes";export default[index("routes/home.tsx"),route("personal","routes/personal.tsx"),route("pelicula/:id","routes/movie.tsx")] satisfies RouteConfig;
