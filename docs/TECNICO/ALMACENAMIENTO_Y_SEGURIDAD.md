@@ -1,6 +1,6 @@
 # Almacenamiento, seguridad y recuperación — Prisma
 
-**Estado actualizado (13-11-2026):** dirección local-first confirmada. SQLite WASM 3.54.1-build1 + OPFS SAH pool, con un único propietario SQLite activo y coordinación entre pestañas, es el candidato de almacenamiento preferido por la evidencia de rendimiento, concurrencia cooperativa, recuperación y persistencia en Brave. Sigue pendiente de aprobación expresa del propietario y de cerrar cifrado/copias, migraciones y origen HTTPS definitivo. Dexie/IndexedDB se conserva como alternativa. Argon2id + AES-256-GCM siguen sin aprobarse como formato de copia.
+**Estado actualizado (13-11-2026):** dirección local-first confirmada. El propietario aprobó SQLite WASM 3.54.1-build1 + OPFS SAH pool como almacenamiento candidato principal, con un único propietario SQLite activo en Dedicated Worker y coordinación entre pestañas mediante SharedWorker. La evidencia incluye rendimiento, concurrencia cooperativa, recuperación y persistencia declarada tras reapertura manual de Brave. Restan la validación en origen HTTPS definitivo, migraciones, cuota, exportación/restauración cifrada y criterios de recuperación. Dexie/IndexedDB se conserva como alternativa de contingencia. Argon2id + AES-256-GCM siguen sin aprobarse como formato de copia.
 
 ## Protección de la información
 
