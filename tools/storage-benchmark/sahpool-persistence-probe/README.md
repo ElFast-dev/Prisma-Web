@@ -58,3 +58,20 @@ Esta prueba mide persistencia del archivo virtual SAH pool entre sesiones de pá
 La prueba no aprueba por sí sola toda la arquitectura de Prisma. Después de ejecutarla se compararán los resultados con OPFS clásico y se cerrará la decisión del VFS/propietario.
 
 **Estado al publicar:** paquete preparado y validado estáticamente; pendiente de ejecución real en Brave.
+
+## Paquete de instalación entregado
+
+El ZIP verificado de esta revisión se entrega como adjunto de la conversación, no como blob binario de GitHub. Se retiró el primer blob remoto porque su tamaño no coincidía con los bytes locales.
+
+- Archivo: `sahpool-persistence-probe-v1.zip`.
+- Tamaño: 13.053 bytes.
+- SHA-256: `4782c65f400c9267e5172975992614d3cd676faa3d5720786eee6439c354dea2`.
+- Incluye exactamente `README.md`, `index.html` y `src/persistence-worker.js`; los bytes del ZIP se comprobaron contra las fuentes locales.
+
+Antes de extraerlo, verifica el SHA-256 en Termux:
+
+```bash
+sha256sum "$HOME/storage/downloads/sahpool-persistence-probe-v1.zip"
+```
+
+El resultado debe coincidir exactamente con el valor indicado arriba. La aceptación real en Brave sigue pendiente.
