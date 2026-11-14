@@ -646,3 +646,19 @@ La reapertura final repite conteos e `quick_check` / `integrity_check`. No exist
 - Documentación de la sonda: [opfs-crash-recovery-auto-test/README.md](opfs-crash-recovery-auto-test/README.md).
 
 No ejecutar hasta instalar el paquete completo. No reutilizar RUN_ID ni borrar directorios de pruebas anteriores. El resultado, si aprueba, será evidencia para estos dos escenarios de terminación del Worker, no aprobación final de arquitectura.
+
+## Actualización de aceptación · OPFS Crash Recovery ejecutada (13-11-2026)
+
+La sonda que en el bloque anterior estaba pendiente **ya fue ejecutada en Brave**. RUN_ID: `prisma-opfs-crash-recovery-986eb1b4-a6d7-4fa3-b5dc-26028624c271`.
+
+- **Ensayo A:** cinco filas insertadas sin COMMIT; el Worker fue terminado abruptamente. Una conexión nueva recuperó solo las cinco filas iniciales. Ambas comprobaciones de integridad devolvieron `ok`.
+- **Ensayo B:** cinco filas con COMMIT completado, pero sin acuse; el Worker fue terminado. Una conexión nueva recuperó las diez filas confirmadas. Ambas comprobaciones de integridad devolvieron `ok`.
+- **Reapertura final:** diez filas, `transactionState=0`, sin errores de integridad.
+
+**Resultado:** APROBADO para ambos escenarios controlados de terminación del Dedicated Worker. No demuestra apagado de Android, cierre forzado de Brave ni pérdida de energía.
+
+**Observación pendiente:** después de la primera recuperación, se observó `recovery.sqlite3-journal` de 36.896 bytes; al terminar el segundo escenario y la reapertura final solo aparecía el archivo principal. No se capturó la cabecera del journal, así que no se puede clasificar como journal caliente o archivo inerte. No borrarlo ni repararlo manualmente. La prueba de seguimiento debe inspeccionar la cabecera en modo de solo lectura.
+
+Informe detallado: [opfs-crash-recovery-results-2026-11-13.md](opfs-crash-recovery-results-2026-11-13.md).
+
+**Siguiente fase de comparación:** probar persistencia de SharedWorker + OPFS SAH pool después de recarga y reapertura manual del navegador. Debe instalarse con `clearOnInit=false` y `preserveOnInitFailure=true` para evitar que un error de inicialización pueda borrar contenido. OPFS clásico queda como candidato principal provisional; la arquitectura definitiva sigue pendiente de esa comparación y del seguimiento del journal. No borrar ni reutilizar los RUN_ID existentes.
