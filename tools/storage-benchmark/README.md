@@ -662,3 +662,25 @@ La sonda que en el bloque anterior estaba pendiente **ya fue ejecutada en Brave*
 Informe detallado: [opfs-crash-recovery-results-2026-11-13.md](opfs-crash-recovery-results-2026-11-13.md).
 
 **Siguiente fase de comparación:** probar persistencia de SharedWorker + OPFS SAH pool después de recarga y reapertura manual del navegador. Debe instalarse con `clearOnInit=false` y `preserveOnInitFailure=true` para evitar que un error de inicialización pueda borrar contenido. OPFS clásico queda como candidato principal provisional; la arquitectura definitiva sigue pendiente de esa comparación y del seguimiento del journal. No borrar ni reutilizar los RUN_ID existentes.
+
+## SAH Pool Persistence Probe V1: comparación de persistencia
+
+Se preparó una prueba espejo para el VFS `opfs-sahpool`, porque el diseño candidato de Prisma usa SharedWorker y un único propietario SQLite. El objetivo es comparar la persistencia del mismo conjunto sintético (57 filas: A=29, B=28) tras cierre de conexión, recarga y reapertura manual de Brave.
+
+**Protecciones obligatorias del probe:**
+
+- VFS con nombre independiente: `prisma_sahpool_persistence_v1`.
+- Directorio independiente: `/prisma-sahpool-persistence-probe-v1`.
+- `clearOnInit=false`.
+- `preserveOnInitFailure=true`.
+- Capacidad inicial 6.
+- Sin llamadas a `removeVfs()`, `unlink()` o `wipeFiles()`.
+- Archivo virtual absoluto con RUN_ID; no usa las bases SAH pool de V8 ni de Recovery AutoTest.
+
+La opción `preserveOnInitFailure=true` es especialmente importante: SQLite documenta que, por defecto, un fallo durante la inicialización del SAH pool puede llamar a `removeVfs()` y borrar el almacenamiento subyacente; esta prueba solicita expresamente preservar el contenido en ese escenario. La opción está disponible desde SQLite 3.54.0 y se usa aquí con 3.54.1. Documentación: https://sqlite.org/wasm/doc/trunk/persistence.md#opfs-sahpool.
+
+- Paquete: `sahpool-persistence-probe-v1.zip`.
+- URL después de extraer en la raíz servida por 18768: `http://127.0.0.1:18768/sahpool-persistence-probe/`.
+- README: [sahpool-persistence-probe/README.md](sahpool-persistence-probe/README.md).
+
+**Estado:** validado estáticamente y empaquetado; pendiente de aceptación real en Brave. Esta es la última comparación de persistencia propuesta antes de congelar la arquitectura. Si pasa, podremos cerrar la matriz y comenzar la implementación de la aplicación principal; si falla, documentaremos la causa antes de cambiar de candidato.
