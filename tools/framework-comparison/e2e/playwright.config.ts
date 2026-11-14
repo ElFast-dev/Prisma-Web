@@ -80,6 +80,13 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure"
   },
-  projects: frameworks.map(name => ({ name })),
+  projects: frameworks.map(name => ({
+    name,
+    use: {
+      baseURL: name === "sveltekit"
+        ? "http://127.0.0.1:18820"
+        : "http://127.0.0.1:18821"
+    }
+  })),
   webServer: activeFrameworks.map(framework => servers[framework])
 });
