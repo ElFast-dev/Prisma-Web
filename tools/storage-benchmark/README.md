@@ -663,24 +663,27 @@ Informe detallado: [opfs-crash-recovery-results-2026-11-13.md](opfs-crash-recove
 
 **Siguiente fase de comparación:** probar persistencia de SharedWorker + OPFS SAH pool después de recarga y reapertura manual del navegador. Debe instalarse con `clearOnInit=false` y `preserveOnInitFailure=true` para evitar que un error de inicialización pueda borrar contenido. OPFS clásico queda como candidato principal provisional; la arquitectura definitiva sigue pendiente de esa comparación y del seguimiento del journal. No borrar ni reutilizar los RUN_ID existentes.
 
-## SAH Pool Persistence Probe V1: comparación de persistencia
+## SAH Pool Persistence Probe V1: aceptación real
 
-Se preparó una prueba espejo para el VFS `opfs-sahpool`, porque el diseño candidato de Prisma usa SharedWorker y un único propietario SQLite. El objetivo es comparar la persistencia del mismo conjunto sintético (57 filas: A=29, B=28) tras cierre de conexión, recarga y reapertura manual de Brave.
+La comparación de persistencia del VFS `opfs-sahpool` **ya se ejecutó en Brave y aprobó el conjunto controlado**.
 
-**Protecciones obligatorias del probe:**
+- RUN_ID: `prisma-sahpool-survival-b1bb9d6f-2558-4d1d-a2a8-a75744cebc2a`.
+- Núcleo SQLite 3.54.1 / paquete 3.54.1-build1.
+- VFS: `prisma_sahpool_persistence_v1`.
+- Directorio: `/prisma-sahpool-persistence-probe-v1`.
+- Opciones registradas: `clearOnInit=false`, `preserveOnInitFailure=true`, capacidad inicial 6.
+- Se recuperaron 57 registros: A=29, B=28, payloads distintos=57.
+- SHA-256 esperado y observado coincidente: `a9d09c499384dc4deeaadfeffd9d68f9a0860eec4648bd5144a1862638c33d76`.
+- `quick_check=["ok"]`, `integrity_check=["ok"]`.
+- Tres sesiones y PAGE_BOOT_ID distintos: siembra, tras recarga y fase `after-close-1`.
+- Tras la reapertura, pool con capacidad 6 y un archivo asignado.
 
-- VFS con nombre independiente: `prisma_sahpool_persistence_v1`.
-- Directorio independiente: `/prisma-sahpool-persistence-probe-v1`.
-- `clearOnInit=false`.
-- `preserveOnInitFailure=true`.
-- Capacidad inicial 6.
-- Sin llamadas a `removeVfs()`, `unlink()` o `wipeFiles()`.
-- Archivo virtual absoluto con RUN_ID; no usa las bases SAH pool de V8 ni de Recovery AutoTest.
+**Resultado:** PASS para persistencia después del cierre de conexión, recarga y reapertura manual de Brave declarada por el propietario. La fase `after-close-1` se registra manualmente; la página no puede certificar por sí sola el cierre del proceso Android/Brave. No prueba varias instalaciones SAH pool concurrentes.
 
-La opción `preserveOnInitFailure=true` es especialmente importante: SQLite documenta que, por defecto, un fallo durante la inicialización del SAH pool puede llamar a `removeVfs()` y borrar el almacenamiento subyacente; esta prueba solicita expresamente preservar el contenido en ese escenario. La opción está disponible desde SQLite 3.54.0 y se usa aquí con 3.54.1. Documentación: https://sqlite.org/wasm/doc/trunk/persistence.md#opfs-sahpool.
+La sonda usó VFS y directorio propios, sin tocar V8 ni otras bases. No ejecutó limpieza. La opción `preserveOnInitFailure=true` evita que un error de inicialización ordene borrar automáticamente el VFS; véase la [documentación oficial de persistencia SQLite](https://sqlite.org/wasm/doc/tip/persistence.md).
 
-- Paquete descargable: se entrega como archivo adjunto de esta conversación. El ZIP binario no se considera publicado en GitHub porque la primera transferencia no pasó la verificación de tamaño/SHA y se retiró para evitar instalar un artefacto incompleto.
-- URL después de extraer en la raíz servida por 18768: `http://127.0.0.1:18768/sahpool-persistence-probe/`.
+- URL de la sonda: `http://127.0.0.1:18768/sahpool-persistence-probe/`.
+- Informe detallado: [sahpool-persistence-results-2026-11-13.md](sahpool-persistence-results-2026-11-13.md).
 - README: [sahpool-persistence-probe/README.md](sahpool-persistence-probe/README.md).
 
-**Estado:** fuentes y paquete revisados localmente; sintaxis JavaScript y SQL sintético comprobados; pendiente de aceptación real en Brave. La publicación binaria queda fuera de GitHub hasta disponer de una transferencia verificable. Esta es la última comparación de persistencia propuesta antes de congelar la arquitectura.
+**Conclusión técnica provisional:** los resultados favorecen SQLite WASM + SAH pool con un único propietario Dedicated Worker activo, coordinado entre pestañas mediante SharedWorker. Esto es coordinación a nivel de aplicación y escrituras serializadas, no concurrencia multi-pestaña transparente del VFS. La arquitectura sigue pendiente de aprobación expresa del propietario y de completar los fundamentos no relacionados con el motor de almacenamiento.
