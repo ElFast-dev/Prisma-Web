@@ -82,3 +82,24 @@ Esta ejecución valida persistencia de datos ya confirmados a través del flujo 
 La próxima prueba debe aislar OPFS clásico y ensayar dos casos de interrupción: una transacción sin COMMIT que debe desaparecer por rollback y una transacción ya confirmada cuya respuesta se retiene deliberadamente y que debe reaparecer al abrir una conexión nueva. Cada escenario tendrá un RUN_ID nuevo, verificaciones de integridad y preservación automática ante cualquier error.
 
 **Estado de arquitectura:** OPFS clásico es el candidato principal y ha aprobado esta prueba de persistencia. La arquitectura de almacenamiento definitiva de Prisma todavía no está aprobada; debe completarse la recuperación ante interrupción y compararse con SharedWorker + OPFS SAH pool bajo criterios equivalentes. No limpiar ni reutilizar este RUN_ID.
+
+## Actualización: recuperación ante terminación abrupta del Worker (13-11-2026)
+
+La fase que en la versión inicial de este informe figuraba como pendiente **ya se ejecutó** en OPFS clásico:
+
+- RUN_ID: `prisma-opfs-crash-recovery-986eb1b4-a6d7-4fa3-b5dc-26028624c271`.
+- Cinco INSERT sin COMMIT: después de terminar el Worker, una conexión nueva recuperó cinco filas baseline y cero no confirmadas; integridad `ok`.
+- Cinco INSERT con COMMIT completado pero sin acuse: después de terminar el Worker, una conexión nueva recuperó las diez filas; integridad `ok`.
+- Tercera reapertura: diez filas, `transactionState=0`, integridad `ok`.
+
+Esto completa los dos escenarios controlados de interrupción del Dedicated Worker. No equivale a apagado de Android, cierre forzado de Brave ni pérdida de energía.
+
+### Observación de journal que requiere seguimiento
+
+Después de la recuperación del primer rollback, el listado OPFS todavía mostraba `recovery.sqlite3-journal` de 36.896 bytes. Después del segundo escenario y la reapertura final, solo aparecía `recovery.sqlite3`.
+
+El informe no capturó la cabecera ni el contenido del journal, por lo que no se puede determinar si era un journal caliente, inerte o un efecto temporal del VFS. La documentación de SQLite explica que en modo DELETE el journal se elimina al concluir la transacción y que, durante la recuperación de un hot journal, SQLite revierte y después elimina el archivo. No manipular ni borrar manualmente ese archivo. La observación detallada y el alcance están en [opfs-crash-recovery-results-2026-11-13.md](opfs-crash-recovery-results-2026-11-13.md).
+
+Referencias oficiales: https://sqlite.org/pragma.html#pragma_journal_mode y https://www.sqlite.org/lockingv3.html#hot_journals.
+
+**Siguiente comparación:** persistencia de SharedWorker + OPFS SAH pool a través de recarga y reapertura manual de Brave, con `clearOnInit=false` y `preserveOnInitFailure=true` explícitos. OPFS clásico sigue como candidato principal, pero la arquitectura definitiva aún no está aprobada. No reutilizar ni limpiar los RUN_ID existentes.
