@@ -8,7 +8,7 @@ El workflow `.github/workflows/framework-comparison.yml` instala, audita, compil
 
 El flujo realiza:
 
-1. Instalación reproducible de SvelteKit, React Router y el laboratorio con `npm ci`.
+1. Instalación reproducible de SvelteKit, React Router y las herramientas con `npm ci`.
 2. Auditoría de dependencias con `npm audit --audit-level=high`.
 3. Builds de producción y medición de archivos brutos y gzip.
 4. Pruebas unitarias de invariantes del catálogo sintético con Vitest.
@@ -16,22 +16,33 @@ El flujo realiza:
 6. Pruebas de búsqueda, filtros, ordenación, rutas profundas, ficha, calificación y persistencia del tema.
 7. Prueba de Service Worker y apertura offline de una ficha que ya se visitó con conexión.
 8. Análisis axe de las pantallas principales; las infracciones críticas o graves bloquean el flujo.
-9. Conservación del informe HTML, trazas, capturas, resultados axe y archivos de bloqueo como artefactos de GitHub Actions.
+9. Tres auditorías Lighthouse por cada URL de cada framework: Descubrir, Personal y ficha.
+10. Conservación de informes HTML/JSON, resumen comparativo, trazas, capturas, resultados axe y archivos de bloqueo como artefactos de GitHub Actions.
+
+## Lighthouse CI
+
+Se usa Lighthouse CI 0.16.1. Cada candidato se sirve desde su build de producción en un servidor local de GitHub Actions y se mide con el mismo perfil móvil emulado. Se recogen tres ejecuciones por pantalla para reducir variaciones naturales; Lighthouse selecciona una ejecución representativa para el resumen.
+
+Los informes se guardan exclusivamente en el sistema de archivos del ejecutor y se adjuntan a los artefactos de GitHub Actions durante 14 días. No se usa almacenamiento temporal público ni un servidor de informes externo.
+
+Durante esta fase, Lighthouse es informativo: no se fijan límites de puntuación ni se bloquea la compilación por una nota variable. Primero se compararán los resultados representativos y las métricas individuales; los umbrales se decidirán cuando exista una línea base.
+
+Las puntuaciones son de Chromium y emulación móvil, no mediciones del Galaxy A03 real. Sirven para comparar ambos builds en el mismo entorno, no para afirmar que el teléfono tendrá exactamente esos tiempos.
+
+El resumen `lighthouse-summary.md` muestra las puntuaciones y métricas principales de las tres pantallas para cada candidato. Los informes detallados HTML y JSON permiten investigar diferencias.
 
 ## Archivos de bloqueo
 
-Los tres `package-lock.json` ya están versionados en esta rama. Las ejecuciones normales utilizan `npm ci`, que reproduce exactamente las dependencias registradas y falla si el manifiesto y el bloqueo no coinciden.
-
-GitHub Actions conserva los archivos de bloqueo como artefactos de diagnóstico. La automatización también puede registrar en la rama experimental los archivos que genere una primera instalación en un evento de actualización de rama. No se escriben cambios en `main`.
+Los tres `package-lock.json` están versionados en esta rama. GitHub Actions verifica la instalación reproducible con `npm ci`; en la primera actualización de una dependencia, `npm install` refresca el bloqueo y `npm ci` comprueba que puede reproducirse. Los cambios de lockfile se guardan únicamente en la rama experimental.
 
 ## Consultar resultados
 
-En GitHub abre la pestaña **Actions**, selecciona **Framework comparison · automated checks** y entra en la ejecución más reciente. Los informes se descargan desde **Artifacts**. Una prueba fallida conserva la traza y, cuando corresponde, capturas y vídeo. Los artefactos se conservan durante 14 días.
+En GitHub abre la pestaña **Actions**, selecciona **Framework comparison · automated checks** y entra en la ejecución más reciente. Descarga **Artifacts** para ver el informe HTML de Playwright, las trazas/capturas de fallos y la carpeta Lighthouse con todos los informes y el resumen.
 
 ## Alcance y límites
 
-Las pruebas de Playwright usan Chromium emulado en un ejecutor Linux de GitHub. Automatizan los mismos recorridos en ambas muestras, pero no sustituyen por sí solas la aceptación final en Brave del Galaxy A03.
+Playwright y Lighthouse usan Chromium en un ejecutor Linux con emulación móvil. Automatizan recorridos y comparan de manera consistente los dos candidatos, pero no sustituyen la comprobación de diferencias concretas de Brave Android ni las limitaciones reales del Galaxy A03.
 
 axe automatiza reglas comprobables, no toda la accesibilidad. El laboratorio tampoco decide preferencias visuales: el propietario conserva la decisión sobre UI/UX.
 
-No se declara ganador por una sola ejecución. La decisión debe considerar los builds, los recorridos automáticos, el comportamiento PWA, las mediciones y la mantenibilidad. Las diferencias específicas de Brave Android deben quedar identificadas por separado.
+No se declara ganador por una sola ejecución o por una puntuación aislada. La decisión debe considerar builds, pruebas funcionales, métricas Lighthouse repetidas, tamaño de recursos, estabilidad, accesibilidad y mantenibilidad.
