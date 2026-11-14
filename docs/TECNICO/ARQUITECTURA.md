@@ -380,3 +380,31 @@ La comparación de concurrencia debe centrarse en:
 3. **Dexie/IndexedDB:** mantiene una vía más simple para acceso desde varias pestañas, con transacciones gestionadas por el navegador.
 
 El resultado actual favorece SQLite por rendimiento, pero no autoriza a usar SAH pool directamente desde cada pestaña.
+
+## Actualización de arquitectura de almacenamiento · 13 de noviembre de 2026
+
+Las pruebas posteriores cerraron la evaluación que figuraba como pendiente en las secciones históricas de este documento. Los resultados nuevos prevalecen sobre esas notas anteriores:
+
+- **SAH pool:** persistencia real de 57 registros en Brave tras cierre de conexión, recarga y reapertura manual declarada; SHA-256 coincidente; `quick_check` e `integrity_check` en `ok`; opciones protegidas `clearOnInit=false` y `preserveOnInitFailure=true`. Informe: [SAH Pool Persistence](../../tools/storage-benchmark/sahpool-persistence-results-2026-11-13.md).
+- **Concurrencia cooperativa:** dos clientes y 24/24 solicitudes; 605 filas verificadas; un solo propietario SQLite; las escrituras se serializaron dentro del propietario. No es concurrencia de varios escritores SQLite independientes.
+- **Transferencia de propiedad:** V8 demostró transferencia cooperativa mediante instantánea binaria entre dos pestañas y conservación de 200 registros.
+- **Recuperación SAH pool:** Recovery AutoTest V1 ya documentó rollback, COMMIT completado con respuesta retenida, reapertura y limpieza exclusiva aprobados.
+- **OPFS-WL:** no aprobado. La ejecución que produjo `SQLITE_CORRUPT` sigue preservada y no se declara un falso positivo.
+- **OPFS clásico:** pasó escenarios controlados de concurrencia pequeña, persistencia y terminación abrupta del Worker. El informe de Crash Recovery conserva una observación no resuelta sobre un archivo `-journal` que apareció después del rollback; no se capturó su cabecera.
+
+### Recomendación técnica vigente
+
+La opción con mayor evidencia combinada para el caso de Prisma es:
+
+**SQLite WASM 3.54.1-build1 + OPFS SAH pool + un único propietario SQLite activo, coordinado entre pestañas mediante SharedWorker.**
+
+La arquitectura operativa propuesta es:
+1. Cada pestaña se conecta al SharedWorker coordinador.
+2. Un Dedicated Worker es el único que instala el SAH pool y mantiene la conexión SQLite propietaria.
+3. El SharedWorker distribuye solicitudes al propietario. El propietario serializa las transacciones y devuelve resultados.
+4. Cuando deba transferirse la propiedad, se utiliza exclusivamente el protocolo cooperativo que ya se probó; no se permite que dos pestañas inicialicen a la vez el mismo SAH pool ni que abran la misma base en propietarios distintos.
+5. El SharedWorker no crea Dedicated Workers; la página/cliente inicia el Worker que corresponda y sigue el protocolo de concesión de propiedad.
+
+Este diseño prioriza rendimiento y control de integridad mediante exclusividad explícita. Sacrifica escritores SQLite independientes y concurrencia transparente a cambio de un solo dueño verificable. La documentación oficial de SQLite advierte que SAH pool no ofrece concurrencia transparente porque preasigna SyncAccessHandles; cuando se requiere multi-pestaña, la coordinación debe resolverse en la aplicación o elegir otro VFS. Fuentes: [SQLite OPFS persistence](https://sqlite.org/wasm/doc/tip/persistence.md) y [SQLite oo1 API](https://sqlite.org/wasm/doc/trunk/api-oo1.md).
+
+**Estado de aprobación:** esta es la recomendación técnica lista para decisión del propietario; no se convierte en selección de producción solo por estar documentada. La aplicación principal no se inicia hasta que el propietario apruebe expresamente los fundamentos pendientes que especifica `AGENTS.md`: framework, diseño web revisado, almacenamiento/seguridad/copias, alojamiento gratuito y origen HTTPS, política de actualización PWA y criterios de aceptación. El resultado de persistencia SAH pool cierra la comparación del motor para este hito, no todos los fundamentos del producto.
