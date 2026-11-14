@@ -61,7 +61,7 @@ jobs:
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 
-      - name: Start CI against the branch with committed lockfiles
+      - name: Run the full cross-browser suite for verification
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run framework-comparison-ci.yml --ref "${GITHUB_REF_NAME}"
+        run: gh workflow run framework-comparison-ci.yml --ref "${GITHUB_REF_NAME}" -f full_suite=true
