@@ -629,3 +629,20 @@ El usuario aportó el informe real de OPFS Persistence Probe V1. RUN_ID: `prisma
 La prueba no cubre terminación abrupta durante una transacción, antes/después de COMMIT, pérdida de energía, cierre forzado por Android, cuota agotada ni restauración de exportaciones. OPFS clásico sigue como candidato principal, no como arquitectura definitiva aprobada.
 
 RUN_ID preservado; no borrar ni reutilizar. Informe: [opfs-persistence-results-2026-11-13.md](opfs-persistence-results-2026-11-13.md).
+
+## OPFS Crash Recovery AutoTest V1: interrupción abrupta del Worker
+
+Se preparó una sonda independiente para OPFS clásico (`opfs`), SQLite 3.54.1 / paquete 3.54.1-build1. Prueba dos situaciones con RUN_ID nuevo y un Dedicated Worker propietario de una sola conexión:
+
+1. Inserta cinco filas dentro de `BEGIN IMMEDIATE` sin ejecutar COMMIT; la página termina el Worker inmediatamente tras confirmar que la transacción está abierta. Una conexión nueva debe recuperar solo las cinco filas iniciales.
+2. Inserta otras cinco filas, completa COMMIT y verifica diez filas; antes de enviar el acuse final la página termina el Worker. Una conexión nueva debe recuperar las diez filas confirmadas.
+
+La reapertura final repite conteos e `quick_check` / `integrity_check`. No existe función de limpieza y toda carpeta creada se conserva ante éxito o error.
+
+**Límite:** `Worker.terminate()` demuestra interrupción inmediata del Dedicated Worker, no apagado, cierre forzado del proceso Brave/Android ni pérdida de energía. La herramienta está construida y validada estáticamente; todavía no tiene aceptación real en el Galaxy A03.
+
+- Paquete local preparado: `opfs-crash-recovery-auto-test-v1.zip`.
+- URL tras instalar en la raíz servida por el puerto 18768: `http://127.0.0.1:18768/opfs-crash-recovery-auto-test/`.
+- Documentación de la sonda: [opfs-crash-recovery-auto-test/README.md](opfs-crash-recovery-auto-test/README.md).
+
+No ejecutar hasta instalar el paquete completo. No reutilizar RUN_ID ni borrar directorios de pruebas anteriores. El resultado, si aprueba, será evidencia para estos dos escenarios de terminación del Worker, no aprobación final de arquitectura.
