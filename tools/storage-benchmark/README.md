@@ -679,8 +679,8 @@ Se preparó una prueba espejo para el VFS `opfs-sahpool`, porque el diseño cand
 
 La opción `preserveOnInitFailure=true` es especialmente importante: SQLite documenta que, por defecto, un fallo durante la inicialización del SAH pool puede llamar a `removeVfs()` y borrar el almacenamiento subyacente; esta prueba solicita expresamente preservar el contenido en ese escenario. La opción está disponible desde SQLite 3.54.0 y se usa aquí con 3.54.1. Documentación: https://sqlite.org/wasm/doc/trunk/persistence.md#opfs-sahpool.
 
-- Paquete: `sahpool-persistence-probe-v1.zip`.
+- Paquete descargable: se entrega como archivo adjunto de esta conversación. El ZIP binario no se considera publicado en GitHub porque la primera transferencia no pasó la verificación de tamaño/SHA y se retiró para evitar instalar un artefacto incompleto.
 - URL después de extraer en la raíz servida por 18768: `http://127.0.0.1:18768/sahpool-persistence-probe/`.
 - README: [sahpool-persistence-probe/README.md](sahpool-persistence-probe/README.md).
 
-**Estado:** validado estáticamente y empaquetado; pendiente de aceptación real en Brave. Esta es la última comparación de persistencia propuesta antes de congelar la arquitectura. Si pasa, podremos cerrar la matriz y comenzar la implementación de la aplicación principal; si falla, documentaremos la causa antes de cambiar de candidato.
+**Estado:** fuentes y paquete revisados localmente; sintaxis JavaScript y SQL sintético comprobados; pendiente de aceptación real en Brave. La publicación binaria queda fuera de GitHub hasta disponer de una transferencia verificable. Esta es la última comparación de persistencia propuesta antes de congelar la arquitectura.
