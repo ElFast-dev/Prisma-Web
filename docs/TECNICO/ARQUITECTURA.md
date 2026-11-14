@@ -169,7 +169,7 @@ La elección definitiva se documentará cuando el prototipo demuestre una difere
 ## Comparativa de almacenamiento: resultado de investigación
 
 **Revisión documental:** 12 de noviembre de 2026.  
-**Estado:** evaluación empírica realizada en el Samsung Galaxy A03 y Brave Android. Dexie 4.4.7 y el paquete @sqlite.org/sqlite-wasm 3.54.1-build1 son las versiones usadas en las comparaciones; ninguna variante queda aún aprobada para producción.
+**Estado:** evaluación empírica realizada en el Samsung Galaxy A03 y Brave Android. El propietario aprobó el 13-11-2026 SQLite WASM 3.54.1-build1 + OPFS SAH pool con un único propietario Dedicated Worker coordinado por SharedWorker. La aprobación aplica a la arquitectura candidata de almacenamiento; siguen pendientes origen HTTPS final, copias/restauración, migraciones, cuota y aceptación integral antes de producción.
 
 ### Candidata A — Dexie 4.4.7 sobre IndexedDB
 
@@ -407,4 +407,4 @@ La arquitectura operativa propuesta es:
 
 Este diseño prioriza rendimiento y control de integridad mediante exclusividad explícita. Sacrifica escritores SQLite independientes y concurrencia transparente a cambio de un solo dueño verificable. La documentación oficial de SQLite advierte que SAH pool no ofrece concurrencia transparente porque preasigna SyncAccessHandles; cuando se requiere multi-pestaña, la coordinación debe resolverse en la aplicación o elegir otro VFS. Fuentes: [SQLite OPFS persistence](https://sqlite.org/wasm/doc/tip/persistence.md) y [SQLite oo1 API](https://sqlite.org/wasm/doc/trunk/api-oo1.md).
 
-**Estado de aprobación:** esta es la recomendación técnica lista para decisión del propietario; no se convierte en selección de producción solo por estar documentada. La aplicación principal no se inicia hasta que el propietario apruebe expresamente los fundamentos pendientes que especifica `AGENTS.md`: framework, diseño web revisado, almacenamiento/seguridad/copias, alojamiento gratuito y origen HTTPS, política de actualización PWA y criterios de aceptación. El resultado de persistencia SAH pool cierra la comparación del motor para este hito, no todos los fundamentos del producto.
+**Estado de aprobación:** el propietario aceptó expresamente el 13-11-2026 SQLite WASM 3.54.1-build1 + OPFS SAH pool como candidato principal, con el modelo de propietario único descrito arriba. La elección base del motor queda cerrada. No es todavía autorización para crear la aplicación ni una aprobación de producción completa: según `AGENTS.md` siguen pendientes framework, verificación del diseño web ya aprobado, HTTPS final, copias/restauración cifrada, migraciones, actualización PWA y criterios de aceptación. El código de producto no comienza hasta cerrar esos fundamentos y recibir la autorización final.
