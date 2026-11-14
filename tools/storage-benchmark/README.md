@@ -583,3 +583,16 @@ La revisión 7 cambia el helper a 120 intentos positivos y añade el contador re
 Instalador: [install-opfs-wl-auto-test-revision-7.py](install-opfs-wl-auto-test-revision-7.py), fijado al commit b73eeff671db54022fbfaed3da4e3b573189ad42. Solo modifica el Worker de la sonda, verifica los hashes y no toca SQLite WASM, dependencias, HTML, los servidores, SAH pool, Prisma ni directorios OPFS anteriores.
 
 **Estado vigente:** apertura, VFS y creación de esquema observados; causa probable del callback omitido localizada en el límite negativo de reintentos; ejecución real con límite positivo pendiente. OPFS-WL sigue sin aceptación.
+
+
+### OPFS-WL AutoTest: séptima ejecución y diagnóstico de integridad (13-11-2026)
+
+La revisión 7 llegó a ejecutar escrituras reales desde dos conexiones SQLite independientes al mismo archivo. Tras cuatro transacciones confirmadas (B1, A1, B2, A2), el siguiente lote de B terminó en `SQLITE_CORRUPT` (código 11, `database disk image is malformed`). RUN_ID: `prisma-opfs-wl-auto-973de902-311b-447c-8078-90e9c365b6d4`. La carpeta OPFS se conserva sin reparación ni limpieza. No se completaron 24 transacciones, la verificación de 605 filas ni la reapertura. OPFS-WL permanece **NO APROBADA**.
+
+La investigación del código oficial de SQLite 3.54.1 encontró que `sqlite3_js_retry_busy()` implementa un bucle `n <= maxTimes`, mientras que la prueba oficial `ext/wasm/tests/opfs/concurrency/worker.js` aún la llama con `-1`. En esa versión, el callback queda omitido; por tanto, el mensaje de finalización de esa prueba no prueba por sí solo que se hayan ejecutado escrituras. La revisión 7 de Prisma pasa 120 intentos positivos y sí alcanzó operaciones transaccionales reales. Esto explica el problema de ejecución de la revisión 6, pero **no explica el SQLITE_CORRUPT posterior**.
+
+El uso de `OpfsWlDb`, `DB.transaction("IMMEDIATE", ...)` y `DB.exec()` coincide con las APIs documentadas. La coordinación Web Locks, especialmente el cambio de bloqueo compartido a exclusivo, sigue bajo investigación; no se atribuye todavía la corrupción a una causa concreta.
+
+Siguiente paso: sonda mínima y aislada, con RUN_ID nuevo, comparación de `opfs-wl` y `opfs`, una fila por operación, integridad entre fases y reapertura. No volver a cargar la base fallida ni limpiar ejecuciones previas.
+
+Detalle y trazas: [OPFS-WL AutoTest README](opfs-wl-auto-test/README.md).
