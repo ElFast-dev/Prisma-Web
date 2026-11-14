@@ -52,4 +52,20 @@ Una aprobación solo cubre estos dos escenarios controlados. No aprueba por sí 
 - Ante cualquier error detiene la prueba y preserva el directorio y el informe.
 - No borres datos del sitio Brave ni carpetas OPFS de ensayos anteriores.
 
-**Estado al documentar:** herramienta construida y validada estáticamente; pendiente de ejecución real en Brave.
+
+## Aceptación real en Brave · 13-11-2026
+
+Ejecución aportada por el usuario:
+
+- RUN_ID: `prisma-opfs-crash-recovery-986eb1b4-a6d7-4fa3-b5dc-26028624c271`.
+- Ensayo A: cinco INSERT dentro de `BEGIN IMMEDIATE`; el Worker fue terminado con `Worker.terminate()` antes de COMMIT. Una conexión nueva recuperó exactamente cinco filas baseline y cero no confirmadas. Ambas comprobaciones de integridad devolvieron `ok`.
+- Ensayo B: cinco filas adicionales fueron confirmadas con COMMIT; el Worker fue terminado antes del acuse. Una conexión nueva recuperó diez filas (cinco baseline y cinco confirmadas), con ambas comprobaciones de integridad en `ok`.
+- Reapertura final: diez filas, `transactionState=0`, VFS `opfs`, `journal_mode=delete`, `synchronous=2`, `readOnly=0`; ambas comprobaciones de integridad devolvieron `ok`.
+
+**Resultado real:** APROBADO para estos dos escenarios de terminación del Dedicated Worker.
+
+**Observación pendiente:** después de la recuperación del ensayo A, el listado OPFS informó `recovery.sqlite3-journal` de 36.896 bytes junto a la base. Después del ensayo B/reapertura final, solo apareció `recovery.sqlite3`. El informe no capturó la cabecera del journal, por lo que no se puede saber si era un journal caliente, un archivo inerte o un efecto del VFS. SQLite documenta que el modo DELETE elimina el journal al concluir la transacción y que la recuperación de un hot journal lo revierte y después lo elimina. No se debe borrar manualmente el archivo. Una futura sonda debe observar su cabecera de forma estrictamente de solo lectura y repetir la lista tras una segunda apertura sin escrituras.
+
+**Límite:** `Worker.terminate()` no equivale a apagado de Android, cierre forzado de Brave, pérdida de energía ni fallo físico del dispositivo.
+
+Informe completo: [opfs-crash-recovery-results-2026-11-13.md](../opfs-crash-recovery-results-2026-11-13.md). RUN_ID preservado; no borrar ni reutilizar.
