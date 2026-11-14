@@ -48,6 +48,12 @@ jobs:
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix tools/framework-comparison/react-router
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix tools/framework-comparison/e2e
 
+      - name: Audit locked dependencies without installing node_modules
+        run: |
+          npm audit --prefix tools/framework-comparison/sveltekit --audit-level=high
+          npm audit --prefix tools/framework-comparison/react-router --audit-level=high
+          npm audit --prefix tools/framework-comparison/e2e --audit-level=high
+
       - name: Commit lockfiles when they are new or changed
         run: |
           git add tools/framework-comparison/sveltekit/package-lock.json tools/framework-comparison/react-router/package-lock.json tools/framework-comparison/e2e/package-lock.json
