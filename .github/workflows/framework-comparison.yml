@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: framework-comparison-${{ github.ref }}
@@ -40,6 +40,10 @@ jobs:
         working-directory: tools/framework-comparison/sveltekit
         run: npm install --include=dev --no-audit --no-fund
 
+      - name: Audit SvelteKit dependencies
+        working-directory: tools/framework-comparison/sveltekit
+        run: npm audit --audit-level=high
+
       - name: Build SvelteKit
         working-directory: tools/framework-comparison/sveltekit
         run: npm run build
@@ -47,6 +51,10 @@ jobs:
       - name: Install React Router dependencies
         working-directory: tools/framework-comparison/react-router
         run: npm install --include=dev --no-audit --no-fund
+
+      - name: Audit React Router dependencies
+        working-directory: tools/framework-comparison/react-router
+        run: npm audit --audit-level=high
 
       - name: Verify React Router CLI dependencies
         working-directory: tools/framework-comparison/react-router
@@ -66,6 +74,10 @@ jobs:
         working-directory: tools/framework-comparison/automation
         run: npm install --include=dev --no-audit --no-fund
 
+      - name: Audit automation dependencies
+        working-directory: tools/framework-comparison/automation
+        run: npm audit --audit-level=high
+
       - name: Install Chromium for Playwright
         working-directory: tools/framework-comparison/automation
         run: npx playwright install --with-deps chromium
@@ -73,6 +85,19 @@ jobs:
       - name: Run unit and browser tests
         working-directory: tools/framework-comparison/automation
         run: npm test
+
+      - name: Save generated dependency lockfiles to the experimental branch
+        if: ${{ always() && github.event_name == 'push' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add             tools/framework-comparison/sveltekit/package-lock.json             tools/framework-comparison/react-router/package-lock.json             tools/framework-comparison/automation/package-lock.json
+          if git diff --cached --quiet; then
+            echo "Los archivos de bloqueo ya están actualizados."
+          else
+            git commit -m "Guarda lockfiles de la comparación de frameworks"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
 
       - name: Upload reports, traces and generated lockfiles
         if: ${{ always() }}
