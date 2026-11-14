@@ -4,29 +4,34 @@ Este laboratorio pertenece exclusivamente a `tools/framework-comparison/`. No fo
 
 ## Ejecución automática en GitHub
 
-El workflow `.github/workflows/framework-comparison.yml` instala, compila y prueba las dos muestras cuando se actualiza la rama experimental o se abre una solicitud de integración hacia `main`.
+El workflow `.github/workflows/framework-comparison.yml` instala, audita, compila y prueba las dos muestras cuando se actualiza la rama experimental o se abre una solicitud de integración hacia las ramas configuradas.
 
 El flujo realiza:
 
-1. Instalación de dependencias de SvelteKit y React Router.
-2. Builds de producción y medición de archivos brutos y gzip.
-3. Pruebas unitarias de invariantes del catálogo con Vitest.
-4. Pruebas de navegación y comportamiento con Playwright en Chromium, usando un viewport móvil de 360 × 800.
-5. Pruebas de búsqueda, filtros, ordenación, rutas profundas, ficha, calificación, temas y persistencia del tema.
-6. Prueba automatizada de Service Worker y navegación offline.
-7. Análisis axe de las pantallas principales; las infracciones críticas o graves bloquean el flujo.
-8. Conservación del informe HTML, trazas, capturas, resultados axe y archivos de bloqueo como artefactos de GitHub Actions.
+1. Instalación reproducible de SvelteKit, React Router y el laboratorio con `npm ci`.
+2. Auditoría de dependencias con `npm audit --audit-level=high`.
+3. Builds de producción y medición de archivos brutos y gzip.
+4. Pruebas unitarias de invariantes del catálogo sintético con Vitest.
+5. Pruebas de navegación y comportamiento con Playwright en Chromium móvil (360 × 800).
+6. Pruebas de búsqueda, filtros, ordenación, rutas profundas, ficha, calificación y persistencia del tema.
+7. Prueba de Service Worker y apertura offline de una ficha que ya se visitó con conexión.
+8. Análisis axe de las pantallas principales; las infracciones críticas o graves bloquean el flujo.
+9. Conservación del informe HTML, trazas, capturas, resultados axe y archivos de bloqueo como artefactos de GitHub Actions.
+
+## Archivos de bloqueo
+
+Los tres `package-lock.json` ya están versionados en esta rama. Las ejecuciones normales utilizan `npm ci`, que reproduce exactamente las dependencias registradas y falla si el manifiesto y el bloqueo no coinciden.
+
+GitHub Actions conserva los archivos de bloqueo como artefactos de diagnóstico. La automatización también puede registrar en la rama experimental los archivos que genere una primera instalación en un evento de actualización de rama. No se escriben cambios en `main`.
 
 ## Consultar resultados
 
-En GitHub abre la pestaña **Actions**, selecciona **Framework comparison · automated checks** y entra en la ejecución más reciente. Los informes se descargan desde **Artifacts**. Una prueba fallida conserva la traza y, cuando corresponde, capturas y vídeo.
-
-Los archivos de bloqueo se generan en la primera ejecución y se entregan como artefacto para incorporarlos a la rama experimental. Después se cambiará la instalación de CI a `npm ci`, que exige esos archivos.
+En GitHub abre la pestaña **Actions**, selecciona **Framework comparison · automated checks** y entra en la ejecución más reciente. Los informes se descargan desde **Artifacts**. Una prueba fallida conserva la traza y, cuando corresponde, capturas y vídeo. Los artefactos se conservan durante 14 días.
 
 ## Alcance y límites
 
-Las pruebas de Playwright usan Chromium emulado en un ejecutor Linux de GitHub. Esto automatiza los mismos recorridos en ambas muestras, pero no sustituye la aceptación final en Brave del Galaxy A03.
+Las pruebas de Playwright usan Chromium emulado en un ejecutor Linux de GitHub. Automatizan los mismos recorridos en ambas muestras, pero no sustituyen por sí solas la aceptación final en Brave del Galaxy A03.
 
 axe automatiza reglas comprobables, no toda la accesibilidad. El laboratorio tampoco decide preferencias visuales: el propietario conserva la decisión sobre UI/UX.
 
-No se declara ganador por el resultado de una sola compilación o ejecución. Se mantienen las tres rondas reales en el Galaxy A03 y las mediciones comparables de las dos muestras.
+No se declara ganador por una sola ejecución. La decisión debe considerar los builds, los recorridos automáticos, el comportamiento PWA, las mediciones y la mantenibilidad. Las diferencias específicas de Brave Android deben quedar identificadas por separado.
