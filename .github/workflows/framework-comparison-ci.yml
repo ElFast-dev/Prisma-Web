@@ -44,7 +44,8 @@ jobs:
         run: npm run build --prefix tools/framework-comparison/sveltekit
 
       - name: Measure SvelteKit output
-        run: node tools/framework-comparison/measure.mjs sveltekit
+        working-directory: tools/framework-comparison
+        run: node measure.mjs sveltekit
 
       - name: Install React Router dependencies
         run: npm install --prefix tools/framework-comparison/react-router --no-audit --no-fund
@@ -63,7 +64,8 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Measure React Router output
-        run: node tools/framework-comparison/measure.mjs react
+        working-directory: tools/framework-comparison
+        run: node measure.mjs react
 
       - name: Install browser-test dependencies
         run: npm install --prefix tools/framework-comparison/e2e --no-audit --no-fund
