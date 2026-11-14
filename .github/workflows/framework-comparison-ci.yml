@@ -4,96 +4,90 @@ on:
   push:
     branches:
       - experiment/automated-testing
+    paths:
+      - "tools/framework-comparison/**"
+      - "!tools/framework-comparison/**/package.json"
   pull_request:
     branches:
       - experiment/framework-comparison
+    paths:
+      - "tools/framework-comparison/**"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: framework-comparison-${{ github.ref }}
+  group: prisma-framework-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: Build and test both frameworks
+  framework-test:
+    name: Build and test ${{ matrix.framework }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        framework:
+          - sveltekit
+          - react-router
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Set up Node.js 24
-        uses: actions/setup-node@v4
+      - name: Set up Node.js and restore npm cache
+        uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            tools/framework-comparison/${{ matrix.framework }}/package-lock.json
+            tools/framework-comparison/e2e/package-lock.json
 
-      - name: Install SvelteKit dependencies
-        run: npm install --prefix tools/framework-comparison/sveltekit --no-audit --no-fund
+      - name: Install framework dependencies from the committed lockfile
+        run: npm ci --prefix tools/framework-comparison/${{ matrix.framework }} --no-audit --no-fund
 
-      - name: Verify SvelteKit lockfile installation
-        run: npm ci --prefix tools/framework-comparison/sveltekit --no-audit --no-fund
-
-      - name: Audit SvelteKit dependencies
-        run: npm audit --prefix tools/framework-comparison/sveltekit --audit-level=high
-
-      - name: Build SvelteKit
-        run: npm run build --prefix tools/framework-comparison/sveltekit
-
-      - name: Measure SvelteKit output
-        working-directory: tools/framework-comparison
-        run: node measure.mjs sveltekit
-
-      - name: Install React Router dependencies
-        run: npm install --prefix tools/framework-comparison/react-router --no-audit --no-fund
-
-      - name: Verify React Router lockfile installation
-        run: npm ci --prefix tools/framework-comparison/react-router --no-audit --no-fund
-
-      - name: Audit React Router dependencies
-        run: npm audit --prefix tools/framework-comparison/react-router --audit-level=high
-
-      - name: Build React Router
-        run: npm run build --prefix tools/framework-comparison/react-router
+      - name: Build framework
+        run: npm run build --prefix tools/framework-comparison/${{ matrix.framework }}
 
       - name: Type-check React Router
+        if: matrix.framework == 'react-router'
         working-directory: tools/framework-comparison/react-router
         run: npx tsc --noEmit
 
-      - name: Measure React Router output
+      - name: Measure production output
         working-directory: tools/framework-comparison
-        run: node measure.mjs react
+        run: |
+          if [ "${{ matrix.framework }}" = "sveltekit" ]; then
+            node measure.mjs sveltekit
+          else
+            node measure.mjs react
+          fi
 
-      - name: Install browser-test dependencies
-        run: npm install --prefix tools/framework-comparison/e2e --no-audit --no-fund
-
-      - name: Verify browser-test lockfile installation
+      - name: Install browser-test dependencies from the committed lockfile
         run: npm ci --prefix tools/framework-comparison/e2e --no-audit --no-fund
 
-      - name: Audit browser-test dependencies
-        run: npm audit --prefix tools/framework-comparison/e2e --audit-level=high
-
-      - name: Install Playwright Chromium
+      - name: Install Chromium and operating-system dependencies
         working-directory: tools/framework-comparison/e2e
         run: npx playwright install --with-deps chromium
 
-      - name: Run automated browser tests
+      - name: Run the shared browser suite for this framework
         working-directory: tools/framework-comparison/e2e
-        run: npm test
+        env:
+          PRISMA_FRAMEWORK: ${{ matrix.framework }}
+          PLAYWRIGHT_BROWSER: chromium
+        run: npm test -- --project="${{ matrix.framework }}"
 
-      - name: Upload test reports and generated lockfiles
+      - name: Upload Playwright report and failure evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: framework-comparison-test-reports
+          name: framework-${{ matrix.framework }}-test-report
           path: |
             tools/framework-comparison/e2e/playwright-report/
             tools/framework-comparison/e2e/test-results/
-            tools/framework-comparison/e2e/package-lock.json
-            tools/framework-comparison/sveltekit/package-lock.json
-            tools/framework-comparison/react-router/package-lock.json
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 14
