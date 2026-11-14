@@ -1,0 +1,67 @@
+name: Prepare framework lockfiles
+
+on:
+  push:
+    branches:
+      - experiment/automated-testing
+    paths:
+      - ".github/workflows/framework-comparison-ci.yml"
+      - ".github/workflows/prepare-framework-lockfiles.yml"
+      - "tools/framework-comparison/sveltekit/package.json"
+      - "tools/framework-comparison/react-router/package.json"
+      - "tools/framework-comparison/e2e/package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: prepare-framework-lockfiles-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Generate and commit dependency lockfiles
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout the selected branch
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            tools/framework-comparison/sveltekit/package.json
+            tools/framework-comparison/react-router/package.json
+            tools/framework-comparison/e2e/package.json
+
+      - name: Generate lockfiles without installing node_modules
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix tools/framework-comparison/sveltekit
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix tools/framework-comparison/react-router
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix tools/framework-comparison/e2e
+
+      - name: Commit lockfiles when they are new or changed
+        run: |
+          git add             tools/framework-comparison/sveltekit/package-lock.json             tools/framework-comparison/react-router/package-lock.json             tools/framework-comparison/e2e/package-lock.json
+
+          if git diff --cached --quiet; then
+            echo "Los tres lockfiles ya están actualizados."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Actualiza lockfiles de la comparación de frameworks"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Start CI against the branch with committed lockfiles
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run framework-comparison-ci.yml --ref "${GITHUB_REF_NAME}"
+          gh workflow run dependency-security.yml --ref "${GITHUB_REF_NAME}"
