@@ -23,9 +23,9 @@ concurrency:
 
 jobs:
   validate:
-    name: Build and automated browser tests
+    name: Build and automated quality checks
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
 
     steps:
       - name: Checkout repository
@@ -70,9 +70,11 @@ jobs:
           node measure.mjs sveltekit
           node measure.mjs react
 
-      - name: Install automation dependencies
+      - name: Install automation dependencies and refresh lockfile
         working-directory: tools/framework-comparison/automation
-        run: npm ci --include=dev --no-audit --no-fund
+        run: |
+          npm install --include=dev --no-audit --no-fund
+          npm ci --include=dev --no-audit --no-fund
 
       - name: Audit automation dependencies
         working-directory: tools/framework-comparison/automation
@@ -85,6 +87,18 @@ jobs:
       - name: Run unit and browser tests
         working-directory: tools/framework-comparison/automation
         run: npm test
+
+      - name: Lighthouse mobile audit — SvelteKit
+        working-directory: tools/framework-comparison/automation
+        run: npm run perf:sveltekit
+
+      - name: Lighthouse mobile audit — React Router
+        working-directory: tools/framework-comparison/automation
+        run: npm run perf:react
+
+      - name: Build Lighthouse comparison summary
+        working-directory: tools/framework-comparison/automation
+        run: npm run perf:summary
 
       - name: Save generated dependency lockfiles to the experimental branch
         if: ${{ always() && github.event_name == 'push' }}
@@ -109,6 +123,7 @@ jobs:
           path: |
             tools/framework-comparison/automation/playwright-report/
             tools/framework-comparison/automation/test-results/
+            tools/framework-comparison/automation/lighthouse-results/
             tools/framework-comparison/automation/package-lock.json
             tools/framework-comparison/sveltekit/package-lock.json
             tools/framework-comparison/react-router/package-lock.json
