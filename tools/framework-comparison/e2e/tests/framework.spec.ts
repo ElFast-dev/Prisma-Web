@@ -191,13 +191,19 @@ test("offline: vuelve a abrir sin red una ficha visitada con conexión", async (
   }
 });
 
-test("estabilidad: las rutas principales no generan excepciones JavaScript", async ({ page }) => {
+test("estabilidad: la navegación interna no genera excepciones JavaScript", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
 
-  for (const route of ["/", "/personal", "/pelicula/25"]) {
-    await page.goto(route);
-  }
+  await page.goto("/");
+  await page.getByRole("link", { name: /Personal/ }).click();
+  await expect(page.getByRole("heading", { name: "Personal" })).toBeVisible();
+
+  await page.getByRole("link", { name: /Descubrir/ }).click();
+  await expect(page.getByRole("heading", { name: "Descubrir" })).toBeVisible();
+
+  await page.locator(".poster").first().click();
+  await expect(page.locator(".hero")).toBeVisible();
 
   expect(errors).toEqual([]);
 });
