@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/tools/framework-comparison/sveltekit"
+    schedule:
+      interval: weekly
+      day: sunday
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: "/tools/framework-comparison/react-router"
+    schedule:
+      interval: weekly
+      day: sunday
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: "/tools/framework-comparison/e2e"
+    schedule:
+      interval: weekly
+      day: sunday
+    open-pull-requests-limit: 5

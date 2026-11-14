@@ -1,0 +1,97 @@
+name: Framework comparison CI
+
+on:
+  push:
+    branches:
+      - experiment/automated-testing
+  pull_request:
+    branches:
+      - experiment/framework-comparison
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: framework-comparison-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test both frameworks
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install SvelteKit dependencies
+        run: npm install --prefix tools/framework-comparison/sveltekit --no-audit --no-fund
+
+      - name: Verify SvelteKit lockfile installation
+        run: npm ci --prefix tools/framework-comparison/sveltekit --no-audit --no-fund
+
+      - name: Audit SvelteKit dependencies
+        run: npm audit --prefix tools/framework-comparison/sveltekit --audit-level=high
+
+      - name: Build SvelteKit
+        run: npm run build --prefix tools/framework-comparison/sveltekit
+
+      - name: Measure SvelteKit output
+        run: node tools/framework-comparison/measure.mjs sveltekit
+
+      - name: Install React Router dependencies
+        run: npm install --prefix tools/framework-comparison/react-router --no-audit --no-fund
+
+      - name: Verify React Router lockfile installation
+        run: npm ci --prefix tools/framework-comparison/react-router --no-audit --no-fund
+
+      - name: Audit React Router dependencies
+        run: npm audit --prefix tools/framework-comparison/react-router --audit-level=high
+
+      - name: Build React Router
+        run: npm run build --prefix tools/framework-comparison/react-router
+
+      - name: Type-check React Router
+        working-directory: tools/framework-comparison/react-router
+        run: npx tsc --noEmit
+
+      - name: Measure React Router output
+        run: node tools/framework-comparison/measure.mjs react
+
+      - name: Install browser-test dependencies
+        run: npm install --prefix tools/framework-comparison/e2e --no-audit --no-fund
+
+      - name: Verify browser-test lockfile installation
+        run: npm ci --prefix tools/framework-comparison/e2e --no-audit --no-fund
+
+      - name: Audit browser-test dependencies
+        run: npm audit --prefix tools/framework-comparison/e2e --audit-level=high
+
+      - name: Install Playwright Chromium
+        working-directory: tools/framework-comparison/e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run automated browser tests
+        working-directory: tools/framework-comparison/e2e
+        run: npm test
+
+      - name: Upload test reports and generated lockfiles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework-comparison-test-reports
+          path: |
+            tools/framework-comparison/e2e/playwright-report/
+            tools/framework-comparison/e2e/test-results/
+            tools/framework-comparison/e2e/package-lock.json
+            tools/framework-comparison/sveltekit/package-lock.json
+            tools/framework-comparison/react-router/package-lock.json
+          if-no-files-found: warn
+          retention-days: 14
