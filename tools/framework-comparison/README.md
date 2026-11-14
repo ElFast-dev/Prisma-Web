@@ -7,6 +7,7 @@ Estas dos muestras son experimentos aislados; no son la aplicación Prisma. No u
 - Svelte 5.57.3, SvelteKit 3.2.0, adapter-static 4.0.1, plugin Svelte 7.3.1, Vite 8.3.8 y TypeScript 6.0.3.
 - React y React DOM 19.3.1, React Router y herramientas de framework 8.5.1, Vite 8.3.8 y TypeScript 6.0.3.
 - Tipos React: @types/react 19.3.0 y @types/react-dom 19.2.7.
+- Tipos Node para la muestra React Router: @types/node 24.19.2.
 - Dependencia de detección de bots de React Router: isbot 5.2.3.
 - Automatización: Playwright 1.65.0 y @axe-core/playwright 4.14.0.
 
@@ -14,27 +15,53 @@ Node 24 satisface el mínimo Node 22.17 de SvelteKit 3. SvelteKit 3 exige TypeSc
 
 Bits UI queda fuera para no introducir una ventaja de dependencias solo para Svelte: ambas muestras utilizan el diálogo nativo HTML. Las versiones quedan fijas para que el ensayo compare una combinación concreta y reproducible, no rangos que puedan cambiar durante la ejecución.
 
-## Obtener la rama en Termux
+## Instalación local
 
-Desde la carpeta local del repositorio:
+Los tres proyectos ya tienen sus archivos `package-lock.json` guardados en GitHub. Para preparar el entorno local se utiliza `npm ci`, que instala las versiones exactas indicadas por el lockfile.
 
-    git status --short --branch
-    git fetch origin
-    git switch --track -c experiment/framework-comparison origin/experiment/framework-comparison
+Desde la raíz del repositorio:
 
-Esto crea una rama local nueva y no cambia `main`. Si ya tienes la rama local creada, no repitas el último comando: usa `git switch experiment/framework-comparison` y `git pull --ff-only`.
+    npm ci --prefix tools/framework-comparison/sveltekit
+    npm ci --prefix tools/framework-comparison/react-router
+    npm ci --prefix tools/framework-comparison/e2e
 
-## Construcción local de las muestras
+Para compilar las dos muestras:
 
-    cd tools/framework-comparison/sveltekit
-    npm install
-    npm run build
-    cd ../react-router
-    npm install
-    npm run build
-    cd ..
+    npm run build --prefix tools/framework-comparison/sveltekit
+    npm run build --prefix tools/framework-comparison/react-router
 
-No uses `--force` ni `--legacy-peer-deps`. Conserva ambos `package-lock.json` generados. La construcción no cambia versiones del producto.
+No uses `--force` ni `--legacy-peer-deps`. Si se modifica una dependencia en alguno de los `package.json`, el workflow `Prepare framework lockfiles` genera los lockfiles sin instalar `node_modules`, los guarda en la rama y después inicia CI sobre el commit actualizado. No hay que regenerarlos manualmente.
+
+## Cómo se optimizó CI
+
+### Ejecución habitual
+
+El workflow `.github/workflows/framework-comparison-ci.yml` ejecuta dos trabajos en paralelo: uno para SvelteKit y otro para React Router. Cada trabajo:
+
+1. Recupera la caché de paquetes npm asociada a sus lockfiles.
+2. Ejecuta un único `npm ci` para el framework.
+3. Compila y mide el resultado de producción; React Router también pasa TypeScript.
+4. Ejecuta un único `npm ci` para las herramientas E2E.
+5. Instala Chromium y ejecuta los 10 escenarios del framework seleccionado.
+6. Guarda el informe de Playwright, las trazas y las capturas de los fallos como artefactos de GitHub durante 14 días.
+
+La caché reutiliza descargas de npm, no la carpeta `node_modules`. Cada trabajo vuelve a hacer una instalación limpia desde su lockfile. Playwright recomienda no almacenar los binarios de sus navegadores en caché por defecto porque restaurarlos puede tardar tanto como descargarlos; por eso Chromium se instala en el runner que lo necesita.
+
+La suite compartida comprueba portada, navegación, búsqueda, filtros y orden, calificación, persistencia del tema, manifiesto PWA, Service Worker, funcionamiento offline, errores JavaScript y accesibilidad con axe-core. Cada escenario se ejecuta contra ambos frameworks, sin que uno espere a que el otro termine.
+
+### Preparación de lockfiles
+
+El workflow `.github/workflows/prepare-framework-lockfiles.yml` se activa cuando cambian los manifiestos de dependencias o la configuración de CI. Ejecuta `npm install --package-lock-only --ignore-scripts` para actualizar solo los lockfiles; no instala paquetes en `node_modules`. Si hay diferencias, los guarda en un commit de la misma rama y dispara la batería normal contra ese commit.
+
+### Auditoría de seguridad
+
+La auditoría está separada en `.github/workflows/dependency-security.yml`. Se ejecuta para cambios de dependencias en solicitudes de integración y tiene una programación semanal cuando el workflow esté en la rama principal del repositorio. También se puede lanzar manualmente desde GitHub Actions una vez disponible en la rama predeterminada.
+
+Dependabot revisa semanalmente las dependencias npm de los tres proyectos y las acciones de GitHub Actions. Las actualizaciones se proponen como cambios revisables; no se aceptan automáticamente sin pasar por CI.
+
+### Evidencias
+
+Cuando una prueba falla, Playwright conserva capturas, vídeos cuando están disponibles y trazas que permiten inspeccionar los pasos del navegador. Los informes de cada framework se descargan por separado desde la ejecución de GitHub Actions.
 
 ## Medición del tamaño de archivos
 
@@ -60,27 +87,6 @@ Detén únicamente este servidor con Ctrl+C. Para React Router:
 Abre `http://127.0.0.1:18821/` y prueba las mismas rutas.
 
 El servidor local entrega el fallback estático correspondiente: `200.html` en SvelteKit y `index.html` en React Router. El hosting de React Router deberá dirigir las rutas válidas a `/index.html`; el hosting SvelteKit utilizará su fallback `200.html`. Los puertos y orígenes de las muestras son distintos.
-
-## Pruebas automatizadas en GitHub
-
-El workflow `.github/workflows/framework-comparison-ci.yml` ejecuta automáticamente ambos builds y una batería compartida de pruebas en cada push a `experiment/automated-testing`, en las solicitudes de integración hacia `experiment/framework-comparison` y cuando se inicia manualmente desde GitHub Actions.
-
-La batería usa Playwright 1.65.0 en Chromium con una ventana móvil simulada de 360 × 800 píxeles. Los mismos escenarios se ejecutan contra SvelteKit y React Router:
-
-- Portada, catálogo completo de 240 elementos y ausencia de desplazamiento horizontal.
-- Navegación a Personal, regreso a Descubrir y apertura directa de rutas profundas.
-- Búsqueda por título, género y año.
-- Filtros por estado y ordenación por año.
-- Apertura del diálogo y guardado de una calificación.
-- Cambio a Cuarzo y persistencia después de recargar.
-- Manifiesto PWA y registro de un Service Worker activo.
-- Apertura de una ruta profunda después de cargar la aplicación y desconectar la red.
-- Ausencia de excepciones JavaScript no controladas.
-- Auditoría automática de accesibilidad con axe-core; el bloqueo inicial se aplica a infracciones críticas y graves, mientras el informe conserva también las de menor impacto.
-
-El workflow instala dependencias, genera sus archivos de bloqueo en el entorno de CI, verifica una instalación limpia con `npm ci`, ejecuta `npm audit`, compila cada muestra y publica los informes, trazas y archivos de bloqueo como artefactos de GitHub durante 14 días. Los archivos generados no se incorporan automáticamente al repositorio.
-
-Dependabot revisa semanalmente las dependencias de los tres proyectos. Las actualizaciones propuestas se revisan mediante los mismos builds y pruebas antes de aceptarse.
 
 ## Pruebas en el Galaxy A03 / Brave
 
