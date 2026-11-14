@@ -57,9 +57,9 @@ test("filtros y orden: aplica Pendiente y ordena por año", async ({ page }) => 
   await expect(page.locator(".results")).toContainText("60 resultados");
   await expect(page.locator(".results")).toContainText("Orden: Año");
 
-  const years = await page.locator(".poster").evaluateAll(elements =>
+  const years = await page.locator(".poster .sr-only").evaluateAll(elements =>
     elements.map(element => {
-      const match = element.getAttribute("aria-label")?.match(/,\s*(\d{4}),/);
+      const match = element.textContent?.match(/,\s*(\d{4}),/);
       return match ? Number(match[1]) : Number.NaN;
     })
   );
