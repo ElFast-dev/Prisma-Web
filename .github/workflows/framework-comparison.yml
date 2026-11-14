@@ -1,0 +1,129 @@
+name: Framework comparison · automated checks
+
+on:
+  push:
+    branches:
+      - experiment/framework-comparison-ci
+  pull_request:
+    branches:
+      - main
+      - experiment/framework-comparison
+    paths:
+      - "tools/framework-comparison/**"
+      - ".github/workflows/framework-comparison.yml"
+      - ".github/dependabot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: framework-comparison-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Build and automated quality checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
+
+      - name: Install SvelteKit dependencies
+        working-directory: tools/framework-comparison/sveltekit
+        run: npm ci --include=dev --no-audit --no-fund
+
+      - name: Audit SvelteKit dependencies
+        working-directory: tools/framework-comparison/sveltekit
+        run: npm audit --audit-level=high
+
+      - name: Build SvelteKit
+        working-directory: tools/framework-comparison/sveltekit
+        run: npm run build
+
+      - name: Install React Router dependencies
+        working-directory: tools/framework-comparison/react-router
+        run: npm ci --include=dev --no-audit --no-fund
+
+      - name: Audit React Router dependencies
+        working-directory: tools/framework-comparison/react-router
+        run: npm audit --audit-level=high
+
+      - name: Verify React Router CLI dependencies
+        working-directory: tools/framework-comparison/react-router
+        run: npm ls @react-router/dev isbot --depth=0
+
+      - name: Build React Router
+        working-directory: tools/framework-comparison/react-router
+        run: npm run build
+
+      - name: Measure production assets
+        working-directory: tools/framework-comparison
+        run: |
+          node measure.mjs sveltekit
+          node measure.mjs react
+
+      - name: Install automation dependencies and refresh lockfile
+        working-directory: tools/framework-comparison/automation
+        run: |
+          npm install --include=dev --no-audit --no-fund
+          npm ci --include=dev --no-audit --no-fund
+
+      - name: Audit automation dependencies
+        working-directory: tools/framework-comparison/automation
+        run: npm audit --audit-level=high
+
+      - name: Install Chromium for Playwright
+        working-directory: tools/framework-comparison/automation
+        run: npx playwright install --with-deps chromium
+
+      - name: Run unit and browser tests
+        working-directory: tools/framework-comparison/automation
+        run: npm test
+
+      - name: Lighthouse mobile audit — SvelteKit
+        working-directory: tools/framework-comparison/automation
+        run: npm run perf:sveltekit
+
+      - name: Lighthouse mobile audit — React Router
+        working-directory: tools/framework-comparison/automation
+        run: npm run perf:react
+
+      - name: Build Lighthouse comparison summary
+        working-directory: tools/framework-comparison/automation
+        run: npm run perf:summary
+
+      - name: Save generated dependency lockfiles to the experimental branch
+        if: ${{ always() && github.event_name == 'push' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add             tools/framework-comparison/sveltekit/package-lock.json             tools/framework-comparison/react-router/package-lock.json             tools/framework-comparison/automation/package-lock.json
+          if git diff --cached --quiet; then
+            echo "Los archivos de bloqueo ya están actualizados."
+          else
+            git commit -m "Guarda lockfiles de la comparación de frameworks"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Upload reports, traces and generated lockfiles
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: framework-comparison-diagnostics-${{ github.run_number }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            tools/framework-comparison/automation/playwright-report/
+            tools/framework-comparison/automation/test-results/
+            tools/framework-comparison/automation/lighthouse-results/
+            tools/framework-comparison/automation/package-lock.json
+            tools/framework-comparison/sveltekit/package-lock.json
+            tools/framework-comparison/react-router/package-lock.json

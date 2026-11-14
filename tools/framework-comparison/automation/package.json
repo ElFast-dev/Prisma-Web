@@ -1,0 +1,26 @@
+{
+  "name": "prisma-framework-comparison-automation",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
+    "perf:sveltekit": "lhci collect --config=./lighthouserc-sveltekit.cjs && lhci upload --config=./lighthouserc-sveltekit.cjs",
+    "perf:react": "lhci collect --config=./lighthouserc-react-router.cjs && lhci upload --config=./lighthouserc-react-router.cjs",
+    "perf:summary": "node summarize-lighthouse.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@lhci/cli": "0.16.1",
+    "@playwright/test": "1.65.0",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  },
+  "overrides": {
+    "basic-ftp": "6.2.6"
+  }
+}
