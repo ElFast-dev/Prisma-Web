@@ -1,0 +1,54 @@
+name: Dependency security audit
+
+on:
+  pull_request:
+    branches:
+      - experiment/framework-comparison
+    paths:
+      - "tools/framework-comparison/sveltekit/package.json"
+      - "tools/framework-comparison/sveltekit/package-lock.json"
+      - "tools/framework-comparison/react-router/package.json"
+      - "tools/framework-comparison/react-router/package-lock.json"
+      - "tools/framework-comparison/e2e/package.json"
+      - "tools/framework-comparison/e2e/package-lock.json"
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit ${{ matrix.project }} dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        project:
+          - sveltekit
+          - react-router
+          - e2e
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js and restore npm cache
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tools/framework-comparison/${{ matrix.project }}/package-lock.json
+
+      - name: Install exactly from the committed lockfile
+        run: npm ci --prefix tools/framework-comparison/${{ matrix.project }} --no-audit --no-fund
+
+      - name: Audit installed dependency tree
+        run: npm audit --prefix tools/framework-comparison/${{ matrix.project }} --audit-level=high
