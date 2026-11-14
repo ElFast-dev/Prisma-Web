@@ -38,7 +38,7 @@ jobs:
 
       - name: Install SvelteKit dependencies
         working-directory: tools/framework-comparison/sveltekit
-        run: npm install --include=dev --no-audit --no-fund
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Audit SvelteKit dependencies
         working-directory: tools/framework-comparison/sveltekit
@@ -50,7 +50,7 @@ jobs:
 
       - name: Install React Router dependencies
         working-directory: tools/framework-comparison/react-router
-        run: npm install --include=dev --no-audit --no-fund
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Audit React Router dependencies
         working-directory: tools/framework-comparison/react-router
@@ -72,7 +72,7 @@ jobs:
 
       - name: Install automation dependencies
         working-directory: tools/framework-comparison/automation
-        run: npm install --include=dev --no-audit --no-fund
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Audit automation dependencies
         working-directory: tools/framework-comparison/automation
