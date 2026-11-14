@@ -4,11 +4,11 @@ Estas dos muestras son experimentos aislados; no son la aplicación Prisma. No u
 
 ## Versiones fijadas y verificadas
 
-- Svelte 5.57.3, SvelteKit 3.2.0, adapter-static 4.0.1, plugin Svelte 7.3.1, Vite 8.0.12 y TypeScript 6.0.3.
-- React y React DOM 19.3.1, React Router y herramientas de framework 8.5.1, Vite 8.0.12 y TypeScript 6.0.3.
-- Tipos: @types/react 19.3.0 y @types/react-dom 19.2.7.
+- Svelte 5.57.3, SvelteKit 3.2.0, adapter-static 4.0.1, plugin Svelte 7.3.1, Vite 8.3.8 y TypeScript 6.0.3.
+- React y React DOM 19.3.1, React Router y herramientas de framework 8.5.1, Vite 8.3.8 y TypeScript 6.0.3.
+- Tipos React: @types/react 19.3.0 y @types/react-dom 19.2.7.
 
-Node 24 satisface el mínimo Node 22.17 de SvelteKit 3. SvelteKit 3 exige TypeScript 6, Svelte 5.57.1+, Vite 8.0.12+ y plugin Svelte 7+. React 19.3.1 es el parche estable que sustituye al 19.3.0 indicado inicialmente; React Router 8.5.1 sigue siendo el último release estable comprobado.
+Node 24 satisface el mínimo Node 22.17 de SvelteKit 3. SvelteKit 3 exige TypeScript 6, Svelte 5.57.1+, Vite 8.0.12+ y plugin Svelte 7+. Vite 8.3.8 es la versión estable más reciente verificada, no solo el mínimo requerido. React 19.3.1 es el parche estable más reciente que sustituye al 19.3.0 indicado inicialmente; React Router 8.5.1 es el release estable más reciente comprobado.
 
 Bits UI queda fuera para no introducir una ventaja de dependencias solo para Svelte: ambas muestras utilizan el diálogo nativo HTML. Las versiones quedan fijas para que el ensayo compare una combinación concreta y reproducible, no rangos que puedan cambiar durante la ejecución.
 
