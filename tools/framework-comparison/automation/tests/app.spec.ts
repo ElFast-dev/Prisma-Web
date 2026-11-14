@@ -78,7 +78,7 @@ test("El tema Cuarzo se conserva después de recargar", async ({ page, pageError
   await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("cuarzo");
 });
 
-test("El Service Worker mantiene disponible una ruta profunda sin conexión", async ({ page, pageErrors, context }) => {
+test("Service Worker permite abrir sin conexión una ficha visitada previamente", async ({ page, pageErrors, context }) => {
   void pageErrors;
   await page.goto("/");
   await page.evaluate(async () => {
@@ -95,11 +95,17 @@ test("El Service Worker mantiene disponible una ruta profunda sin conexión", as
     { timeout: 15_000 }
   );
 
+  // Visita la ruta mientras hay conexión para que su módulo y recursos se guarden
+  // en la caché de ejecución antes de comprobar el modo sin conexión.
+  await page.goto("/pelicula/25");
+  await expect(page.getByRole("heading", { name: "Horizonte de cristal 3" })).toBeVisible();
+  await page.goto("/");
+
   await context.setOffline(true);
   try {
     await page.goto("/pelicula/25", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Horizonte de cristal 3" })).toBeVisible({
-      timeout: 20_000
+      timeout: 10_000
     });
   } finally {
     await context.setOffline(false);
@@ -115,6 +121,7 @@ test("axe no detecta infracciones críticas o graves en las pantallas principale
     impact: string | null;
     help: string;
     nodes: number;
+    examples: Array<{ target: string[]; failureSummary: string | null }>;
   }> = [];
 
   for (const route of routes) {
@@ -129,7 +136,11 @@ test("axe no detecta infracciones críticas o graves en las pantallas principale
         id: violation.id,
         impact: violation.impact ?? null,
         help: violation.help,
-        nodes: violation.nodes.length
+        nodes: violation.nodes.length,
+        examples: violation.nodes.slice(0, 5).map((node) => ({
+          target: node.target,
+          failureSummary: node.failureSummary ?? null
+        }))
       }))
     );
   }
