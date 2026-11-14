@@ -1,0 +1,1 @@
+{"name":"prisma-backup-security-lab","private":true,"type":"module","scripts":{"dev":"vite --host 127.0.0.1 --port 18830","build":"vite build","preview":"vite preview --host 127.0.0.1 --port 18830"},"dependencies":{"hash-wasm":"4.13.0","libsodium-wrappers-sumo":"0.8.4"},"devDependencies":{"typescript":"6.0.3","vite":"8.3.8"}}
