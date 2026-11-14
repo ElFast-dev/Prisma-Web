@@ -106,4 +106,8 @@ El informe no capturó la cabecera ni el contenido del journal, por lo que no se
 
 Referencias oficiales: https://sqlite.org/pragma.html#pragma_journal_mode y https://www.sqlite.org/lockingv3.html#hot_journals.
 
-**Siguiente comparación:** persistencia de SharedWorker + OPFS SAH pool a través de recarga y reapertura manual de Brave, con `clearOnInit=false` y `preserveOnInitFailure=true` explícitos. OPFS clásico sigue como candidato principal, pero la arquitectura definitiva aún no está aprobada. No reutilizar ni limpiar los RUN_ID existentes.
+**Comparación completada el 13-11-2026:** SAH Pool Persistence Probe V1 recuperó 57 filas, A=29 y B=28, con SHA-256 coincidente e integridad `ok` después de siembra, recarga y reapertura manual de Brave declarada por el propietario. Usó `clearOnInit=false` y `preserveOnInitFailure=true`. Véase [sahpool-persistence-results-2026-11-13.md](sahpool-persistence-results-2026-11-13.md).
+
+**Conclusión comparativa:** OPFS clásico pasó persistencia y Crash Recovery controlada, pero dejó una observación de journal cuya cabecera no se capturó. SAH pool pasó además la persistencia a través de la reapertura declarada y se combina con las pruebas previas de transferencia, concurrencia cooperativa y recuperación SAH pool. La recomendación técnica pasa a ser SQLite WASM + OPFS SAH pool con un único propietario Dedicated Worker coordinado por SharedWorker. Esto no es concurrencia transparente del VFS: las escrituras se serializan en el propietario y no se instalan instancias SAH pool independientes desde cada pestaña.
+
+La recomendación está lista para aprobación expresa del propietario; no aprueba framework, diseño web, cifrado/copias, migraciones, hosting ni actualización PWA. No reutilizar ni limpiar los RUN_ID existentes.
