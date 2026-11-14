@@ -149,3 +149,39 @@ Se recibieron nuevos informes con la versión del benchmark que registra limpiez
 Esto verifica la eliminación del VFS y la ausencia del directorio OPFS exclusivo de la prueba. No explica por sí solo el crecimiento de StorageManager.estimate().usage: en estos informes las variaciones posteriores fueron aproximadamente +0,80 MB, +3,88 MB y +4,31 MB. Los valores son estimaciones del navegador, no prueba directa de archivos retenidos.
 
 El benchmark se amplió para enumerar bases IndexedDB cuyo nombre empiece por prisma-dexie-benchmark- después de cada tanda. Falta recibir un informe que incluya indexedDbCleanup y cleanupVerification.dexieBenchmarkDatabasesAbsent; no atribuir el delta a Dexie hasta revisar ese resultado.
+
+## Propuesta técnica pendiente de aprobación del propietario · 13 de noviembre de 2026
+
+Esta sección registra una recomendación basada en pruebas; **no representa una aprobación expresa del propietario ni modifica retroactivamente las decisiones P-001 a P-010**.
+
+### Almacenamiento recomendado
+
+**SQLite WASM 3.54.1-build1 + OPFS SAH pool con un único propietario SQLite activo, coordinado por SharedWorker.**
+
+Evidencia ya recibida y documentada en el Galaxy A03 / Brave:
+
+- Benchmark Dexie vs SQLite: SQLite obtuvo ventaja de 2,70× a 4,40× en inserciones para datasets de 1.000 a 10.000 películas y 3.000 a 30.000 visionados.
+- Transferencia cooperativa V8: dos pestañas, un propietario a la vez, transferencia binaria y 200 registros verificados después de nueva propiedad y reapertura.
+- Concurrency AutoTest: 24/24 solicitudes respondidas, 605 filas, un propietario SQLite y reapertura correcta. Las escrituras se serializaron en el propietario.
+- Recovery AutoTest V1 sobre SAH pool: rollback, COMMIT completado con respuesta retenida, reapertura y limpieza exclusiva aprobados.
+- SAH Pool Persistence Probe V1: 57 registros (A=29, B=28), SHA-256 coincidente, `quick_check` e `integrity_check` en `ok` tras siembra, recarga y reapertura manual de Brave declarada por el propietario. RUN_ID: `prisma-sahpool-survival-b1bb9d6f-2558-4d1d-a2a8-a75744cebc2a`.
+
+El VFS SAH pool no ofrece concurrencia multi-pestaña transparente: preasigna SyncAccessHandles y bloquea sus archivos. Por ello, la recomendación exige un único Dedicated Worker propietario en cada momento. SharedWorker coordina los clientes; las otras pestañas no instalan el VFS ni abren la base de forma independiente. Las peticiones se serializan en el propietario. El SharedWorker no crea Dedicated Workers; el contexto de página administra su Worker y sigue el protocolo de concesión de propiedad ya probado.
+
+OPFS-WL no se recomienda debido a la ejecución preservada que produjo `SQLITE_CORRUPT` durante escrituras concurrentes. OPFS clásico pasó pruebas controladas de persistencia y terminación del Worker, pero su informe conserva una observación pendiente de clasificación del archivo `-journal`.
+
+### Límites de esta recomendación
+
+La fase `after-close-1` de SAH pool fue declarada manualmente después de cerrar y reabrir Brave; el informe no certifica por sí mismo que Android haya terminado el proceso por completo. Tampoco se ha demostrado persistencia en el origen HTTPS definitivo ni se han cerrado cuota, migraciones, formato de copia cifrada y restauración.
+
+### Aprobaciones que siguen pendientes
+
+- Framework y stack de interfaz, después de comparar alternativas en el dispositivo.
+- Revisión y aprobación del diseño web; no se debe modificar el diseño aprobado por iniciativa propia.
+- Decisión de almacenamiento basada en esta recomendación.
+- Seguridad, cifrado, exportación/restauración y migraciones.
+- Hosting gratuito con coste total 0 USD y hostname HTTPS estable.
+- Estrategia de actualización PWA y pruebas de aceptación.
+- Autorización expresa del propietario para comenzar el código de producto.
+
+Hasta recibir esas aprobaciones, la recomendación SAH pool se considera **candidata preferida, no arquitectura de producción aprobada**.
